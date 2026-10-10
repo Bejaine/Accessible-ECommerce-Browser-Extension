@@ -219,3 +219,91 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   your cart? Quantity 1, price ₹17,999."); the colour is its own line. Live Hindi showed several
   masked names in one sentence come back in a shuffled word order.
 - Demo: the backend warms the language models at startup (~25 s); start it a minute early.
+
+## 2026-10-11 — Schema: checkout summary (Track C for place-order; affects B, D, core)
+- New `CheckoutSummary` {id CHECKOUT_n, items [{title, quantity, price}], subtotal,
+  delivery_charge, total, delivery_pin_code, delivery_address (ADDR_n placeholder),
+  payment_method (selected), place_order_target_id, missing}; `PageContext.checkout` holds it on
+  checkout pages. Grounding may name a CheckoutSummary id as subject.
+- `checkout` is OPTIONAL (not required-but-nullable) so B's existing PageContext code keeps
+  compiling; schema_version stays "1.0". Team: bump to 1.1 later if we want strict versioning.
+- B: please extract it on Amazon/Flipkart checkout pages (logged-in account; save + sanitise).
+  Without `total` and the Place-order target, the backend refuses to place an order.
+
+## 2026-10-11 — Place order (Track C; affects B, D, core)
+- `order_task` with task "place" on a checkout page: reads `PageContext.checkout` aloud (items,
+  delivery charge, ADDR_n, payment) and returns ONE high-risk Confirmation "Place this order?
+  Total ₹X. Delivery PIN N." with read_back {quantity, total, pin_code}; the Place-order click is
+  only its pending action. Next page with the order "placed" → "Your order is placed."
+- Refused (nothing offered) without a total, the Place-order target or a selected payment
+  method. Warns when the page's payment differs from prefs.preferred_payment. Pressing the
+  button directly is refused. Payment details are always entered by the user (secure zone).
+
+## 2026-10-11 — /turn translates an answer's lines in parallel (Track C; affects A)
+- All lines of one answer (summary, headings, items, follow-ups, warnings) are translated
+  concurrently through `bhashini.translate`; one at a time, a 20-line answer cost 20 round trips.
+  Still all-or-nothing: if any line fails, the whole answer stays English (`lang: en`).
+- At most 4 MT requests at once, each distinct line once (Track A: the sandbox allows a burst
+  of 12 per model then ~0.8/s, and returned 500s for ~20 at once). When Track A's
+  `bhashini.translate_many` lands it is used automatically (a few packed requests per answer);
+  masking and the lost-placeholder check still apply per line.
+- The user's words are redacted BEFORE translation (they were translated first, so a card number
+  or OTP said in Hindi reached the MT service); placeholders survive masking and translation.
+- MT turns ": " into a visarga ("रंगः"); we put the colon back, at most as many as the English
+  had. `fixtures/mocks/TurnResponse.json` now has the Hindi prompt equal to the Hindi summary.
+
+## 2026-10-11 — Short answers, photo grounding, did-you-mean, streaming (Track C; affects D, core)
+- `prefs.verbosity == "short"` or `prefs.lite_mode`: at most 3 items per section, 3 follow-up chips
+  and 4 table rows (docs/conditions.md: 3 options per step). Summaries are never cut: they are
+  already ≤ 2 sentences and cutting lost key facts (delivery date, read-backs). The cache keeps the
+  full sections; /product/prepare and /turn shorten per request.
+- `/vision/describe` with the `product_id` of a prepared product grounds its answer in
+  `images[i].description`. Without one there is nothing to cite: only visual description is kept
+  (numbers and printed text dropped), marked AI-made. This is the one ungrounded output.
+- "Did you mean X or Y?": when the model gives no different second meaning, the sound-alike command
+  is offered ("a cart" → Open the cart, or Add to cart?); consequential choices carry no actions.
+- No backend streaming (track brief item, decided not to build): /turn answers are built by our
+  tools, not free-form LLM prose, grounding is already per sentence, and a turn returns in ~1–2 s.
+  The slow part is TTS (Track A), which `player.ts` already plays sentence by sentence. Streaming
+  would need a new endpoint, an event schema and a client rewrite for little gain. Revisit only if
+  free-form LLM answers are added.
+
+## 2026-10-11 — Review headings "Good points" / "Drawbacks" (Track C; affects A, D)
+- Review sections are headed "Good points", "Mixed opinions" and "Drawbacks" (were "Pros"/"Cons",
+  which MT rendered as "प्रो"/"विपक्ष", "ప్రోస్"/"కాన్స్" out of context, Track A's live run).
+  Older recorded LLM answers saying "Pros"/"Cons" are renamed in code.
+- Track A's `bhashini.translate_many` (track-a/tts-speech) is picked up automatically by
+  `brain/language.py` once merged: ~2 MT calls per answer instead of ~14.
+
+## 2026-10-11 — Numbers are spoken as words (Track A; affects C, D)
+- Live, the Hindi and Telugu TTS voices read digits in English ("सेवेंटींथ…", "బైవ్ థౌసండ్") and
+  ₹ is rejected, so `bhashini.tts` first calls `numbers.speakable(text, lang)`: prices with the
+  currency word (and paise), numbers in the Indian system, decimals, units in the listener's
+  script; PIN codes, phone/order numbers and leading zeros digit by digit; names (S24, 5G) kept.
+- Verified by TTS → ASR: Hindi and Telugu now say "सत्रह हज़ार नौ सौ निन्यानवे रुपये" /
+  "పదిహేడు వేల … రూపాయలు". Telugu TTS took ~16 s for one long sentence: speak short sentences.
+- Text shown on screen keeps the digits; only the audio uses words. Telugu forms were written
+  by us, not a native speaker: please have one review `numbers.py`'s Telugu tables.
+
+## 2026-10-11 — UI strings and pre-recorded phrases (Track A; affects D, core)
+- UI strings live in `extension/src/i18n/{en,hi,te}.json`; `t(key, lang)` falls back to English.
+  `scripts/build_phrases.py` machine-translates missing keys and records each string as 16 kHz
+  audio. MT was wrong for several UI strings (e.g. "your colours look alike", "भाषण" for speech,
+  "they added" in Telugu), so hi/te strings are hand-reviewed and never overwritten by the script.
+- `phraseAudioUrl(key, lang)` (src/audio/phrases.ts) returns the recording only if it was made from
+  the current text; otherwise null and the caller uses live TTS. Add new UI strings to en.json
+  and ask Track A to rebuild (needs tokens). Only the phrases in `i18n/prerecord.json` are
+  recorded (13 short/onboarding phrases, 2.2 MB as 16 kHz WAV, ~32 KB/s); long messages are
+  spoken live, or by the device voice in lite mode.
+- The spoken control words in `player.controls_hint` are 'रुको'/'दोबारा' and 'ఆపు'/'మళ్లీ': the
+  local matcher (Track D) must accept them. Telugu strings still need a native speaker's review.
+
+## 2026-10-11 — translate_many: an answer's lines in few MT calls (Track A; affects Track C)
+- `bhashini.translate_many(lines, src, tgt)` returns the same length and order, or raises
+  ApiError (callers keep the whole answer in one language). Cached lines are free, duplicates
+  are translated once, the rest are packed as a numbered list of ≤ 50 words per request.
+- Chosen by a live test: newline and "||" separators were merged or mangled, and a marker word
+  kept its count but moved into the middle of a sentence (silently wrong lines); numbered items
+  stayed whole and in order (en→hi, en→te). Every packed reply is still verified (markers 1…n
+  in order, each item keeps its placeholders); a failed batch is re-translated line by line.
+- Live: a 14-line reviews answer took 2 calls per language (was 14), 0.4 s hi / 1.1 s te.

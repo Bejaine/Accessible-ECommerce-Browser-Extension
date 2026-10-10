@@ -1,0 +1,15 @@
+[
+  "overlay.title",
+  "onboarding.choose_language",
+  "onboarding.read_aloud",
+  "onboarding.colours",
+  "listening.stopped",
+  "listening.resumed",
+  "mic.listening",
+  "common.yes",
+  "common.no",
+  "common.cancelled",
+  "common.done",
+  "cart.added",
+  "player.paused"
+]

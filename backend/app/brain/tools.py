@@ -454,8 +454,8 @@ async def press(ctx: Context, target_id: str) -> ToolResult:
     label = target.label
     if BLOCKED.search(label):
         out = plain_output(
-            "I won't press that for you. Placing an order needs the order summary first, and "
-            "you confirm it yourself.",
+            "I won't press that directly. Say \"place my order\" and I'll read the order "
+            "summary first; the order is placed only after you say yes.",
             followups=["Read my cart"],
         )
         return ToolResult(f"Press {brief(label, 40)}", out)
@@ -559,7 +559,9 @@ def phrase_chips(ctx: Context) -> list[str]:
         return ["Price", "Specs", "Reviews", "Add to cart"]
     if kind == "search":
         return ["Read the results", "Cheapest", "Best rated", "Search again"]
-    if kind in ("cart", "checkout"):
+    if kind == "checkout":
+        return ["Place my order", "Where am I?", "Help"]
+    if kind == "cart":
         return ["Read my cart", "Where am I?", "Help"]
     return ["Where am I?", "Search", "Help"]
 
@@ -577,9 +579,12 @@ CHIPS: dict[str, tuple[str, dict[str, Any]]] = {
     "best rated": ("recommend", {"prefer": "best_rated"}),
     "where am i?": ("where_am_i", {}),
     "stop": ("order_task", {"stop": True}),
+    # After the extension ran a confirmed order step, "Continue" lets the task read the new page.
+    "continue": ("order_task", {}),
     "track my order": ("order_task", {"task": "track"}),
     "cancel an order": ("order_task", {"task": "cancel"}),
     "return an order": ("order_task", {"task": "return"}),
+    "place my order": ("order_task", {"task": "place"}),
     "read my cart": ("where_am_i", {}),
 }
 
@@ -772,11 +777,12 @@ TOOL_SPECS = [
     ),
     _spec(
         "order_task",
-        "Track, cancel or return one of the user's orders, step by step. Use it to start a "
+        "Track, cancel or return one of the user's orders, or place the order on the checkout "
+        "page (reads the summary and asks to confirm), step by step. Use it to start a "
         "task, to answer the task's question (which order, the reason for a return, "
         "continue), or to stop it.",
         {
-            "task": {"type": "string", "enum": ["track", "cancel", "return"]},
+            "task": {"type": "string", "enum": ["track", "cancel", "return", "place"]},
             "order_id": {"type": "string", "description": "An order id from PAGE orders"},
             "reason": {"type": "string", "description": "Return reason in the user's words"},
             "stop": {"type": "boolean", "description": "True if the user wants to stop the task"},

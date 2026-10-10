@@ -16,7 +16,7 @@ import logging
 import re
 from typing import Any
 
-from app.brain import intent, language, session, tools
+from app.brain import brevity, intent, language, session, tools
 from app.brain.llm import LLMError, LLMSettings, complete_tool_call
 from app.brain.output import plain_output
 from app.brain.redact import redact
@@ -52,7 +52,9 @@ guessing. Give up to 2 alternatives (other plausible meanings), most likely firs
 - The transcript has no confidence score, so judge it yourself: a very short or broken
   transcript that could be several commands (e.g. "a cart": add to cart or open the cart?)
   gets confidence below 0.8, with the other meaning as an alternative.
-- Orders: "where is my order", "cancel it", "return the cover" -> order_task. While
+- Orders: "where is my order", "cancel it", "return the cover" -> order_task. On a checkout
+  page "place my order" / "buy it" / "order now" -> order_task with task place (it only reads
+  the summary and asks; never press the Place order button yourself). While
   TASK_IN_PROGRESS is set, the user's answer (which order, a reason, "continue", "yes") goes to
   order_task with the matching slot, and "stop" / "never mind" goes to order_task with stop.
 - If nothing fits, call unclear.
@@ -102,6 +104,14 @@ def page_brief(req: TurnRequest) -> dict[str, Any]:
         "page_type": page.page_type.value,
         "site": page.site,
         "products": products,
+        "checkout": (
+            {
+                "total": page.checkout.total.amount if page.checkout.total else None,
+                "items": len(page.checkout.items),
+            }
+            if page.checkout
+            else None
+        ),  # fmt: skip
         "orders": [
             {
                 "id": o.id,
@@ -162,6 +172,9 @@ async def handle_turn(req: TurnRequest) -> TurnResponse:
     # "पंद्रह से बीस हज़ार" -> "15000 से 20000", "dedh lakh" -> "150000" (Track A's normaliser),
     # before and after translation, so budgets and quantities reach the model as digits.
     text = numbers.normalise_numbers(text, user_lang)
+    # Redact BEFORE translation (docs/safety.md: before any text reaches an LLM or translation):
+    # a card number or OTP said in Hindi must not reach the MT service either.
+    text = redact(text).text
     english = await language.translate(text, user_lang, "en", keep=brands) or text
     said = redact(numbers.normalise_numbers(english, "en")).text
     alternatives = [
@@ -239,6 +252,14 @@ async def handle_turn(req: TurnRequest) -> TurnResponse:
     return await _respond(req, ctx, "unclear", min(confidence, 0.49), [], result)
 
 
+# Commands that unclear speech mixes up, offered as the other "Did you mean" option.
+SOUNDS_ALIKE: dict[str, tuple[str, dict[str, Any]]] = {
+    "go_to_cart": ("add_to_cart", {}),
+    "add_to_cart": ("go_to_cart", {}),
+    "read_section": ("where_am_i", {}),
+    "where_am_i": ("read_section", {"section": "overview"}),
+}
+
 SILENT_MIC = 0.05  # mic_level (0-1, from Track A's capture) below this: nothing was said
 
 
@@ -290,7 +311,12 @@ async def _ask(
     """0.5-0.8: never act; offer the top two meanings. Each choice carries its actions only if
     they are safe to run directly; consequential ones are confirmed on the next turn."""
     options: list[dict[str, Any]] = []
-    for tool_name, tool_args in [(name, args), *[(t, a) for _, t, a in alts]]:
+    candidates = [(name, args), *[(t, a) for _, t, a in alts]]
+    if len(candidates) == 1 and name in SOUNDS_ALIKE:
+        # The model often gives no second meaning; offer the command that sounds alike
+        # ("a cart": add to cart or open the cart?). Consequential ones carry no actions.
+        candidates.append(SOUNDS_ALIKE[name])
+    for tool_name, tool_args in candidates:
         if tool_name in tools.READ_TOOLS:
             # Reading needs no page action; don't run it (it may cost an LLM call).
             options.append(
@@ -335,7 +361,10 @@ async def _respond(
     result: tools.ToolResult,
 ) -> TurnResponse:
     lang = req.input.lang.value
-    output = await _translate_output(result.output, lang, _brands(req))
+    output = result.output
+    if brevity.wants_short(req.prefs):
+        output = brevity.shorten(output)
+    output = await _translate_output(output, lang, _brands(req))
     confirmation = result.confirmation
     if confirmation is not None:
         confirmation = {**confirmation, "prompt": output.summary}
@@ -378,13 +407,13 @@ async def _translate_output(
             texts.append((item, "text"))
         if section["table"]:
             texts.append((section["table"], "spoken"))
-    translated = []
-    for container, key in texts:
-        out = await language.translate(container[key], "en", lang, keep=keep or [])
-        if out is None:
-            return output  # all or nothing: never a half-translated answer
-        translated.append((container, key, out))
-    for container, key, out in translated:
+    # One batch: Track A packs lines into a few requests (or we send at most 4 at a time).
+    results = await language.translate_many(
+        [container[key] for container, key in texts], "en", lang, keep=keep or []
+    )
+    if results is None:
+        return output  # all or nothing: never a half-translated answer
+    for (container, key), out in zip(texts, results, strict=True):
         container[key] = out
     data["lang"] = lang
     return AccessibleOutput.model_validate(data)

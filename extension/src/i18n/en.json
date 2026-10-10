@@ -1,11 +1,24 @@
 {
   "overlay.title": "Shopping assistant",
+  "onboarding.choose_language": "For English, say English or press 1.",
+  "onboarding.read_aloud": "Would you like me to read things aloud?",
+  "onboarding.colours": "Do colours ever look alike to you?",
   "listening.stopped": "Listening has stopped.",
+  "listening.resumed": "Listening again.",
   "mic.listening": "Listening.",
   "mic.no_speech": "I didn't hear anything. Press the mic button to try again, or type instead.",
   "mic.permission_denied": "I can't use the microphone because permission was not given. You can type instead, or allow the microphone in the browser's site settings.",
   "mic.no_microphone": "No microphone was found. You can type instead.",
   "mic.unavailable": "The microphone isn't working right now. You can type instead.",
   "mic.secure_zone": "Listening is paused while you're in a payment or password field.",
-  "mic.no_audio": "There was no speech to send. Please try again."
+  "mic.no_audio": "There was no speech to send. Please try again.",
+  "common.yes": "Yes",
+  "common.no": "No",
+  "common.cancelled": "Cancelled.",
+  "common.done": "Done.",
+  "cart.added": "Added to cart.",
+  "player.controls_hint": "Say pause to stop for a moment, or repeat to hear it again.",
+  "player.paused": "Paused.",
+  "error.try_again": "Something went wrong. Please try again.",
+  "lite.device_voice": "The internet is slow, so I'll use this device's voice for now."
 }
