@@ -6,6 +6,7 @@ import { flipkartAdapter } from './adapters/flipkart';
 import { mockStoreAdapter } from './adapters/mockstore';
 import type { SiteAdapter } from './adapters/types';
 import { extractCheckout, redactAddress } from './checkout';
+import { applyLearned } from './learned';
 import { hasType, jsonLdNodes, productFromJsonLd, productFromMeta } from './jsonld';
 import { redactOrderIds, toOrderJSON } from './orders';
 import { mergeTiers, type TierResult } from './product';
@@ -22,6 +23,13 @@ export {
 } from './secure';
 export { orderStatusFromText, resolveOrderId } from './orders';
 export { extractCheckout, resolveAddress, restorePlaceholders } from './checkout';
+export {
+  applyLearned,
+  completeWithFallback,
+  learnFromFallback,
+  loadLearnedAdapters,
+  setLearnedAdapters,
+} from './learned';
 export { buildPageMap, resolveTarget } from './targets';
 
 const ADAPTERS: SiteAdapter[] = [amazonAdapter, flipkartAdapter, mockStoreAdapter];
@@ -64,12 +72,15 @@ export function extractProduct(doc: Document, opts: ExtractOptions = {}): Produc
   ];
   const adapter = adapterFor(site);
   if (adapter) tiers.push({ method: 'adapter', draft: adapter.product(doc, url, now) });
-  const product = mergeTiers(tiers, { url, site, now });
-  if (product || !tiers.some((t) => t.draft.title)) return product;
-  // A product without a native id on an unknown site: key it by URL path.
-  const path = new URL(url).pathname.replace(/\/+$/, '') || '/';
-  tiers.push({ method: 'jsonld', draft: { nativeId: path } });
-  return mergeTiers(tiers, { url, site, now });
+  let product = mergeTiers(tiers, { url, site, now });
+  if (!product && tiers.some((t) => t.draft.title)) {
+    // A product without a native id on an unknown site: key it by URL path.
+    const path = new URL(url).pathname.replace(/\/+$/, '') || '/';
+    tiers.push({ method: 'jsonld', draft: { nativeId: path } });
+    product = mergeTiers(tiers, { url, site, now });
+  }
+  // Rules learned from earlier LLM fallbacks on this site fill what is still empty.
+  return product ? applyLearned(doc, product, undefined, now) : null;
 }
 
 export function extractPageContext(
