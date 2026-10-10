@@ -92,3 +92,13 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - MOCK=1: `/turn` runs the real orchestrator on recorded Groq calls (`fixtures/llm/turn/`); an
   utterance with no recording gets the canned `TurnResponse.json` as before.
 - Until Track A adds `bhashini.translate()`, answers stay English and say so (`output.lang: en`).
+
+## 2026-10-11 — Photo descriptions via Gemini (Track C; affects A, D, slides)
+- The main product photo is described by Gemini during `/product/prepare` (more on request via
+  `/turn` "describe the photo"); descriptions are cached by image URL and returned in
+  `product.images[i].description`. Outputs carry a warning that the description is AI-made.
+- Numbers and printed text the VLM reads are kept only if the page confirms them (OCR text, alt
+  text or title); "IP67 Rating" read off a banner is dropped until OCR (Track A) fills `ocr_text`.
+- The backend downloads images only from the shops' image hosts (Amazon, Flipkart CDNs), https,
+  max 4 MB. Requests set `store: false`; we send only public product photos (Responsible AI slide).
+- A transcript with ASR confidence < 0.5 never acts directly in `/turn`: it asks first.

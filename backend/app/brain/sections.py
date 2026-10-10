@@ -184,7 +184,7 @@ def variant_items(b: OutputBuilder, p: ProductJSON) -> list[Item]:
     return items
 
 
-async def images(p: ProductJSON) -> CheckResult:
+async def images(p: ProductJSON, warnings: list[str] | None = None) -> CheckResult:
     b = OutputBuilder(p.id)
     if not p.images:
         return b.checked(_subjects(p), "The page doesn't show any product photos.")
@@ -219,4 +219,5 @@ async def images(p: ProductJSON) -> CheckResult:
         _subjects(p),
         _fit(f"There are {len(p.images)} product {plural}.", second),
         followups=["Describe the next photo", "Tell me the specs"],
+        warnings=warnings or [],
     )

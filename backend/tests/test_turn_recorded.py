@@ -113,3 +113,29 @@ def test_compare_on_a_search_page(mock_body):
     r = turn(mock_body, "compare the first two", page="PageContext.search")
     rows = r.output.sections[0].table.rows
     assert rows[0] == ["Price", "₹15,499", "₹17,999"]
+
+
+def test_specific_question_uses_answer_question_even_when_not_listed(mock_body):
+    """Seen live: "warranty" read the whole overview, "weigh" came back "unclear"."""
+    for text, topic in [
+        ("tell me something about the warranty", "warranty"),
+        ("how much does it weigh", "weight"),
+    ]:
+        r = turn(mock_body, text)
+        assert r.intent.name == "answer_question"
+        assert r.output.summary == f"The page doesn't list {topic}."
+
+
+def test_low_confidence_transcript_never_acts(mock_body):
+    """The recorded model answer for "a cart" is go_to_cart at 0.6-0.85; with ASR confidence
+    0.41 the turn must ask, not open the cart."""
+    r = turn(mock_body, "a cart", alts=["a cart", "the cart", "add cart"], conf=0.41)
+    assert r.intent.confidence < 0.8 and r.actions == []
+
+
+def test_photo_request_falls_back_to_the_label_when_it_cannot_be_described(mock_body):
+    r = turn(mock_body, "describe the main photo")
+    assert r.intent.name == "describe_photo"
+    assert r.output.summary.endswith(
+        "Its label says: Zentra Pulse 5G front and back, Midnight Black."
+    )
