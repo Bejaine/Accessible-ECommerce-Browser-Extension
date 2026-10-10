@@ -6,7 +6,12 @@ import { join, resolve } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { ActionTarget, ClientAction, EffectKind, PageContext } from '@shared/index';
 import { performAction } from '../src/actuate';
-import { extractPageContext, resolveOrderId } from '../src/extract';
+import {
+  extractPageContext,
+  resolveAddress,
+  resolveOrderId,
+  restorePlaceholders,
+} from '../src/extract';
 import { schemaErrors } from './extract/helpers';
 
 const STORE = resolve(__dirname, '../../mock-store');
@@ -135,6 +140,62 @@ describe('mock store pages', () => {
     });
     expect(JSON.stringify(ctx)).not.toMatch(/MS-100\d/);
     expect(resolveOrderId(ctx.orders[0]?.id ?? '')).toBe('MS-1001');
+  });
+});
+
+describe('mock store checkout summary (what Track C reads before placing an order)', () => {
+  function checkoutWithBuds(): PageContext {
+    open('product.html?id=zx-buds-air');
+    (document.getElementById('add-to-cart') as HTMLButtonElement).click();
+    return open('checkout.html');
+  }
+
+  it('reads items, totals, PIN, payment and the Place-order target', () => {
+    const ctx = checkoutWithBuds();
+    expect(schemaErrors('PageContext', ctx)).toEqual([]);
+    expect(ctx.checkout).toEqual({
+      schema_version: '1.0',
+      id: 'CHECKOUT_1',
+      items: [
+        {
+          title: 'Zentra Buds Air Wireless Earbuds (White)',
+          quantity: 1,
+          price: { amount: 1999, currency: 'INR' },
+        },
+      ],
+      subtotal: { amount: 1999, currency: 'INR' },
+      delivery_charge: { amount: 0, currency: 'INR' },
+      total: { amount: 1999, currency: 'INR' },
+      delivery_pin_code: '500032',
+      delivery_address: 'ADDR_1',
+      payment_method: 'upi',
+      place_order_target_id: 't-place-order',
+      missing: [],
+    });
+    expect(target(ctx, /^Place your order$/).id).toBe('t-place-order');
+  });
+
+  it('keeps the address on the device', () => {
+    const ctx = checkoutWithBuds();
+    expect(JSON.stringify(ctx)).not.toMatch(/Demo User|Demo Street/);
+    expect(resolveAddress('ADDR_1')).toBe('Demo User, 12 Demo Street, Hyderabad, PIN 500032');
+    expect(restorePlaceholders('Deliver to: ADDR_1.')).toBe(
+      'Deliver to: Demo User, 12 Demo Street, Hyderabad, PIN 500032.',
+    );
+  });
+
+  it('follows the payment choice', async () => {
+    const ctx = checkoutWithBuds();
+    await performAction(act('select', target(ctx, /^Cash on Delivery$/)));
+    expect(extractPageContext(document).checkout?.payment_method).toBe('cod');
+  });
+
+  it('an empty cart has no total or Place-order button, so nothing can be placed', () => {
+    const ctx = open('checkout.html');
+    expect(ctx.checkout).toMatchObject({ total: null, place_order_target_id: null, items: [] });
+    expect(ctx.checkout?.missing).toEqual(
+      expect.arrayContaining(['total', 'place_order_target_id']),
+    );
   });
 });
 

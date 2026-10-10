@@ -5,11 +5,12 @@ import { amazonAdapter } from './adapters/amazon';
 import { flipkartAdapter } from './adapters/flipkart';
 import { mockStoreAdapter } from './adapters/mockstore';
 import type { SiteAdapter } from './adapters/types';
+import { extractCheckout, redactAddress } from './checkout';
 import { hasType, jsonLdNodes, productFromJsonLd, productFromMeta } from './jsonld';
 import { redactOrderIds, toOrderJSON } from './orders';
 import { mergeTiers, type TierResult } from './product';
 import { isSecureZoneActive } from './secure';
-import { buildPageMap } from './targets';
+import { buildPageMap, resolveTarget } from './targets';
 import { siteOf } from './util';
 
 export { applyFallback, buildFallbackRequest, buildLlmFallbackRequest, needsFallback } from './llm';
@@ -20,6 +21,7 @@ export {
   watchSecureZone,
 } from './secure';
 export { orderStatusFromText, resolveOrderId } from './orders';
+export { extractCheckout, resolveAddress, restorePlaceholders } from './checkout';
 export { buildPageMap, resolveTarget } from './targets';
 
 const ADAPTERS: SiteAdapter[] = [amazonAdapter, flipkartAdapter, mockStoreAdapter];
@@ -105,6 +107,11 @@ export function extractPageContext(
   if ((pageType === 'orders' || pageType === 'order_detail') && adapter?.orders) {
     orders = adapter.orders(doc, url).map((d) => toOrderJSON(doc, d));
   }
+  // Before the page map, so the Place-order button already carries its t-place-order id.
+  const checkout = pageType === 'checkout' ? extractCheckout(doc) : null;
+  const placeOrder = checkout?.place_order_target_id
+    ? resolveTarget(checkout.place_order_target_id, doc)
+    : null;
 
   return {
     schema_version: '1.0',
@@ -113,11 +120,12 @@ export function extractPageContext(
     site,
     products,
     orders,
-    // Labels like "Order # 403-…" must not carry the real order number to the backend.
-    targets: buildPageMap(doc, { pageType, url }).map((t) => ({
-      ...t,
-      label: redactOrderIds(doc, t.label),
-    })),
+    // Labels like "Order # 403-…" or "Deliver to <name, address>" must not carry personal
+    // data to the backend.
+    targets: buildPageMap(doc, { pageType, url, pinned: placeOrder ? [placeOrder] : [] }).map(
+      (t) => ({ ...t, label: redactAddress(doc, redactOrderIds(doc, t.label)) }),
+    ),
+    checkout,
     secure_zone_active: false,
   };
 }
