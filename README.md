@@ -61,9 +61,11 @@ Add to this list in the same PR that introduces a dependency (docs/product.md).
 - [Ruff](https://docs.astral.sh/ruff/) — lint and format
 - [datamodel-code-generator](https://github.com/koxudaxi/datamodel-code-generator) — Pydantic models from schemas
 
-**APIs** (wired as stubs; nothing calls them yet)
-- Bhashini models via AnuvaadHub (ASR, MT, TTS, OCR) — only through `backend/app/services/bhashini.py`
+**APIs**
+- Bhashini models via AnuvaadHub (ASR, MT, TTS, OCR) — only through `backend/app/services/bhashini.py` (stub)
 - SerpApi `amazon_product` — only through `backend/app/services/serpapi.py`; development uses `fixtures/serpapi/`
+- [Groq](https://console.groq.com) chat completions (`openai/gpt-oss-120b`, `openai/gpt-oss-20b`, strict
+  structured outputs) — section summaries, only through `backend/app/brain/llm.py`; tests replay `fixtures/llm/`
 
 **Datasets**
 - None added yet. Planned: TORGO (dysarthric speech) for `eval/`.

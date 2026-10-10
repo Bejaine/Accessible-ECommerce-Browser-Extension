@@ -1,0 +1,39 @@
+{
+  "model": "openai/gpt-oss-20b",
+  "response": {
+    "id": "chatcmpl-d21bb7ee-17c6-4f0a-b6f2-2a2c8af2ce07",
+    "object": "chat.completion",
+    "created": 1791653631,
+    "model": "openai/gpt-oss-20b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\"facts\":[{\"claim\":\"₹17,999\",\"field_path\":\"price.amount\"},{\"claim\":\"₹24,999\",\"field_path\":\"price.mrp\"},{\"claim\":\"4.2\",\"field_path\":\"rating.value\"},{\"claim\":\"3418\",\"field_path\":\"rating.count\"},{\"claim\":\"In stock\",\"field_path\":\"availability.text\"},{\"claim\":\"FREE delivery Tuesday, 14 October\",\"field_path\":\"delivery.text\"},{\"claim\":\"Zentra Official Store\",\"field_path\":\"seller\"},{\"claim\":\"Midnight Black (selected), Sage Green\",\"field_path\":\"variants\"}],\"summary\":[{\"text\":\"Zentra Pulse 5G is priced at ₹17,999, MRP ₹24,999.\",\"fact_refs\":[0,1]},{\"text\":\"It has a rating of 4.2 out of 5 from 3418 ratings.\",\"fact_refs\":[2,3]}],\"simpler\":null,\"sections\":[{\"heading\":\"At a glance\",\"items\":[{\"fact_ref\":4,\"kind\":\"text\",\"text\":\"In stock\"},{\"fact_ref\":5,\"kind\":\"text\",\"text\":\"FREE delivery Tuesday, 14 October\"},{\"fact_ref\":6,\"kind\":\"text\",\"text\":\"Sold by Zentra Official Store\"},{\"fact_ref\":7,\"kind\":\"text\",\"text\":\"Colours: Midnight Black (selected), Sage Green\"}]}]}"
+        },
+        "logprobs": null,
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.21072733,
+      "prompt_tokens": 1301,
+      "prompt_time": 0.081121087,
+      "completion_tokens": 637,
+      "completion_time": 0.675444305,
+      "total_tokens": 1938,
+      "total_time": 0.756565392,
+      "completion_tokens_details": {
+        "reasoning_tokens": 359
+      }
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_e23fc997ca",
+    "x_groq": {
+      "id": "req_01m4ke1mn4e5ks5qczwrz70e9w",
+      "seed": 2053284785
+    },
+    "service_tier": "on_demand"
+  }
+}
