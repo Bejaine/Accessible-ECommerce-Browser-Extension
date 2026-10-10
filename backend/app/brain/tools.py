@@ -14,9 +14,10 @@ from dataclasses import dataclass, field
 from typing import Any
 from urllib.parse import quote_plus
 
-from app.brain import prepare, recommender
+from app.brain import prepare, recommender, vision
 from app.brain.format import brief, join_words, money, number, short_title, spec_value
 from app.brain.grounding import Unresolved, resolve
+from app.brain.llm import LLMError
 from app.brain.output import OutputBuilder, plain_output
 from app.models import SCHEMA_VERSION, AccessibleOutput, ActionTarget, ProductJSON, TurnRequest
 
@@ -168,7 +169,8 @@ async def answer_question(
             break
     if not items:
         summary = f"The page doesn't list {topic}."
-        return ToolResult(f"Answer about {topic}", b.checked({p.id: p}, summary).output)
+        out = b.checked({p.id: p}, summary, followups=["Tell me the specs", "Describe the photos"])
+        return ToolResult(f"Answer about {topic}", out.output)
     b.section(topic.capitalize(), items)
     summary = items[0]["text"] + "."
     result = b.checked({p.id: p}, summary, followups=["Tell me the specs", "Add to cart"])
@@ -196,6 +198,44 @@ def _describe(p: ProductJSON, path: str, value: Any) -> tuple[str, str] | None:
         label = path.split(".")[-1].replace("_", " ").capitalize()
         return label, brief(spec_value(value, None), 80)
     return None
+
+
+async def describe_photo(
+    ctx: Context, number: int = 1, product_id: str | None = None
+) -> ToolResult:
+    """Describe one product photo (1 = main) with the VLM; at most one extra model call."""
+    p = _product(ctx, product_id)
+    if not p.images:
+        return ToolResult(
+            "Describe a photo", plain_output("The page doesn't show any product photos.")
+        )
+    index = max(1, min(int(number or 1), len(p.images))) - 1
+    try:
+        d = await vision.describe_url(p.images[index].url, p)
+    except LLMError:
+        img = p.images[index]
+        b = OutputBuilder(p.id)
+        if img.alt:
+            b.ground(img.alt, f"images[{index}].alt")
+            text = f"I can't describe photo {index + 1} right now. Its label says: {img.alt}."
+        else:
+            text = f"I can't describe photo {index + 1} right now."
+        b.derive(index + 1)
+        return ToolResult("Describe a photo", b.checked({p.id: p}, text).output)
+    enriched = vision.with_descriptions(p)
+    b = OutputBuilder(p.id)
+    said = vision.spoken(d)
+    b.ground(said, f"images[{index}].description")
+    items = [b.item(f"Colour: {c}") for c in d.colours]
+    items += [b.item(f"Shown: {x}") for x in d.items_shown]
+    if items:
+        b.section(f"Photo {index + 1}", items)
+    b.derive(index + 1, len(p.images))
+    more = ["Describe the next photo"] if index + 1 < len(p.images) else []
+    result = b.checked(
+        {p.id: enriched}, said, followups=[*more, "Tell me the specs"], warnings=[vision.AI_NOTE]
+    )
+    return ToolResult(f"Describe photo {index + 1}", result.output, dropped=result.dropped)
 
 
 async def compare(ctx: Context, product_ids: list[str]) -> ToolResult:
@@ -501,6 +541,8 @@ CHIPS: dict[str, tuple[str, dict[str, Any]]] = {
     "price": ("answer_question", {"topic": "price", "field_paths": ["price"]}),
     "specs": ("read_section", {"section": "specs"}),
     "reviews": ("read_section", {"section": "reviews"}),
+    "describe the photos": ("describe_photo", {"number": 1}),
+    "describe the next photo": ("describe_photo", {"number": 2}),
     "add to cart": ("add_to_cart", {}),
     "read the results": ("where_am_i", {}),
     "cheapest": ("recommend", {"prefer": "cheapest"}),
@@ -509,7 +551,15 @@ CHIPS: dict[str, tuple[str, dict[str, Any]]] = {
     "read my cart": ("where_am_i", {}),
 }
 
-READ_TOOLS = {"read_section", "answer_question", "compare", "recommend", "where_am_i", "unclear"}
+READ_TOOLS = {
+    "read_section",
+    "answer_question",
+    "describe_photo",
+    "compare",
+    "recommend",
+    "where_am_i",
+    "unclear",
+}
 
 
 def label_for(name: str, args: dict[str, Any]) -> str:
@@ -523,6 +573,8 @@ def label_for(name: str, args: dict[str, Any]) -> str:
         return {"cheapest": "Find the cheapest", "best_rated": "Find the best rated"}.get(
             prefer, "Suggest the best options"
         )
+    if name == "describe_photo":
+        return "Describe the photo"
     return {"compare": "Compare products", "where_am_i": "Describe this page"}.get(name, "Help")
 
 
@@ -531,6 +583,7 @@ Tool = Callable[..., Awaitable[ToolResult]]
 TOOLS: dict[str, Tool] = {
     "read_section": read_section,
     "answer_question": answer_question,
+    "describe_photo": describe_photo,
     "compare": compare,
     "recommend": recommend,
     "where_am_i": where_am_i,
@@ -548,7 +601,8 @@ _COMMON = {
     },
     "alternatives": {
         "type": "array",
-        "description": "Up to 2 other plausible meanings, most likely first.",
+        "description": "Up to 2 OTHER plausible meanings, each a different tool or different "
+        "arguments from your choice (e.g. 'a cart': add_to_cart vs go_to_cart). Most likely first.",
         "items": {
             "type": "object",
             "properties": {
@@ -589,15 +643,17 @@ _PID = {
 TOOL_SPECS = [
     _spec(
         "read_section",
-        "Read a prepared summary of a product: overview (price, rating, delivery), specs, "
-        "reviews, or images (photos).",
+        "Read a WHOLE prepared section, only when the user asks for it as a whole: 'tell me "
+        "about this', 'read the specs', 'what do reviews say'. For a question about one "
+        "specific thing use answer_question; for photos use describe_photo.",
         {"section": {"type": "string", "enum": list(SECTIONS)}, **_PID},
         ["section"],
     ),
     _spec(
         "answer_question",
-        "Answer a specific question about a product (e.g. battery, weight, warranty, price) "
-        "from its page data.",
+        "Answer a question about ONE specific thing of a product from its page data: "
+        "warranty, battery, weight, size, material, price, delivery, seller, what's in the "
+        "box. Prefer this over read_section whenever the user names a specific thing.",
         {
             "topic": {
                 "type": "string",
@@ -611,6 +667,12 @@ TOOL_SPECS = [
             **_PID,
         },
         ["topic"],
+    ),
+    _spec(
+        "describe_photo",
+        "Describe a product photo for someone who cannot see it (1 = main photo).",
+        {"number": {"type": "integer"}, **_PID},
+        [],
     ),
     _spec(
         "compare",

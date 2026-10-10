@@ -12,7 +12,7 @@ import hashlib
 import logging
 from collections.abc import Awaitable, Callable
 
-from app.brain import review_summariser, sections
+from app.brain import review_summariser, sections, vision
 from app.brain.grounding import CheckResult
 from app.brain.llm import LLMError
 from app.brain.llm_sections import llm_section
@@ -43,12 +43,25 @@ def llm_first(name: str, template: Builder) -> Builder:
     return build
 
 
+async def images_with_vlm(product: ProductJSON) -> CheckResult:
+    """Main photo described by the VLM (cached by URL); alt/OCR text if that fails."""
+    described = False
+    if product.images:
+        try:
+            await vision.describe_url(product.images[0].url, product)
+            described = True
+        except LLMError as exc:
+            log.info("photo description for %s unavailable: %s", product.id, exc)
+    return await sections.images(
+        vision.with_descriptions(product), warnings=[vision.AI_NOTE] if described else None
+    )
+
+
 BUILDERS: dict[str, Builder] = {
     "overview": llm_first("overview", sections.overview),
     "specs": llm_first("specs", sections.specs),
     "reviews": llm_first("reviews", review_summariser.summarise_product),
-    # Image descriptions come from the VLM (Gemini) in brain/vision.py; alt/OCR text until then.
-    "images": sections.images,
+    "images": images_with_vlm,
 }
 
 _cache = TTLCache(ttl_seconds=3600)
@@ -89,7 +102,8 @@ async def prepare(req: ProductPrepareRequest) -> ProductPrepareResponse:
         {
             "schema_version": SCHEMA_VERSION,
             "product_id": req.product.id,
-            "product": req.product,
+            # With the photo descriptions filled in, so images[i].description claims resolve.
+            "product": vision.with_descriptions(req.product),
             "sections": result,
         }
     )

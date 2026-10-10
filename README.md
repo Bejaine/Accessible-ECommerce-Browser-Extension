@@ -69,7 +69,10 @@ Add to this list in the same PR that introduces a dependency (docs/product.md).
 - Bhashini models via AnuvaadHub (ASR, MT, TTS, OCR) — only through `backend/app/services/bhashini.py` (stub)
 - SerpApi `amazon_product` — only through `backend/app/services/serpapi.py`; development uses `fixtures/serpapi/`
 - [Groq](https://console.groq.com) chat completions (`openai/gpt-oss-120b`, `openai/gpt-oss-20b`, strict
-  structured outputs) — section summaries, only through `backend/app/brain/llm.py`; tests replay `fixtures/llm/`
+  structured outputs) — section summaries and `/turn` tool calls, only through `backend/app/brain/llm.py`;
+  tests replay `fixtures/llm/`
+- [Gemini API](https://ai.google.dev) (Interactions endpoint, `gemini-3.5-flash-lite`, `store: false`) —
+  product photo descriptions, only through `backend/app/brain/vision.py`; tests replay `fixtures/llm/vision/`
 
 **Datasets**
 - None added yet. Planned: TORGO (dysarthric speech) for `eval/`.

@@ -1,0 +1,86 @@
+{
+  "model": "gemini-3.5-flash-lite",
+  "image_url": "https://m.media-amazon.com/images/I/61135j8fPJL._SL1500_.jpg",
+  "response": {
+    "status": "completed",
+    "usage": {
+      "total_tokens": 1439,
+      "total_input_tokens": 1316,
+      "input_tokens_by_modality": [
+        {
+          "modality": "image",
+          "tokens": 1089
+        },
+        {
+          "modality": "text",
+          "tokens": 227
+        }
+      ],
+      "total_cached_tokens": 0,
+      "total_output_tokens": 123,
+      "total_tool_use_tokens": 0,
+      "total_thought_tokens": 0,
+      "raw_prompt_token": 1660,
+      "model_invocation_token_counts": [
+        {
+          "prompt_tokens_details": [
+            {
+              "modality": "text",
+              "tokens": 571
+            },
+            {
+              "modality": "image",
+              "tokens": 1089
+            }
+          ],
+          "candidates_tokens_details": [
+            {
+              "modality": "text",
+              "tokens": 139
+            }
+          ]
+        }
+      ],
+      "non_grounding_model_invocation_token_counts": [
+        {
+          "prompt_tokens_details": [
+            {
+              "modality": "text",
+              "tokens": 571
+            },
+            {
+              "modality": "image",
+              "tokens": 1089
+            }
+          ],
+          "candidates_tokens_details": [
+            {
+              "modality": "text",
+              "tokens": 139
+            }
+          ]
+        }
+      ]
+    },
+    "created": "2026-10-10T18:36:44Z",
+    "updated": "2026-10-10T18:36:44Z",
+    "service_tier": "standard",
+    "steps": [
+      {
+        "signature": "EmAKXgFpFH0TwOteqNnV6Nm81xzEm6wnVnPMPIOyk3OB3OthSZ98sHW31B/uCwT+uLONZ0hkoizrjin24Nbm0ohgNrsOydqZ629rkU8b6ictPJGzVd7XGQeyC0x+K+GPzEE=",
+        "type": "thought"
+      },
+      {
+        "content": [
+          {
+            "text": "{\n  \"is_product_photo\": true,\n  \"description\": \"Two identical black smartphones shown side-by-side; one angled to show the back cameras and Apple logo, and one showing the front screen with a dark wallpaper.\",\n  \"colours\": [\n    \"black\"\n  ],\n  \"items_shown\": [\n    \"smartphone back\",\n    \"smartphone front\"\n  ],\n  \"visible_text\": [],\n  \"unclear\": [\n    \"bottom ports and speaker grill\",\n    \"storage capacity\"\n  ]\n}",
+            "type": "text"
+          }
+        ],
+        "type": "model_output"
+      }
+    ],
+    "object": "interaction",
+    "model": "gemini-3.5-flash-lite"
+  }
+}

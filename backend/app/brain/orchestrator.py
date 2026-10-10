@@ -28,6 +28,7 @@ from app.services.cache import TTLCache
 log = logging.getLogger(__name__)
 
 MAX_TARGETS = 60
+LOW_ASR = 0.5
 _sessions = TTLCache(ttl_seconds=1800)  # session_id -> consecutive misses
 
 SYSTEM_PROMPT = """\
@@ -39,6 +40,9 @@ Rules:
 - Call exactly one tool. Use only product ids and target ids that appear in PAGE.
 - Never answer from your own knowledge; tools read the page.
 - On a product page, "this", "it", "isse", "idi" mean that product.
+- A question about one specific thing (warranty, battery, weight, size...) is answer_question,
+  not read_section, EVEN IF the page may not list it: the tool will say so. A clear question
+  is never "unclear".
 - Use ASR alternatives and the recent history to repair misheard words.
 - confidence = your probability that the tool and arguments are what the shopper meant: \
 0.8 or more only when it is clear; 0.5-0.8 when plausible but you are unsure; below 0.5 when \
@@ -157,7 +161,15 @@ async def handle_turn(req: TurnRequest) -> TurnResponse:
         ) from exc
 
     confidence = _confidence(args.get("confidence"))
-    alts = tools.parse_alternatives(args.get("alternatives"))
+    primary = (name, _plain_args(args))
+    alts = [
+        a for a in tools.parse_alternatives(args.get("alternatives")) if (a[1], a[2]) != primary
+    ]
+    asr_confidence = req.input.asr_meta.confidence if req.input.asr_meta else None
+    if asr_confidence is not None and asr_confidence < LOW_ASR:
+        # The transcript itself is doubtful (e.g. dysarthric speech): however sure the model
+        # is about these words, they may not be what was said. Ask, never act.
+        confidence = min(confidence, intent.ACT - 0.01)
     decision = intent.decision(confidence)
     if name == "unclear":
         decision = "chips"
@@ -186,6 +198,10 @@ async def handle_turn(req: TurnRequest) -> TurnResponse:
     )
     result = tools.ToolResult("Not sure", plain_output(summary, followups=chips))
     return await _respond(req, ctx, "unclear", min(confidence, 0.49), [], result)
+
+
+def _plain_args(args: dict[str, Any]) -> dict[str, Any]:
+    return {k: v for k, v in args.items() if k not in ("confidence", "alternatives")}
 
 
 def _confidence(value: Any) -> float:
