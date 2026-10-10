@@ -1,4 +1,11 @@
 {
   "overlay.title": "Shopping assistant",
-  "listening.stopped": "Listening has stopped."
+  "listening.stopped": "Listening has stopped.",
+  "mic.listening": "Listening.",
+  "mic.no_speech": "I didn't hear anything. Press the mic button to try again, or type instead.",
+  "mic.permission_denied": "I can't use the microphone because permission was not given. You can type instead, or allow the microphone in the browser's site settings.",
+  "mic.no_microphone": "No microphone was found. You can type instead.",
+  "mic.unavailable": "The microphone isn't working right now. You can type instead.",
+  "mic.secure_zone": "Listening is paused while you're in a payment or password field.",
+  "mic.no_audio": "There was no speech to send. Please try again."
 }

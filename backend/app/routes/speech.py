@@ -1,22 +1,49 @@
-from fastapi import APIRouter
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
-from app.config import get_settings
-from app.errors import not_implemented
-from app.mocks import fixture
-from app.models import ASRRequest, ASRResponse, TTSRequest, TTSResponse
+from fastapi import APIRouter, FastAPI
 
-router = APIRouter(prefix="/speech")
+from app.models import SCHEMA_VERSION, AsrMeta, ASRRequest, ASRResponse, TTSRequest, TTSResponse
+from app.services import bhashini
+
+
+@asynccontextmanager
+async def _warm_language_models(_app: FastAPI) -> AsyncIterator[None]:
+    """Load every language model in the background at startup (merged into the app's
+    lifespan by include_router), so the first real voice turn isn't a 10 s cold start."""
+    task = bhashini.start_warm_up()
+    yield
+    if task is not None and not task.done():
+        task.cancel()
+
+
+router = APIRouter(prefix="/speech", lifespan=_warm_language_models)
 
 
 @router.post("/asr", response_model=ASRResponse, response_model_exclude_unset=True)
-async def asr(_req: ASRRequest) -> ASRResponse:
-    if get_settings().mock:
-        return fixture(ASRResponse)
-    raise not_implemented("Speech recognition")
+async def asr(req: ASRRequest) -> ASRResponse:
+    result = await bhashini.asr(
+        req.lang.value, audio_base64=req.audio_base64, encoding=req.encoding.value
+    )
+    return ASRResponse(
+        schema_version=SCHEMA_VERSION,
+        text=result.text,
+        lang=req.lang,
+        asr_meta=AsrMeta(
+            confidence=result.confidence,
+            mic_level=req.mic_level,  # our own level, so silence and unclear speech differ
+            alternatives=result.alternatives,
+        ),
+    )
 
 
 @router.post("/tts", response_model=TTSResponse, response_model_exclude_unset=True)
-async def tts(_req: TTSRequest) -> TTSResponse:
-    if get_settings().mock:
-        return fixture(TTSResponse)
-    raise not_implemented("Speech output")
+async def tts(req: TTSRequest) -> TTSResponse:
+    result = await bhashini.tts(req.text, req.lang.value, voice=req.voice)
+    return TTSResponse(
+        schema_version=SCHEMA_VERSION,
+        audio_base64=result.audio_base64,
+        encoding=result.encoding,
+        lang=req.lang,
+        cached=result.cached,
+    )

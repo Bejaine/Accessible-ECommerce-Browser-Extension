@@ -1,0 +1,9 @@
+{
+  "status": "success",
+  "message": "Inference performed successfully",
+  "data": {
+    "recognized_text": "इसे कार्ट में डाल दो"
+  },
+  "error": null,
+  "code": 200
+}
