@@ -1,0 +1,9 @@
+{
+  "status": "success",
+  "message": "OCR Inference performed successfully",
+  "data": {
+    "decoded_text": "Zentra Pulse 5G\n5000 mAh battery\nIn the box: phone, USB-C cable"
+  },
+  "error": null,
+  "code": 200
+}

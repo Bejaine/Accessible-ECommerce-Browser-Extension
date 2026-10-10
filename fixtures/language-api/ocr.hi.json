@@ -1,0 +1,9 @@
+{
+  "status": "success",
+  "message": "OCR Inference performed successfully",
+  "data": {
+    "decoded_text": "बैटरी 5000 mAh\nडिब्बे में: फ़ोन, USB-C केबल"
+  },
+  "error": null,
+  "code": 200
+}

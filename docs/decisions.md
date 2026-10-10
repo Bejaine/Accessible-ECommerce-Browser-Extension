@@ -53,3 +53,11 @@ request options (TTSRequest.voice, ASRRequest.sample_rate/mic_level,
 VisionDescribeRequest.product_id) are optional and non-null. Generated Pydantic/TS do not enforce
 OCRRequest's oneOf; JSON Schema validation does.
 Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
+
+## 2026-10-10 — AnuvaadHub wire format (Track A; affects Track D's audio consumers and Track C)
+- ASR accepts WAV only (form field `audio_file`, ~20 s, < 5 MB), so the extension uploads
+  16 kHz mono PCM WAV, not Opus. `/speech/asr` rejects other encodings with `validation`.
+- ASR returns text only: `asr_meta.confidence` is always null and `alternatives` empty; the
+  speech-mode signal comes from our own `mic_level`. Track C's intent repair must not rely on them.
+- MT takes ≤ 50 words and TTS ≤ 30 words with no special characters; the gateway chunks and
+  cleans automatically. TTS returns an S3 link, which the backend fetches; clients still get base64 WAV.

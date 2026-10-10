@@ -1,0 +1,9 @@
+{
+  "status": "success",
+  "message": "Inference performed successfully",
+  "data": {
+    "output_text": "बैटरी क्षमता 5000 mAh है"
+  },
+  "error": null,
+  "code": 200
+}
