@@ -9,7 +9,7 @@ import type { AccessibleOutput, AsrMeta, PageContext, Profile } from '@shared/in
 import { browser } from 'wxt/browser';
 import { performAction } from '../actuate';
 import { createMic, MicError, toAsrRequest, type Mic } from '../audio/mic';
-import { extractPageContext } from '../extract';
+import { extractPageContext, resolveTarget } from '../extract';
 import { t } from '../i18n';
 import { attachCollectors } from '../infer/collectors';
 import { createScoreEngine, type InferredCondition, type ScoreEngine } from '../infer/scores';
@@ -21,6 +21,9 @@ import { announce, resetAnnouncer, setAnnounceVoice } from '../ui/announce';
 import { createConfirmCard, formatMoney } from '../ui/confirmCard';
 import { createMicButton } from '../ui/micButton';
 import { createSettings } from '../ui/settings';
+import { createActionMenu } from '../ui/actionMenu';
+import { createColourLabels, type ColourLabels } from '../ui/colourLabels';
+import { renderSimpleView, simpleSummary } from '../ui/simpleView';
 import { createControls, type Controls } from '../ui/controls';
 import { mountOverlay, type Overlay } from '../ui/overlay';
 import { createSpeechSpeed, formatRate } from '../ui/speechSpeed';
@@ -157,6 +160,7 @@ export function mountApp(
     speaker.stop();
     view = null;
     overlay.content.replaceChildren();
+    overlay.setWide(false);
     overlay.controls.querySelector<HTMLElement>('button')?.focus();
   }
 
@@ -234,9 +238,67 @@ export function mountApp(
     },
   });
   settings.render(profile, mode);
+  // --- Page tools: simplified view, action menu, colour labels ---
+  const pageTools = document.createElement('div');
+  pageTools.className = 'asl-chips';
+  const simpleButton = document.createElement('button');
+  simpleButton.type = 'button';
+  simpleButton.className = 'asl-menu-toggle';
+  simpleButton.textContent = label('simple.open');
+  simpleButton.addEventListener('click', () => showSimpleView());
+  const actionMenu = createActionMenu((target) => bus.emit({ type: 'select-target', target }));
+  pageTools.append(simpleButton);
+  let colourLabels: ColourLabels | null = null;
+
+  function updateColourLabels(): void {
+    if (profile.conditions.colour.active) {
+      colourLabels ??= createColourLabels(container, (id) => resolveTarget(id));
+      colourLabels.render(page.targets);
+    } else {
+      colourLabels?.destroy();
+      colourLabels = null;
+    }
+  }
+
+  function refreshPageTools(): void {
+    page = extractPageContext();
+    actionMenu.render(page.targets);
+    simpleButton.hidden = !(page.page_type === 'product' && page.products[0]);
+    updateColourLabels();
+  }
+
+  function showSimpleView(): void {
+    const product = page.page_type === 'product' ? page.products[0] : undefined;
+    if (!product) return;
+    speaker.stop();
+    view = null;
+    overlay.setWide(true);
+    overlay.content.replaceChildren(
+      renderSimpleView(product, page.targets, {
+        onSelect: (target) => bus.emit({ type: 'select-target', target }),
+        onBack: backToMenu,
+        maxActions: mode.max_options,
+      }),
+    );
+    overlay.content.querySelector<HTMLElement>('h3')?.setAttribute('tabindex', '-1');
+    overlay.content.querySelector<HTMLElement>('h3')?.focus();
+    announce(simpleSummary(product));
+  }
+
+  offs.push(
+    overlay.onOpen(() => {
+      refreshPageTools();
+      // Simple mode on a product page opens straight into the simplified view.
+      if (profile.conditions.ageing.active && !overlay.content.hasChildNodes()) showSimpleView();
+    }),
+    () => colourLabels?.destroy(),
+  );
+
   overlay.controls.append(
     confirmCard.element,
     suggestionCard.element,
+    pageTools,
+    actionMenu.element,
     speed.element,
     settings.element,
   );
@@ -268,6 +330,7 @@ export function mountApp(
       speed.render(next.prefs.tts_rate);
       speaker.setRate(next.prefs.tts_rate);
       settings.render(next, mode);
+      updateColourLabels();
       const key = controlsKey(next);
       if (key !== builtFor) {
         builtFor = key;
@@ -370,11 +433,12 @@ export function mountApp(
   const urlTimer = setInterval(() => {
     if (location.href === lastUrl) return;
     lastUrl = location.href;
-    page = extractPageContext();
+    refreshPageTools();
     controls.showPhrases(page.page_type);
     preparePage();
   }, URL_CHECK_MS);
   offs.push(() => clearInterval(urlTimer));
+  refreshPageTools();
   preparePage();
 
   // --- Voice (Track A's microphone): listen -> /speech/asr -> local fast path or a turn ---

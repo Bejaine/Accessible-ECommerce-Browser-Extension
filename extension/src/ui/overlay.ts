@@ -10,6 +10,9 @@ import { SUGGESTION_CSS } from './suggestionCard';
 import { CONFIRM_CSS } from './confirmCard';
 import { MIC_CSS } from './micButton';
 import { SETTINGS_CSS } from './settings';
+import { ACTION_MENU_CSS } from './actionMenu';
+import { COLOUR_LABEL_CSS } from './colourLabels';
+import { SIMPLE_VIEW_CSS } from './simpleView';
 import { initAnnouncer } from './announce';
 import { label } from './strings';
 
@@ -47,6 +50,7 @@ export const OVERLAY_CSS = `
   box-shadow: 0 4px 24px rgb(0 0 0 / 0.3);
 }
 .asl-panel[hidden], .asl-toggle[hidden] { display: none; }
+.asl-panel.asl-wide { inline-size: min(720px, calc(100vw - 32px)); }
 .asl-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .asl-header h2 { font-size: 1.125em; margin: 0; }
 .asl-header h2:focus { outline: none; }
@@ -90,6 +94,10 @@ export interface Overlay {
   setBadge(text: string | null): void;
   /** Remove the overlay entirely (e.g. before remounting in another language). */
   destroy(): void;
+  /** Wider panel for the simplified product view. */
+  setWide(wide: boolean): void;
+  /** Called whenever the panel opens (e.g. to refresh the page map). */
+  onOpen(listener: () => void): () => void;
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(
@@ -106,7 +114,16 @@ function el<K extends keyof HTMLElementTagNameMap>(
 export function mountOverlay(container: HTMLElement, lang?: string): Overlay {
   const style = el('style');
   style.textContent =
-    OVERLAY_CSS + RENDER_CSS + SCAN_BAR_CSS + SUGGESTION_CSS + CONFIRM_CSS + MIC_CSS + SETTINGS_CSS;
+    OVERLAY_CSS +
+    RENDER_CSS +
+    SCAN_BAR_CSS +
+    SUGGESTION_CSS +
+    CONFIRM_CSS +
+    MIC_CSS +
+    SETTINGS_CSS +
+    ACTION_MENU_CSS +
+    COLOUR_LABEL_CSS +
+    SIMPLE_VIEW_CSS;
 
   const root = el('div', { class: 'asl-root' });
 
@@ -142,6 +159,7 @@ export function mountOverlay(container: HTMLElement, lang?: string): Overlay {
   initAnnouncer(root);
 
   let isOpen = false;
+  const openListeners = new Set<() => void>();
 
   function open(): void {
     if (isOpen) return;
@@ -150,6 +168,7 @@ export function mountOverlay(container: HTMLElement, lang?: string): Overlay {
     toggleBtn.hidden = true;
     toggleBtn.setAttribute('aria-expanded', 'true');
     heading.focus();
+    openListeners.forEach((l) => l());
   }
 
   function close(): void {
@@ -179,6 +198,13 @@ export function mountOverlay(container: HTMLElement, lang?: string): Overlay {
     open,
     close,
     toggle: () => (isOpen ? close() : open()),
+    setWide(wide) {
+      panel.classList.toggle('asl-wide', wide);
+    },
+    onOpen(listener) {
+      openListeners.add(listener);
+      return () => openListeners.delete(listener);
+    },
     destroy() {
       style.remove();
       root.remove();
