@@ -1,0 +1,48 @@
+{
+  "model": "openai/gpt-oss-20b",
+  "response": {
+    "id": "chatcmpl-92398044-e2c0-48e4-89e6-ae8991f11e82",
+    "object": "chat.completion",
+    "created": 1791663391,
+    "model": "openai/gpt-oss-20b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "id": "fc_44affb64-551f-47b4-9abf-8dbc977a2c62",
+              "type": "function",
+              "function": {
+                "name": "order_task",
+                "arguments": "{\"alternatives\":[{\"arguments_json\":\"{}\",\"label\":\"Cancel order\",\"tool\":\"order_task\"}],\"confidence\":0.95,\"order_id\":\"ORDER_1\",\"task\":\"cancel\"}"
+              }
+            }
+          ]
+        },
+        "logprobs": null,
+        "finish_reason": "tool_calls"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.401071417,
+      "prompt_tokens": 4017,
+      "prompt_time": 0.215424529,
+      "completion_tokens": 108,
+      "completion_time": 0.111333292,
+      "total_tokens": 4125,
+      "total_time": 0.326757821,
+      "completion_tokens_details": {
+        "reasoning_tokens": 52
+      }
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_8b41efc9a3",
+    "x_groq": {
+      "id": "req_01m4kqbg8ee0gagew430ss84wj",
+      "seed": 662496295
+    },
+    "service_tier": "on_demand"
+  }
+}

@@ -185,6 +185,29 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   are not added ("two three days"), and digits are never reformatted.
 - Ranges share the multiplier: "पंद्रह से बीस हज़ार" → "15000 से 20000", never backwards.
 
+## 2026-10-11 — Order workflows: track, cancel, return (Track C; affects B, D, core)
+- Step machines in `brain/workflows.py`, state per session_id; `TurnResponse.workflow` =
+  {name, step, total_steps}. Track: choose order → status. Cancel: choose → confirm → verify.
+  Return: choose → reason → confirm → verify. The LLM only fills slots (order, reason, stop).
+- Cancel/return are only ever `confirmation.pending_actions` with risk "high"; after the user
+  confirms, the next /turn reads the new page: a "Cancel checked items"/"Submit return" button →
+  one more high-risk confirmation; the order showing cancelled/returned → done.
+- Several orders: the button is matched to the order by the number in its target id
+  (t-cancel-1 ↔ ORDER_1); otherwise we ask the user to open the order's page (B: please keep
+  that id convention, or tell us another way to tie a button to its order).
+- An item price with quantity > 1 is read "as listed" and never read back as a total (the page
+  doesn't say per item or in total). Step limit 8 turns; "stop" ends a task at any point.
+
+## 2026-10-11 — /turn with Track A's masking and numbers (Track C; affects A, D)
+- The user's words go through `numbers.normalise_numbers` before and after translation ("dedh
+  lakh" → 150000) so budgets and quantities reach the model as digits.
+- Translation passes the page's product brands to `masking.mask(keep=...)`; a translation that
+  lost a placeholder (name, unit, price) is rejected and the answer stays English (`lang: en`).
+- Confirmations are short sentences with at most one name or price each ("Add Zentra Pulse 5G to
+  your cart? Quantity 1, price ₹17,999."); the colour is its own line. Live Hindi showed several
+  masked names in one sentence come back in a shuffled word order.
+- Demo: the backend warms the language models at startup (~25 s); start it a minute early.
+
 ## 2026-10-11 — Numbers are spoken as words (Track A; affects C, D)
 - Live, the Hindi and Telugu TTS voices read digits in English ("सेवेंटींथ…", "బైవ్ థౌసండ్") and
   ₹ is rejected, so `bhashini.tts` first calls `numbers.speakable(text, lang)`: prices with the

@@ -15,7 +15,7 @@ from typing import Any
 from urllib.parse import quote_plus
 
 from app.brain import compare as compare_mod
-from app.brain import features, prepare, session, vision
+from app.brain import features, prepare, session, vision, workflows
 from app.brain.format import brief, join_words, money, number, short_title, spec_value
 from app.brain.grounding import Unresolved, resolve
 from app.brain.llm import LLMError
@@ -89,6 +89,7 @@ class ToolResult:
     actions: list[dict[str, Any]] = field(default_factory=list)
     confirmation: dict[str, Any] | None = None
     dropped: list[str] = field(default_factory=list)
+    workflow: dict[str, Any] | None = None  # TurnResponse.workflow (order tasks)
 
 
 class ToolInputError(Exception):
@@ -416,15 +417,26 @@ async def add_to_cart(ctx: Context, quantity: int = 1, product_id: str | None = 
     for v in chosen:
         b.ground(v.value, f"variants[{p.variants.index(v)}].value")
     total = None
-    price_text = ""
+    details = [f"Quantity {quantity}"]
     if p.price is not None:
         b.ground(money(p.price.amount, p.price.currency), "price.amount")
         total = (p.price.amount * quantity, p.price.currency)
         b.derive(total[0])
-        price_text = f", for {money(total[0], total[1])}"
+        details.append(f"{'total' if quantity > 1 else 'price'} {money(total[0], total[1])}")
     b.derive(quantity)
-    variant_text = "".join(f", {v.value}" for v in chosen)
-    prompt = f"Add {name}{variant_text}, quantity {quantity}{price_text}, to your cart?"
+    # Short sentences with at most one name or price each translate cleanly (Track A: several
+    # masked names in one sentence came out in a shuffled Hindi word order).
+    prompt = f"Add {name} to your cart? {', '.join(details)}."
+    variant_items = [
+        b.item(
+            f"{v.name.capitalize()}: {v.value}",
+            claim=v.value,
+            path=f"variants[{p.variants.index(v)}].value",
+        )
+        for v in chosen
+    ]
+    if variant_items:
+        b.section("Selected", variant_items)
     result = b.checked({p.id: p}, prompt, followups=["Yes", "No"], warnings=warnings)
     confirmation = _confirmation(
         ctx, result.output.summary, actions, quantity=quantity, total=total
@@ -526,6 +538,21 @@ async def unclear(ctx: Context, heard: str = "") -> ToolResult:
     return ToolResult("Not sure", plain_output("I didn't catch that.", followups=phrase_chips(ctx)))
 
 
+async def order_task(
+    ctx: Context,
+    task: str | None = None,
+    order_id: str | None = None,
+    reason: str | None = None,
+    stop: bool = False,
+) -> ToolResult:
+    """Track, cancel or return an order, one step per turn (brain/workflows.py)."""
+    r = await workflows.advance(ctx, task=task, order_id=order_id, reason=reason, stop=bool(stop))
+    return ToolResult(
+        r.label, r.output, actions=r.actions, confirmation=r.confirmation, dropped=r.dropped,
+        workflow=r.workflow,
+    )  # fmt: skip
+
+
 def phrase_chips(ctx: Context) -> list[str]:
     kind = ctx.page.page_type.value
     if kind == "product":
@@ -549,6 +576,10 @@ CHIPS: dict[str, tuple[str, dict[str, Any]]] = {
     "cheapest": ("recommend", {"prefer": "cheapest"}),
     "best rated": ("recommend", {"prefer": "best_rated"}),
     "where am i?": ("where_am_i", {}),
+    "stop": ("order_task", {"stop": True}),
+    "track my order": ("order_task", {"task": "track"}),
+    "cancel an order": ("order_task", {"task": "cancel"}),
+    "return an order": ("order_task", {"task": "return"}),
     "read my cart": ("where_am_i", {}),
 }
 
@@ -579,6 +610,12 @@ def label_for(name: str, args: dict[str, Any]) -> str:
         return "Describe the photo"
     if name == "set_preferences":
         return "Remember what matters to you"
+    if name == "order_task":
+        return {
+            "track": "Track an order",
+            "cancel": "Cancel an order",
+            "return": "Return an order",
+        }.get(args.get("task"), "Help with an order")
     return {"compare": "Compare products", "where_am_i": "Describe this page"}.get(name, "Help")
 
 
@@ -591,6 +628,7 @@ TOOLS: dict[str, Tool] = {
     "compare": compare,
     "recommend": recommend,
     "set_preferences": set_preferences,
+    "order_task": order_task,
     "where_am_i": where_am_i,
     "add_to_cart": add_to_cart,
     "press": press,
@@ -730,6 +768,19 @@ TOOL_SPECS = [
         "doesn't matter, under 20000'. Use when they state preferences without asking for a "
         "comparison.",
         dict(_PREFS),
+        [],
+    ),
+    _spec(
+        "order_task",
+        "Track, cancel or return one of the user's orders, step by step. Use it to start a "
+        "task, to answer the task's question (which order, the reason for a return, "
+        "continue), or to stop it.",
+        {
+            "task": {"type": "string", "enum": ["track", "cancel", "return"]},
+            "order_id": {"type": "string", "description": "An order id from PAGE orders"},
+            "reason": {"type": "string", "description": "Return reason in the user's words"},
+            "stop": {"type": "boolean", "description": "True if the user wants to stop the task"},
+        },
         [],
     ),
     _spec("where_am_i", "Describe the current page and what can be done on it.", {}, []),
