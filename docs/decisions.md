@@ -217,3 +217,16 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   "పదిహేడు వేల … రూపాయలు". Telugu TTS took ~16 s for one long sentence: speak short sentences.
 - Text shown on screen keeps the digits; only the audio uses words. Telugu forms were written
   by us, not a native speaker: please have one review `numbers.py`'s Telugu tables.
+
+## 2026-10-11 — UI strings and pre-recorded phrases (Track A; affects D, core)
+- UI strings live in `extension/src/i18n/{en,hi,te}.json`; `t(key, lang)` falls back to English.
+  `scripts/build_phrases.py` machine-translates missing keys and records each string as 16 kHz
+  audio. MT was wrong for several UI strings (e.g. "your colours look alike", "भाषण" for speech,
+  "they added" in Telugu), so hi/te strings are hand-reviewed and never overwritten by the script.
+- `phraseAudioUrl(key, lang)` (src/audio/phrases.ts) returns the recording only if it was made from
+  the current text; otherwise null and the caller uses live TTS. Add new UI strings to en.json
+  and ask Track A to rebuild (needs tokens). Only the phrases in `i18n/prerecord.json` are
+  recorded (13 short/onboarding phrases, 2.2 MB as 16 kHz WAV, ~32 KB/s); long messages are
+  spoken live, or by the device voice in lite mode.
+- The spoken control words in `player.controls_hint` are 'रुको'/'दोबारा' and 'ఆపు'/'మళ్లీ': the
+  local matcher (Track D) must accept them. Telugu strings still need a native speaker's review.

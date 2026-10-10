@@ -1,0 +1,47 @@
+{
+  "en": {
+    "overlay.title": "Shopping assistant",
+    "onboarding.choose_language": "For English, say English or press 1.",
+    "onboarding.read_aloud": "Would you like me to read things aloud?",
+    "onboarding.colours": "Do colours ever look alike to you?",
+    "listening.stopped": "Listening has stopped.",
+    "listening.resumed": "Listening again.",
+    "mic.listening": "Listening.",
+    "common.yes": "Yes",
+    "common.no": "No",
+    "common.cancelled": "Cancelled.",
+    "common.done": "Done.",
+    "cart.added": "Added to cart.",
+    "player.paused": "Paused."
+  },
+  "hi": {
+    "overlay.title": "शॉपिंग सहायक",
+    "onboarding.choose_language": "हिंदी के लिए हिंदी बोलें या 2 दबाएँ।",
+    "onboarding.read_aloud": "क्या आप चाहेंगे कि मैं चीजों को जोर से पढ़ूं?",
+    "onboarding.colours": "क्या आपको कभी अलग-अलग रंग एक जैसे दिखते हैं?",
+    "listening.stopped": "सुनना बंद हो गया है।",
+    "listening.resumed": "फिर से सुन रहे हैं।",
+    "mic.listening": "सुन रहे हैं।",
+    "common.yes": "हाँ।",
+    "common.no": "नहीं।",
+    "common.cancelled": "रद्द कर दिया।",
+    "common.done": "हो गया।",
+    "cart.added": "कार्ट में जोड़ा गया।",
+    "player.paused": "रुक गया।"
+  },
+  "te": {
+    "overlay.title": "షాపింగ్ అసిస్టెంట్",
+    "onboarding.choose_language": "తెలుగు కోసం తెలుగు అని చెప్పండి లేదా 3 నొక్కండి.",
+    "onboarding.read_aloud": "నేను విషయాలను బిగ్గరగా చదవాలని మీరు కోరుకుంటున్నారా?",
+    "onboarding.colours": "రంగులు మీకు ఎప్పుడైనా ఒకేలా కనిపిస్తాయా?",
+    "listening.stopped": "వినడం ఆగిపోయింది.",
+    "listening.resumed": "మళ్లీ వింటున్నాను.",
+    "mic.listening": "వింటున్నాను.",
+    "common.yes": "అవును",
+    "common.no": "లేదు",
+    "common.cancelled": "రద్దు చేయబడింది.",
+    "common.done": "పూర్తయింది.",
+    "cart.added": "కార్టుకు జోడించబడింది.",
+    "player.paused": "ఆగిపోయింది."
+  }
+}
