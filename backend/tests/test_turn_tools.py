@@ -177,3 +177,47 @@ def test_page_brief_is_small_and_has_no_page_text(req):
         "page_type", "site", "products", "orders", "targets", "SEEN", "stated_preferences",
     }  # fmt: skip
     assert "reviews" not in json.dumps(brief)
+
+
+# --- translation through Track A's gateway (bhashini.translate) ---
+
+
+def test_turn_answers_in_the_users_language(req, monkeypatch):
+    """With Track A's gateway in place, /turn translates everything the user hears or reads;
+    actions, ids and grounding stay as they are."""
+    from app.services import bhashini
+
+    calls = []
+
+    async def fake_translate(text, source, target):
+        calls.append((source, target))
+        return f"[{target}] {text}"
+
+    monkeypatch.setattr(bhashini, "translate", fake_translate)
+    response = run(
+        orchestrator.handle_turn(with_input(req, kind="switch", target_id="t-add-to-cart"))
+    )
+    out = response.output
+    assert out.lang.value == "hi"
+    assert out.summary.startswith("[hi] Add Zentra Pulse 5G")
+    assert all(f.startswith("[hi] ") for f in out.followups)
+    assert response.confirmation.prompt == out.summary
+    assert response.confirmation.pending_actions[0].target_id == "t-add-to-cart"
+    assert all(not g.claim.startswith("[hi]") for g in out.grounding)
+    assert set(calls) == {("en", "hi")}
+
+
+def test_failed_translation_keeps_english_and_says_so(req, monkeypatch):
+    from app.errors import ApiError
+    from app.models import ErrorCode
+    from app.services import bhashini
+
+    async def down(text, source, target):
+        raise ApiError(ErrorCode.upstream_unavailable, "MT down", status=503)
+
+    monkeypatch.setattr(bhashini, "translate", down)
+    response = run(
+        orchestrator.handle_turn(with_input(req, kind="switch", target_id="t-add-to-cart"))
+    )
+    assert response.output.lang.value == "en"
+    assert response.output.summary.startswith("Add Zentra Pulse 5G")
