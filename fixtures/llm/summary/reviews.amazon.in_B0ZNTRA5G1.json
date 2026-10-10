@@ -1,38 +1,38 @@
 {
   "model": "openai/gpt-oss-120b",
   "response": {
-    "id": "chatcmpl-848693a3-ddbc-4ac3-8d67-6973f4b5118e",
+    "id": "chatcmpl-9462fd6a-2a57-4057-a6a4-73f665623b7c",
     "object": "chat.completion",
-    "created": 1791653635,
+    "created": 1791656540,
     "model": "openai/gpt-oss-120b",
     "choices": [
       {
         "index": 0,
         "message": {
           "role": "assistant",
-          "content": "{\n  \"facts\": [\n    {\n      \"claim\": \"690\",\n      \"field_path\": \"reviews.basis_count\"\n    },\n    {\n      \"claim\": \"Battery life: 189 of 212 mentions are positive\",\n      \"field_path\": \"reviews.insights[0]\"\n    },\n    {\n      \"claim\": \"Display: 131 of 148 mentions are positive\",\n      \"field_path\": \"reviews.insights[1]\"\n    },\n    {\n      \"claim\": \"Low-light camera: 68 of 96 mentions are negative\",\n      \"field_path\": \"reviews.insights[2]\"\n    },\n    {\n      \"claim\": \"Heating: opinions are mixed (54 mentions)\",\n      \"field_path\": \"reviews.insights[3]\"\n    }\n  ],\n  \"summary\": [\n    {\n      \"fact_refs\": [0, 1, 2],\n      \"text\": \"Based on 690 reviews, customers most praise the battery life and display.\"\n    },\n    {\n      \"fact_refs\": [3],\n      \"text\": \"The main complaint is the low‑light camera performance.\"\n    }\n  ],\n  \"simpler\": {\n    \"fact_refs\": [0, 1, 2, 3],\n    \"text\": \"Based on 690 reviews, battery life and display are liked, but low‑light camera is criticized.\"\n  },\n  \"sections\": [\n    {\n      \"heading\": \"Pros\",\n      \"items\": [\n        {\n          \"fact_ref\": 1,\n          \"kind\": \"pro\",\n          \"text\": \"Battery life: 189 of 212 mentions are positive\"\n        },\n        {\n          \"fact_ref\": 2,\n          \"kind\": \"pro\",\n          \"text\": \"Display: 131 of 148 mentions are positive\"\n        }\n      ]\n    },\n    {\n      \"heading\": \"Cons\",\n      \"items\": [\n        {\n          \"fact_ref\": 3,\n          \"kind\": \"con\",\n          \"text\": \"Low-light camera: 68 of 96 mentions are negative\"\n        },\n        {\n          \"fact_ref\": 4,\n          \"kind\": \"con\",\n          \"text\": \"Heating: opinions are mixed (54 mentions)\"\n        }\n      ]\n    }\n  ]\n}"
+          "content": "{\n  \"facts\": [\n    {\n      \"claim\": \"Battery life: 189 positive and 23 negative mentions\",\n      \"field_path\": \"reviews.insights[0]\"\n    },\n    {\n      \"claim\": \"Display: 131 positive and 17 negative mentions\",\n      \"field_path\": \"reviews.insights[1]\"\n    },\n    {\n      \"claim\": \"Low-light camera: 28 positive and 68 negative mentions\",\n      \"field_path\": \"reviews.insights[2]\"\n    },\n    {\n      \"claim\": \"Heating: 25 positive and 29 negative mentions\",\n      \"field_path\": \"reviews.insights[3]\"\n    }\n  ],\n  \"summary\": [\n    {\n      \"fact_refs\": [0],\n      \"text\": \"Customers mention battery life most: 189 positive and 23 negative mentions.\"\n    },\n    {\n      \"fact_refs\": [1],\n      \"text\": \"Display gets many positive mentions: 131 positive and 17 negative mentions.\"\n    }\n  ],\n  \"simpler\": {\n    \"fact_refs\": [0, 1],\n    \"text\": \"Battery life gets 189 positive and 23 negative mentions; display gets 131 positive and 17 negative mentions.\"\n  },\n  \"sections\": [\n    {\n      \"heading\": \"Pros\",\n      \"items\": [\n        {\n          \"fact_ref\": 0,\n          \"kind\": \"pro\",\n          \"text\": \"Battery life: 189 positive and 23 negative mentions\"\n        },\n        {\n          \"fact_ref\": 1,\n          \"kind\": \"pro\",\n          \"text\": \"Display: 131 positive and 17 negative mentions\"\n        }\n      ]\n    },\n    {\n      \"heading\": \"Mixed opinions\",\n      \"items\": [\n        {\n          \"fact_ref\": 3,\n          \"kind\": \"text\",\n          \"text\": \"Heating: 25 positive and 29 negative mentions\"\n        }\n      ]\n    },\n    {\n      \"heading\": \"Cons\",\n      \"items\": [\n        {\n          \"fact_ref\": 2,\n          \"kind\": \"con\",\n          \"text\": \"Low-light camera: 28 positive and 68 negative mentions\"\n        }\n      ]\n    }\n  ]\n}"
         },
         "logprobs": null,
         "finish_reason": "stop"
       }
     ],
     "usage": {
-      "queue_time": 0.345471997,
-      "prompt_tokens": 1558,
-      "prompt_time": 0.107660877,
-      "completion_tokens": 932,
-      "completion_time": 1.938526948,
-      "total_tokens": 2490,
-      "total_time": 2.046187825,
+      "queue_time": 0.397510875,
+      "prompt_tokens": 1655,
+      "prompt_time": 0.121467761,
+      "completion_tokens": 911,
+      "completion_time": 1.890254734,
+      "total_tokens": 2566,
+      "total_time": 2.011722495,
       "completion_tokens_details": {
-        "reasoning_tokens": 451
+        "reasoning_tokens": 435
       }
     },
     "usage_breakdown": null,
-    "system_fingerprint": "fp_fe269835c7",
+    "system_fingerprint": "fp_bb691ea66b",
     "x_groq": {
-      "id": "req_01m4ke1q57e72b07swhqkw3kay",
-      "seed": 844098245
+      "id": "req_01m4kgtc7xegwacjwdej1th0pe",
+      "seed": 194104574
     },
     "service_tier": "on_demand"
   }

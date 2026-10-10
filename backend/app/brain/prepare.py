@@ -93,3 +93,18 @@ async def prepare(req: ProductPrepareRequest) -> ProductPrepareResponse:
             "sections": result,
         }
     )
+
+
+async def one_section(product: ProductJSON, name: str) -> AccessibleOutput | None:
+    """One section for /turn: from the full precompute if cached, else only that builder
+    (at most one LLM call, keeping /turn within its budget of two)."""
+    cached = _cache.get(cache_key(product))
+    if cached is not None:
+        return cached[name]
+    key = f"{cache_key(product)}:{name}"
+    hit = _cache.get(key)
+    if hit is None:
+        hit = await _build(name, BUILDERS[name], product)
+        if hit is not None:
+            _cache.set(key, hit)
+    return hit

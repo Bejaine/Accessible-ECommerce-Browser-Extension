@@ -82,9 +82,15 @@ async def summarise_product(p: ProductJSON) -> CheckResult:
         )
 
     basis = number(r.basis_count)
-    if r.basis_count:
+    if r.insights:
+        # Mention counts come from the shop's own summary of many more reviews than the few
+        # shown (basis_count), so don't put "based on N reviews" next to them.
+        lead = "In the shop's review summary"
+    elif r.basis_count:
         b.ground(f"{basis} reviews", "reviews.basis_count")
-    lead = f"Based on {basis} reviews" if r.basis_count else "Based on the reviews shown"
+        lead = f"Based on the {basis} reviews shown on the page"
+    else:
+        lead = "Based on the reviews shown"
     liked = [x.topic.lower() for _, x in pros[:2]]
     disliked = [x.topic.lower() for _, x in cons[:1]]
     if liked:

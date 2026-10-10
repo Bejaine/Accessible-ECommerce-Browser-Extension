@@ -196,7 +196,7 @@
     "overview": {
       "schema_version": "1.0",
       "lang": "en",
-      "summary": "Zentra Pulse 5G is priced at ₹17,999, MRP ₹24,999. It has a rating of 4.2 out of 5 from 3418 ratings.",
+      "summary": "Zentra Pulse 5G costs ₹17,999 (MRP ₹24,999). It has a rating of 4.2 out of 5 from 3418 ratings.",
       "sections": [
         {
           "heading": "At a glance",
@@ -226,8 +226,8 @@
           "simpler": null
         }
       ],
-      "simpler": null,
-      "followups": [],
+      "simpler": "The phone costs ₹17,999, MRP ₹24,999, rating 4.2/5 from 3418 ratings.",
+      "followups": ["Tell me the specs", "What do reviews say?", "Add to cart"],
       "grounding": [
         {
           "claim": "Zentra Pulse 5G",
@@ -295,7 +295,7 @@
     "specs": {
       "schema_version": "1.0",
       "lang": "en",
-      "summary": "It has a 5000 mAh battery, 8 GB RAM and 128 GB storage.",
+      "summary": "It has a 5000 mAh battery, 8 GB RAM, 128 GB storage, a 6.67 inch screen with 120 Hz refresh rate and runs Android 15.",
       "sections": [
         {
           "heading": "Specs",
@@ -335,8 +335,8 @@
           "simpler": null
         }
       ],
-      "simpler": null,
-      "followups": [],
+      "simpler": "It has a 5000 mAh battery, 8 GB RAM, 128 GB storage, a 6.67 inch screen with 120 Hz refresh rate and runs Android 15.",
+      "followups": ["What do reviews say?", "Describe the photos", "Add to cart"],
       "grounding": [
         {
           "claim": "Zentra Pulse 5G",
@@ -344,27 +344,27 @@
           "field_path": "title"
         },
         {
-          "claim": "5000 mAh",
+          "claim": "5000",
           "subject_id": "amazon.in:B0ZNTRA5G1",
           "field_path": "specs.battery"
         },
         {
-          "claim": "8 GB",
+          "claim": "8",
           "subject_id": "amazon.in:B0ZNTRA5G1",
           "field_path": "specs.ram"
         },
         {
-          "claim": "128 GB",
+          "claim": "128",
           "subject_id": "amazon.in:B0ZNTRA5G1",
           "field_path": "specs.storage"
         },
         {
-          "claim": "6.67 inches",
+          "claim": "6.67",
           "subject_id": "amazon.in:B0ZNTRA5G1",
           "field_path": "specs.display_size"
         },
         {
-          "claim": "120 Hz",
+          "claim": "120",
           "subject_id": "amazon.in:B0ZNTRA5G1",
           "field_path": "specs.refresh_rate"
         },
@@ -379,20 +379,32 @@
     "reviews": {
       "schema_version": "1.0",
       "lang": "en",
-      "summary": "Based on 690 reviews, customers most praise the battery life and display. The main complaint is the low‑light camera performance.",
+      "summary": "Customers mention battery life most: 189 positive and 23 negative mentions. Display gets many positive mentions: 131 positive and 17 negative mentions.",
       "sections": [
         {
           "heading": "Pros",
           "items": [
             {
-              "text": "Battery life: 189 of 212 mentions are positive",
+              "text": "Battery life: 189 positive and 23 negative mentions",
               "kind": "pro",
-              "grounding_index": 2
+              "grounding_index": 1
             },
             {
-              "text": "Display: 131 of 148 mentions are positive",
+              "text": "Display: 131 positive and 17 negative mentions",
               "kind": "pro",
-              "grounding_index": 3
+              "grounding_index": 2
+            }
+          ],
+          "table": null,
+          "simpler": null
+        },
+        {
+          "heading": "Mixed opinions",
+          "items": [
+            {
+              "text": "Heating: 25 positive and 29 negative mentions",
+              "kind": "text",
+              "grounding_index": 4
             }
           ],
           "table": null,
@@ -402,22 +414,17 @@
           "heading": "Cons",
           "items": [
             {
-              "text": "Low-light camera: 68 of 96 mentions are negative",
+              "text": "Low-light camera: 28 positive and 68 negative mentions",
               "kind": "con",
-              "grounding_index": 4
-            },
-            {
-              "text": "Heating: opinions are mixed (54 mentions)",
-              "kind": "con",
-              "grounding_index": 5
+              "grounding_index": 3
             }
           ],
           "table": null,
           "simpler": null
         }
       ],
-      "simpler": "Based on 690 reviews, battery life and display are liked, but low‑light camera is criticized.",
-      "followups": [],
+      "simpler": "Battery life gets 189 positive and 23 negative mentions; display gets 131 positive and 17 negative mentions.",
+      "followups": ["Read a review", "Tell me the specs", "Add to cart"],
       "grounding": [
         {
           "claim": "Zentra Pulse 5G",
@@ -425,27 +432,22 @@
           "field_path": "title"
         },
         {
-          "claim": "690",
-          "subject_id": "amazon.in:B0ZNTRA5G1",
-          "field_path": "reviews.basis_count"
-        },
-        {
-          "claim": "Battery life: 189 of 212 mentions are positive",
+          "claim": "Battery life: 189 positive and 23 negative mentions",
           "subject_id": "amazon.in:B0ZNTRA5G1",
           "field_path": "reviews.insights[0]"
         },
         {
-          "claim": "Display: 131 of 148 mentions are positive",
+          "claim": "Display: 131 positive and 17 negative mentions",
           "subject_id": "amazon.in:B0ZNTRA5G1",
           "field_path": "reviews.insights[1]"
         },
         {
-          "claim": "Low-light camera: 68 of 96 mentions are negative",
+          "claim": "Low-light camera: 28 positive and 68 negative mentions",
           "subject_id": "amazon.in:B0ZNTRA5G1",
           "field_path": "reviews.insights[2]"
         },
         {
-          "claim": "Heating: opinions are mixed (54 mentions)",
+          "claim": "Heating: 25 positive and 29 negative mentions",
           "subject_id": "amazon.in:B0ZNTRA5G1",
           "field_path": "reviews.insights[3]"
         }

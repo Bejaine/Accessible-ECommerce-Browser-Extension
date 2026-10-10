@@ -48,8 +48,8 @@ def test_reviews_never_overclaim(iphone):
     # Star "counts" in the response are percentages (76/15/4/1/4), so no histogram.
     assert r.histogram is None
     assert "reviews.histogram" in iphone.missing
-    # 8 review texts shown, but one insight alone has 44 mentions: 44 is the safe lower bound.
-    assert r.basis_count == 44
+    # basis_count = review texts actually read (team decision, same as the page extractor).
+    assert r.basis_count == 8
     assert len(r.items) == 8
     assert [i.topic for i in r.insights if i.sentiment.value == "negative"] == ["Heat"]
 

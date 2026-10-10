@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from typing import Any
 
 from app.brain import sections
-from app.brain.format import short_title
+from app.brain.format import number, short_title
 from app.brain.grounding import CheckResult, Unresolved, claim_matches, numbers_in, resolve
 from app.brain.llm import LLMError, LLMSettings, complete_json
 from app.brain.output import OutputBuilder
@@ -117,8 +117,8 @@ ABSOLUTE RULES
 brand, the product, the category or typical products. Do not guess, estimate, infer or \
 recommend.
 2. Copy every number exactly as it appears in the JSON. Never calculate anything: no \
-discounts, percentages, differences, totals, averages or rounding. Prices may be written \
-with the currency symbol and digit grouping (17999 INR -> ₹17,999).
+discounts, percentages, differences, totals, averages or rounding. Write Indian prices \
+with the rupee symbol and digit grouping, never "INR": 17999 -> ₹17,999, 2699 -> ₹2,699.
 3. Keep brand names, model names and units exactly as written.
 4. If something this section would normally cover is null, empty or listed in "missing", \
 say so plainly, for example "The page doesn't list the battery size." Never fill it in.
@@ -167,9 +167,12 @@ SECTION_TASKS = {
         "22 hours', citing that spec."
     ),
     "reviews": (
-        "Section: REVIEWS. Fact 0 must be {claim: 'N reviews', field_path: "
-        "'reviews.basis_count'}. Summary: start with what it is based on ('Based on N "
-        "reviews'), citing fact 0, then the main likes and the main complaint. Sections "
+        "Section: REVIEWS. If reviews.insights is not empty, its mention counts come from the "
+        "shop's own summary of many reviews: do NOT say 'Based on N reviews'; start with "
+        "what customers mention most, e.g. 'Customers mention sound quality most: 512 "
+        "positive and 235 negative mentions.' If there are no insights, start with 'Based on "
+        "the N reviews shown on the page' citing reviews.basis_count. Then the main likes "
+        "and the main complaint. Sections "
         "'Pros' (kind pro) for POSITIVE insights, 'Mixed opinions' (kind text) for MIXED "
         "insights and 'Cons' (kind con) for NEGATIVE insights; every insight goes in exactly "
         "one of them, with its mention counts, e.g. 'Battery life: 189 of 212 mentions are "
@@ -188,10 +191,21 @@ SECTION_FIELDS = {
     "reviews": ["id", "title", "rating", "reviews", "missing"],
 }  # fmt: skip
 
+FOLLOWUPS = {
+    "overview": ["Tell me the specs", "What do reviews say?", "Add to cart"],
+    "specs": ["What do reviews say?", "Describe the photos", "Add to cart"],
+    "reviews": ["Read a review", "Tell me the specs", "Add to cart"],
+}
+
 SECTION_MODEL = {"overview": "fast", "specs": "fast", "reviews": "main"}
 
+
 # If the product has these fields, a usable answer must state them correctly.
-REQUIRED_FACTS = {"overview": ["price.amount"], "specs": [], "reviews": ["reviews.basis_count"]}
+def required_paths(name: str, product: dict[str, Any]) -> list[str]:
+    """Facts a usable answer must state in its spoken summary, when the product has them."""
+    if name == "overview":
+        return ["price.amount", "rating.value"]
+    return []
 
 
 def _plain_numbers(value: Any) -> Any:
@@ -269,7 +283,7 @@ def assemble(
         # The product's own name may be said anywhere; its digits ("5G") are not claims.
         product_name = short_title(p.title)
         b.ground(product_name, "title")
-        name_numbers = numbers_in(product_name)
+        name_numbers = numbers_in(p.title)
     for i, fact in enumerate(raw["facts"]):
         claim, path = fact["claim"], fact["field_path"]
         try:
@@ -283,11 +297,13 @@ def assemble(
         facts[i] = _Fact(b.ground(claim, path), value, path)
 
     cited_specs: list[str] = []
+    spoken_paths: set[str] = set()
     summary = []
     for sentence in raw["summary"][:_SENTENCE_LIMIT]:
         text, refs = _sentence(sentence["text"]), sentence["fact_refs"]
         if _supported(text, refs, facts, name_numbers):
             summary.append(text)
+            spoken_paths.update(facts[r].path for r in refs)
         else:
             dropped.append(f"summary sentence not supported: {text}")
 
@@ -339,6 +355,14 @@ def assemble(
                 specs_items.append(sections.spec_item(b, key, p))
         warnings = sections.spec_warnings(b, p)
 
+    reviews = product.get("reviews") or {}
+    if name == "reviews" and summary and not reviews.get("insights") and reviews.get("items"):
+        # Only review texts: say how many were read. Code states the count (seen live: the
+        # model often leaves it out), the model's sentence says what they say.
+        if "reviews.basis_count" not in spoken_paths:
+            count = number(reviews["basis_count"])
+            b.ground(f"{count} reviews", "reviews.basis_count")
+            summary = [f"The page shows {count} reviews.", summary[0]]
     simpler = raw["simpler"]
     if simpler is not None and not _supported(
         simpler["text"], simpler["fact_refs"], facts, name_numbers
@@ -349,14 +373,14 @@ def assemble(
         {p.id: p},
         " ".join(summary) if summary else "",
         simpler=simpler["text"].strip() if simpler else None,
+        followups=FOLLOWUPS[name],
         warnings=warnings,
     )
     result.dropped[:0] = dropped
     claims = len(raw["facts"]) + len(raw["summary"]) + sum(len(s["items"]) for s in raw["sections"])
-    stated = {f.path for f in facts.values()}
-    for path in REQUIRED_FACTS[name]:
-        if _present(product, path) and path not in stated:
-            raise LLMError(f"{name} answer does not state {path} correctly")
+    for path in required_paths(name, product):
+        if _present(product, path) and path not in spoken_paths:
+            raise LLMError(f"{name} summary does not state {path} correctly")
     if not summary:
         raise LLMError(f"no usable summary sentence ({len(result.dropped)} dropped)")
     if claims and len(result.dropped) / claims > MAX_DROPPED_SHARE:

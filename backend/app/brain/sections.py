@@ -212,7 +212,9 @@ async def images(p: ProductJSON) -> CheckResult:
     b.derive(len(p.images))
     plural = "photo" if len(p.images) == 1 else "photos"
     first = shown[0].description or shown[0].alt
-    second = f"The first shows {first}." if first else "The first photo has no description."
+    second = (
+        f"The first shows {brief(first, 80)}." if first else "The first photo has no description."
+    )
     return b.checked(
         _subjects(p),
         _fit(f"There are {len(p.images)} product {plural}.", second),

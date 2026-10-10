@@ -76,5 +76,19 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - Demo machine needs `GROQ_API_KEY` in `.env` (see `.env.example`). Groq's free tier may use what we
   send; we send only public product data, never user data (note for the Responsible AI slide).
 - SerpApi converter (`services/serpapi.py`): star "counts" are percentages (not used as a
-  histogram); review counts use a lower bound so we never claim more reviews than were read;
+  histogram); `basis_count` = review texts read, as for the page extractor. When the shop's
+  own topic counts exist, summaries say "customers mention…" and never "based on N reviews";
   listing errors (e.g. RAM = storage) are read as written with a warning, never corrected.
+
+## 2026-10-10 — /turn behaviour (Track C; affects D, core, A)
+- One Groq tool call per turn picks a tool; tools build the answer from the page. Confidence
+  ≥ 0.8 acts; 0.5–0.8 returns `actions: []` and "Did you mean X or Y?" with `intent.alternatives`
+  (an alternative carries actions only when they are safe to run directly); < 0.5, or a second
+  miss in a row, returns phrase chips in `output.followups`.
+- Consequential actions (add to cart, quantity, cancel/return/remove, checkout) are only ever in
+  `confirmation.pending_actions`; "Buy now", "Place order" and "Pay" are never pressed.
+- Tapped targets (`input.target_id`) and phrase chips (`kind: phrase`, chip label as text) run
+  without an LLM call. `page.secure_zone_active` → ErrorResponse `secure_zone` (HTTP 423).
+- MOCK=1: `/turn` runs the real orchestrator on recorded Groq calls (`fixtures/llm/turn/`); an
+  utterance with no recording gets the canned `TurnResponse.json` as before.
+- Until Track A adds `bhashini.translate()`, answers stay English and say so (`output.lang: en`).
