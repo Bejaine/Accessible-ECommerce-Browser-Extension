@@ -19,6 +19,8 @@ import base64
 import binascii
 import io
 import json
+import logging
+import os
 import re
 import time
 import unicodedata
@@ -38,6 +40,9 @@ from app.services.cache import TTLCache
 Task = Literal["asr", "mt", "tts", "ocr"]
 TASKS: tuple[Task, ...] = ("asr", "mt", "tts", "ocr")
 EXAMPLE_FILE = REPO_ROOT / "backend/config/models.example.json"
+WARM_UP_IMAGE = REPO_ROOT / "fixtures/language-api/smoke/ocr_en.png"
+WARM_UP_CONCURRENCY = 2  # the shared sandbox returns HTTP 500 when ~20 calls arrive at once
+log = logging.getLogger(__name__)
 PIVOT_LANG = "en"
 OCR_FALLBACK_LANG = "en"
 
@@ -247,7 +252,14 @@ def _unavailable() -> ApiError:
 _registry: Registry | None = None
 _limiter = Limiter()
 _transport: httpx.AsyncBaseTransport | None = None  # tests inject httpx.MockTransport
-_TIMEOUT = httpx.Timeout(10.0, connect=3.0)
+# Measured live (2026-10-11): a cold model's first call takes 6-10 s, TTS 3-19 s.
+_TIMEOUTS: dict[Task, httpx.Timeout] = {
+    "mt": httpx.Timeout(20.0, connect=5.0),
+    "asr": httpx.Timeout(20.0, connect=5.0),
+    "ocr": httpx.Timeout(20.0, connect=5.0),
+    "tts": httpx.Timeout(30.0, connect=5.0),
+}
+_DOWNLOAD_TIMEOUT = httpx.Timeout(20.0, connect=5.0)
 
 
 def registry() -> Registry:
@@ -278,7 +290,7 @@ async def call_model(
         )
     await _limiter.acquire(entry)
     try:
-        async with httpx.AsyncClient(transport=_transport, timeout=_TIMEOUT) as client:
+        async with httpx.AsyncClient(transport=_transport, timeout=_TIMEOUTS[task]) as client:
             res = await client.post(
                 entry.url, json=json_body, files=files, headers={entry.auth_header: entry.token}
             )
@@ -316,7 +328,7 @@ async def _download(url: str, *, max_bytes: int, mock_file: str) -> bytes:
     _check_public_https(url)
     try:
         async with httpx.AsyncClient(
-            transport=_transport, timeout=_TIMEOUT, follow_redirects=True
+            transport=_transport, timeout=_DOWNLOAD_TIMEOUT, follow_redirects=True
         ) as client:
             async with client.stream("GET", url) as res:
                 if res.status_code == 404:
@@ -384,6 +396,65 @@ _tts_cache = TTLCache(ttl_seconds=24 * 3600, max_entries=512)
 def clear_caches() -> None:
     _mt_cache.clear()
     _tts_cache.clear()
+
+
+# --- Warm-up --------------------------------------------------------------------------------
+# A model's first call after idling is slow (it loads), so the demo server pings every
+# configured model once at startup, in the background. Off with LANGUAGE_WARMUP=0.
+
+
+def start_warm_up() -> asyncio.Task[dict[str, str]] | None:
+    if get_settings().mock or os.getenv("LANGUAGE_WARMUP", "1").strip() in ("0", "false", "no"):
+        return None
+    return asyncio.create_task(warm_up())
+
+
+async def warm_up() -> dict[str, str]:
+    """One tiny call per configured model; returns {"task key": "ok" | error code}. Never
+    raises, and skips the TTS audio download (the call alone loads the model)."""
+    if get_settings().mock:
+        return {}
+    reg = registry()
+    jobs = [(t, k) for t in TASKS for k in reg.keys(t) if reg.get(t, k).configured]
+    gate = asyncio.Semaphore(WARM_UP_CONCURRENCY)
+
+    async def gated(task: Task, key: str) -> str:
+        async with gate:
+            return await _warm_one(task, key)
+
+    outcomes = await asyncio.gather(*(gated(t, k) for t, k in jobs))
+    result = {f"{t} {k}": outcome for (t, k), outcome in zip(jobs, outcomes, strict=True)}
+    log.info("language model warm-up: %s", result)
+    return result
+
+
+async def _warm_one(task: Task, key: str) -> str:
+    try:
+        if task == "mt":
+            await call_model(task, key, {"input_text": "hello"})
+        elif task == "tts":
+            await call_model(task, key, {"text": "hello", "gender": "female"})
+        elif task == "asr":
+            files = {"audio_file": ("audio.wav", _silent_wav(), "audio/wav")}
+            await call_model(task, key, files=files)
+        else:  # a blank image makes the OCR service crash (HTTP 500), so send real text
+            image = WARM_UP_IMAGE.read_bytes()
+            await call_model(task, key, files={"file": ("image.png", image, "image/png")})
+        return "ok"
+    except ApiError as exc:
+        return exc.code.value
+    except Exception as exc:  # a warm-up must never take the server down
+        return type(exc).__name__
+
+
+def _silent_wav(seconds: float = 0.5, rate: int = 16000) -> bytes:
+    buf = io.BytesIO()
+    with wave.open(buf, "wb") as w:
+        w.setnchannels(1)
+        w.setsampwidth(2)
+        w.setframerate(rate)
+        w.writeframes(b"\0\0" * int(seconds * rate))
+    return buf.getvalue()
 
 
 async def asr(lang: str, *, audio_base64: str, encoding: str) -> AsrResult:

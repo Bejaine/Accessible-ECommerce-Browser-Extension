@@ -685,3 +685,88 @@ async def test_ocr_needs_exactly_one_image_source():
         await bhashini.ocr("en")
     with pytest.raises(ApiError):
         await bhashini.ocr("en", image_url="https://x.com/a", image_base64=b64(PNG))
+
+
+# --- Timeouts and warm-up (from the live smoke test) -------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("task", "key", "body", "seconds"),
+    [
+        ("mt", "en-hi", {"input_text": "hi"}, 20.0),
+        ("tts", "hi", {"text": "hi", "gender": "female"}, 30.0),
+    ],
+)
+async def test_read_timeout_is_per_task(monkeypatch, task, key, body, seconds):
+    """First calls to a cold model took 6-10 s and TTS up to 19 s, so 10 s was too short."""
+    seen = {}
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        seen["read"] = req.extensions["timeout"]["read"]
+        return httpx.Response(200, json=ok({}))
+
+    _live(monkeypatch, handler)
+    await call_model(task, key, body)
+    assert seen["read"] == seconds
+
+
+async def test_warm_up_calls_each_configured_model_once_and_never_raises(monkeypatch):
+    calls = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        calls.append(req.url.path)
+        if req.url.path == "/mt":
+            return httpx.Response(500)
+        return httpx.Response(200, json=ok({}))
+
+    _live(monkeypatch, handler)
+    result = await bhashini.warm_up()
+    assert sorted(calls) == ["/asr", "/mt", "/ocr-en", "/ocr-hi", "/tts"]  # no S3 download
+    assert result == {
+        "asr hi": "ok",
+        "mt en-hi": "upstream_unavailable",
+        "tts hi": "ok",
+        "ocr en": "ok",
+        "ocr hi": "ok",
+    }
+
+
+async def test_warm_up_skips_unconfigured_models(monkeypatch):
+    monkeypatch.setenv("MOCK", "0")
+    reg = Registry.from_dict(
+        {"asr": {"hi": {"url": "https://up.example/asr", "token": "T"}, "te": {}}}
+    )
+    monkeypatch.setattr(bhashini, "_registry", reg)
+    monkeypatch.setattr(
+        bhashini, "_transport", httpx.MockTransport(lambda req: httpx.Response(200, json=ok({})))
+    )
+    assert await bhashini.warm_up() == {"asr hi": "ok"}
+
+
+async def test_warm_up_does_nothing_in_mock_mode(monkeypatch):
+    monkeypatch.setattr(bhashini, "_transport", httpx.MockTransport(lambda req: pytest.fail()))
+    assert await bhashini.warm_up() == {}
+
+
+def test_start_warm_up_respects_the_off_switch(monkeypatch):
+    monkeypatch.setenv("MOCK", "0")
+    monkeypatch.setenv("LANGUAGE_WARMUP", "0")
+    assert bhashini.start_warm_up() is None
+
+
+async def test_warm_up_runs_at_most_two_calls_at_once(monkeypatch):
+    """Live: firing all models at once made the shared OCR service return HTTP 500."""
+    active, peak = 0, 0
+
+    async def handler(req: httpx.Request) -> httpx.Response:
+        nonlocal active, peak
+        active += 1
+        peak = max(peak, active)
+        await asyncio.sleep(0.01)
+        active -= 1
+        return httpx.Response(200, json=ok({}))
+
+    _live(monkeypatch, handler)
+    result = await bhashini.warm_up()
+    assert len(result) == 5 and set(result.values()) == {"ok"}
+    assert peak == 2

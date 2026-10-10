@@ -61,3 +61,21 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   speech-mode signal comes from our own `mic_level`. Track C's intent repair must not rely on them.
 - MT takes ≤ 50 words and TTS ≤ 30 words with no special characters; the gateway chunks and
   cleans automatically. TTS returns an S3 link, which the backend fetches; clients still get base64 WAV.
+
+## 2026-10-11 — Live AnuvaadHub findings (Track A; affects Tracks B, C, D)
+- OCR misreads numbers and units ("5000 mAh" → "500 mAb", "mAh" → "107"). OCR text may help
+  describe an image but is never the source of a price, spec or quantity (rule 1): use ProductJSON.
+- TTS takes 3–19 s per sentence (incl. the S3 download). UI phrases must come from build-time
+  audio, and long answers must be spoken sentence by sentence; lite mode uses device TTS.
+- A model's first call is slow (6–10 s), so the backend warms all models at startup, two at a
+  time (the shared sandbox returns HTTP 500 under a burst). Timeouts: 20 s, TTS 30 s.
+- Telugu ASR model infer_asr/6807… never answered (60 s); we use infer_asr/6979…353b instead
+  (exact, ~1–2 s). A third, 67b8…674b, also works but made a spelling slip.
+
+## 2026-10-11 — Mic capture in the content script (Track A; affects integration lead, B, D)
+- `src/audio/mic.ts` captures in the content script with Web Audio ScriptProcessorNode (not
+  AudioWorklet or a Worker, which page CSPs can block). The browser's permission prompt is
+  therefore per shop origin (amazon.in, flipkart.com …), granted once per site.
+- One utterance per `listen()`: energy VAD, silence timeout 1.0 s (2.5 s in speech mode), 19 s
+  cap, 300 ms pre-roll; output 16 kHz mono 16-bit WAV, confirmed accepted by live Hindi ASR.
+- The mic is open only while listening; `mute()` (secure zone) closes it and discards audio.

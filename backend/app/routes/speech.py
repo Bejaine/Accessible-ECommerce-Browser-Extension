@@ -1,9 +1,23 @@
-from fastapi import APIRouter
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+
+from fastapi import APIRouter, FastAPI
 
 from app.models import SCHEMA_VERSION, AsrMeta, ASRRequest, ASRResponse, TTSRequest, TTSResponse
 from app.services import bhashini
 
-router = APIRouter(prefix="/speech")
+
+@asynccontextmanager
+async def _warm_language_models(_app: FastAPI) -> AsyncIterator[None]:
+    """Load every language model in the background at startup (merged into the app's
+    lifespan by include_router), so the first real voice turn isn't a 10 s cold start."""
+    task = bhashini.start_warm_up()
+    yield
+    if task is not None and not task.done():
+        task.cancel()
+
+
+router = APIRouter(prefix="/speech", lifespan=_warm_language_models)
 
 
 @router.post("/asr", response_model=ASRResponse, response_model_exclude_unset=True)

@@ -238,3 +238,15 @@ def test_rate_limited_is_a_retryable_429(client, assert_schema, monkeypatch):
     assert client.post("/speech/tts", json={**V, "text": "one", "lang": "hi"}).status_code == 200
     res = client.post("/speech/tts", json={**V, "text": "two", "lang": "hi"})
     assert assert_error(res, assert_schema, 429, "rate_limited")["retryable"] is True
+
+
+def test_app_startup_starts_the_language_warm_up(monkeypatch):
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    started = []
+    monkeypatch.setattr(bhashini, "start_warm_up", lambda: started.append(1))
+    with TestClient(app):
+        pass
+    assert started == [1]
