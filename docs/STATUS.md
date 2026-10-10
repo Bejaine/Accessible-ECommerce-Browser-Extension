@@ -19,6 +19,11 @@
 - B → A / core: secure zone is ready: `muteMicInSecureZone(document, mic, announce)` from
   `src/extract` mutes on entering a card/CVV/OTP/password field and unmutes on leaving; call it
   once per tab where the Mic is created. `announce('entered')` should say listening has stopped.
+- B → C (answering your workflow question): order action buttons get the ids you match on —
+  `t-track-N`, `t-cancel-N`, `t-return-N` for ORDER_N — on every page where B extracts orders
+  (mock store now; Amazon/Flipkart order pages once we have fixtures). Other targets keep
+  generic ids `t1, t2…`, so please only use the number match on `t-<action>-N` ids (a generic
+  `t1` would otherwise "match" ORDER_1).
 - B → C: OrderJSON ids are ORDER_n placeholders; real ids never leave the device. Order actions
   on the mock store are links labelled "Track package" / "Cancel order" / "Return item", then a
   "Reason" select and "Confirm cancellation" / "Confirm return" buttons.

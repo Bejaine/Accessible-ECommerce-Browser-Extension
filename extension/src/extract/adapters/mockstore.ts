@@ -114,6 +114,12 @@ function orders(doc: Document, url: string): OrderDraft[] {
   for (const el of Array.from(doc.querySelectorAll('article.order[data-order-id]'))) {
     const realId = el.getAttribute('data-order-id');
     if (!realId) continue;
+    const actions = Array.from(el.querySelectorAll('[data-action]')).flatMap((b) => {
+      const action = b.getAttribute('data-action');
+      return action === 'track' || action === 'return' || action === 'cancel'
+        ? [{ action, el: b } as const]
+        : [];
+    });
     const date = (sel: string): string | null =>
       clean(el.querySelector(`${sel} time`)?.getAttribute('datetime'))?.slice(0, 10) ?? null;
     out.push({
@@ -134,12 +140,8 @@ function orders(doc: Document, url: string): OrderDraft[] {
         expected_delivery: date('.order-expected'),
         delivered: date('.order-delivered'),
       },
-      available_actions: Array.from(el.querySelectorAll('[data-action]'))
-        .map((b) => b.getAttribute('data-action'))
-        .filter(
-          (a): a is 'track' | 'return' | 'cancel' =>
-            a === 'track' || a === 'return' || a === 'cancel',
-        ),
+      available_actions: actions.map((a) => a.action),
+      actionElements: actions,
     });
   }
   return out;

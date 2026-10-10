@@ -1,6 +1,7 @@
 // Orders: OrderJSON with placeholder ids. Real order numbers are personal data (docs/safety.md),
 // so the backend only ever sees ORDER_1, ORDER_2…; the mapping stays in this module.
 import type { OrderJSON, OrderStatus } from '@shared/index';
+import { assignTargetId } from './targets';
 
 /** What an adapter reads for one order; `realId` never leaves the device. */
 export interface OrderDraft {
@@ -9,6 +10,8 @@ export interface OrderDraft {
   status: OrderStatus;
   dates: OrderJSON['dates'];
   available_actions: OrderJSON['available_actions'];
+  /** The page's controls for this order's actions; they get ids like t-cancel-2 (ORDER_2). */
+  actionElements?: { action: 'track' | 'return' | 'cancel'; el: Element }[];
 }
 
 interface OrderRegistry {
@@ -60,9 +63,12 @@ export function redactOrderIds(doc: Document, text: string): string {
 }
 
 export function toOrderJSON(doc: Document, draft: OrderDraft): OrderJSON {
+  const id = orderPlaceholder(doc, draft.realId);
+  const n = id.slice('ORDER_'.length);
+  for (const { action, el } of draft.actionElements ?? []) assignTargetId(el, `t-${action}-${n}`);
   return {
     schema_version: '1.0',
-    id: orderPlaceholder(doc, draft.realId),
+    id,
     items: draft.items,
     status: draft.status,
     dates: draft.dates,

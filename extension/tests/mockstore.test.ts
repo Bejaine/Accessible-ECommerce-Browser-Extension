@@ -108,6 +108,15 @@ describe('mock store pages', () => {
     expect(ctx.products[2]?.availability?.status).toBe('out_of_stock');
   });
 
+  it("names each order's buttons t-<action>-<n> so Track C can tie them to ORDER_n", () => {
+    const ctx = open('orders.html');
+    const ids = ctx.targets.map((t) => [t.id, t.label]);
+    expect(ids).toContainEqual(['t-return-1', 'Return item']);
+    expect(ids).toContainEqual(['t-track-2', 'Track package']);
+    expect(ids).toContainEqual(['t-cancel-2', 'Cancel order']);
+    expect(ctx.orders.map((o) => o.id)).toEqual(['ORDER_1', 'ORDER_2']);
+  });
+
   it('extracts orders with placeholder ids only', () => {
     const ctx = open('orders.html');
     expect(ctx.orders.map((o) => [o.status, o.available_actions])).toEqual([
