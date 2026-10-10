@@ -1,0 +1,5 @@
+{
+  "prompt": "Add Example Wireless Earbuds X1, quantity 1, for 1,999 rupees to your cart?",
+  "action_ref": "act-1",
+  "risk": "low"
+}

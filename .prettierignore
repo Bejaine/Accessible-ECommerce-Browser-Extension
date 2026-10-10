@@ -1,0 +1,10 @@
+node_modules/
+.venv/
+.output/
+.wxt/
+shared/generated/
+fixtures/pages/
+docs/
+*.md
+package-lock.json
+backend/config/models.example.json

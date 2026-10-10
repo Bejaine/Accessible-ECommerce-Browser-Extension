@@ -1,0 +1,9 @@
+{
+  "input_channels": ["voice", "keyboard", "phrase", "switch"],
+  "input_rung": "voice",
+  "output_channels": ["audio", "visual"],
+  "tts_rate": 1,
+  "scan_interval_ms": 1500,
+  "max_options": 5,
+  "verbosity": "normal"
+}

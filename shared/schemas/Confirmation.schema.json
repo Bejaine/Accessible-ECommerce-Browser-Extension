@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Confirmation",
+  "description": "Required before any consequential action. The client asks; the user answers.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["prompt", "action_ref", "risk"],
+  "properties": {
+    "prompt": { "type": "string" },
+    "action_ref": { "type": "string", "description": "Which pending action this confirms." },
+    "risk": { "type": "string", "enum": ["low", "high"] }
+  }
+}

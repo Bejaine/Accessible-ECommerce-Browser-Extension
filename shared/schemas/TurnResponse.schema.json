@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TurnResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["intent", "actions", "output"],
+  "properties": {
+    "intent": { "type": "string" },
+    "confidence": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1,
+      "description": ">= 0.8 act; 0.5-0.8 ask 'Did you mean X or Y?'; < 0.5 offer phrase chips."
+    },
+    "alternatives": {
+      "type": "array",
+      "maxItems": 2,
+      "items": { "type": "string" },
+      "description": "Top two alternative intents for disambiguation."
+    },
+    "actions": { "type": "array", "items": { "$ref": "ClientAction.schema.json" } },
+    "output": { "$ref": "AccessibleOutput.schema.json" },
+    "confirmation": { "anyOf": [{ "$ref": "Confirmation.schema.json" }, { "type": "null" }] }
+  }
+}

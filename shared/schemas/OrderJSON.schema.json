@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OrderJSON",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "items", "status", "dates", "available_actions"],
+  "properties": {
+    "id": { "type": "string", "description": "Placeholder (ORDER_1), never the real order id." },
+    "items": {
+      "type": "array",
+      "items": {
+        "title": "OrderItem",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "quantity"],
+        "properties": {
+          "title": { "type": "string" },
+          "quantity": { "type": "integer", "minimum": 1 },
+          "price": {
+            "anyOf": [{ "$ref": "ProductJSON.schema.json#/$defs/Price" }, { "type": "null" }]
+          },
+          "product_url": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "status": {
+      "title": "OrderStatus",
+      "type": "string",
+      "enum": [
+        "placed",
+        "shipped",
+        "out_for_delivery",
+        "delivered",
+        "cancelled",
+        "returned",
+        "unknown"
+      ]
+    },
+    "dates": {
+      "title": "OrderDates",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "ordered": { "type": ["string", "null"] },
+        "expected_delivery": { "type": ["string", "null"] },
+        "delivered": { "type": ["string", "null"] }
+      }
+    },
+    "available_actions": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": { "type": "string", "enum": ["track", "return", "cancel"] }
+    }
+  }
+}

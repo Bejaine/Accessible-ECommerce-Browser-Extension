@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ClientAction",
+  "description": "An action the extension performs in the user's tab. The backend never touches the shop.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["type", "target_id"],
+  "properties": {
+    "type": {
+      "title": "ClientActionType",
+      "type": "string",
+      "enum": ["click", "fill", "select", "navigate", "scroll"]
+    },
+    "target_id": {
+      "type": ["string", "null"],
+      "description": "ActionTarget id; null for navigate."
+    },
+    "value": {
+      "type": ["string", "null"],
+      "description": "Text to fill, option to select, or URL to navigate to."
+    }
+  }
+}

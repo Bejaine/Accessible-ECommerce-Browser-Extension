@@ -1,0 +1,126 @@
+{
+  "session_id": "sess-mock-1",
+  "input": {
+    "kind": "voice",
+    "text": "add this to my cart",
+    "lang": "en",
+    "asr_meta": {
+      "mic_level": 0.4
+    }
+  },
+  "page": {
+    "page_type": "product",
+    "url": "https://mock-store.local/product/B0MOCK0001",
+    "site": "mock-store",
+    "products": [
+      {
+        "id": "mock-B0MOCK0001",
+        "url": "https://mock-store.local/product/B0MOCK0001",
+        "site": "mock-store",
+        "title": "Example Wireless Earbuds X1",
+        "brand": "ExampleBrand",
+        "price": {
+          "amount": 1999,
+          "currency": "INR",
+          "mrp": 3999
+        },
+        "rating": {
+          "value": 4.1,
+          "count": 1250
+        },
+        "availability": "In stock",
+        "category": "Headphones",
+        "specs": {
+          "battery_life": {
+            "value": 30,
+            "unit": "hours"
+          },
+          "bluetooth_version": {
+            "value": "5.3",
+            "unit": null
+          },
+          "water_resistance": {
+            "value": "IPX5",
+            "unit": null
+          }
+        },
+        "variants": [
+          {
+            "name": "colour",
+            "value": "Black",
+            "selected": true,
+            "available": true,
+            "target_id": "t-swatch-black"
+          },
+          {
+            "name": "colour",
+            "value": "White",
+            "selected": false,
+            "available": true,
+            "target_id": "t-swatch-white"
+          }
+        ],
+        "images": [
+          {
+            "url": "https://mock-store.local/img/x1-main.jpg",
+            "alt": "Earbuds in open charging case",
+            "description": null
+          }
+        ],
+        "delivery": {
+          "text": "Free delivery by Tuesday",
+          "cost": 0,
+          "date": "2026-10-14"
+        },
+        "seller": "Mock Retail",
+        "source": {
+          "method": "jsonld",
+          "extracted_at": "2026-10-10T10:00:00Z",
+          "fields": {
+            "specs": "adapter"
+          }
+        },
+        "missing": []
+      }
+    ],
+    "targets": [
+      {
+        "id": "t-add-to-cart",
+        "kind": "button",
+        "label": "Add to Cart"
+      },
+      {
+        "id": "t-buy-now",
+        "kind": "button",
+        "label": "Buy Now"
+      },
+      {
+        "id": "t-swatch-black",
+        "kind": "swatch",
+        "label": "Black"
+      },
+      {
+        "id": "t-swatch-white",
+        "kind": "swatch",
+        "label": "White"
+      }
+    ]
+  },
+  "prefs": {
+    "lang": "en",
+    "tts_rate": 1,
+    "text_scale": 1,
+    "verbosity": "normal",
+    "lite_mode": false
+  },
+  "history": [
+    {
+      "role": "user",
+      "text": "tell me about this product"
+    },
+    {
+      "role": "assistant",
+      "text": "Example Wireless Earbuds X1 by ExampleBrand cost 1,999 rupees. Rated 4.1 out of 5 from 1,250 ratings."
+    }
+  ]
+}

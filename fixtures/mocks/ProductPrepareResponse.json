@@ -1,0 +1,169 @@
+{
+  "product_id": "mock-B0MOCK0001",
+  "product": {
+    "id": "mock-B0MOCK0001",
+    "url": "https://mock-store.local/product/B0MOCK0001",
+    "site": "mock-store",
+    "title": "Example Wireless Earbuds X1",
+    "brand": "ExampleBrand",
+    "price": {
+      "amount": 1999,
+      "currency": "INR",
+      "mrp": 3999
+    },
+    "rating": {
+      "value": 4.1,
+      "count": 1250
+    },
+    "availability": "In stock",
+    "category": "Headphones",
+    "specs": {
+      "battery_life": {
+        "value": 30,
+        "unit": "hours"
+      },
+      "bluetooth_version": {
+        "value": "5.3",
+        "unit": null
+      },
+      "water_resistance": {
+        "value": "IPX5",
+        "unit": null
+      }
+    },
+    "variants": [
+      {
+        "name": "colour",
+        "value": "Black",
+        "selected": true,
+        "available": true,
+        "target_id": "t-swatch-black"
+      },
+      {
+        "name": "colour",
+        "value": "White",
+        "selected": false,
+        "available": true,
+        "target_id": "t-swatch-white"
+      }
+    ],
+    "images": [
+      {
+        "url": "https://mock-store.local/img/x1-main.jpg",
+        "alt": "Earbuds in open charging case",
+        "description": null
+      }
+    ],
+    "delivery": {
+      "text": "Free delivery by Tuesday",
+      "cost": 0,
+      "date": "2026-10-14"
+    },
+    "seller": "Mock Retail",
+    "source": {
+      "method": "jsonld",
+      "extracted_at": "2026-10-10T10:00:00Z",
+      "fields": {
+        "specs": "adapter"
+      }
+    },
+    "missing": []
+  },
+  "sections": {
+    "overview": {
+      "lang": "en",
+      "summary": "Example Wireless Earbuds X1 by ExampleBrand cost 1,999 rupees. Rated 4.1 out of 5 from 1,250 ratings.",
+      "sections": [
+        {
+          "heading": "Key specs",
+          "items": ["Battery life: 30 hours", "Bluetooth 5.3", "Water resistance: IPX5"]
+        }
+      ],
+      "simpler": "These earbuds cost 1,999 rupees. People rate them 4 out of 5.",
+      "followups": ["Read the reviews", "Add to cart", "Compare with similar"],
+      "grounding": [
+        {
+          "claim": "cost 1,999 rupees",
+          "field_path": "price.amount"
+        },
+        {
+          "claim": "Rated 4.1 out of 5",
+          "field_path": "rating.value"
+        },
+        {
+          "claim": "1,250 ratings",
+          "field_path": "rating.count"
+        },
+        {
+          "claim": "Battery life: 30 hours",
+          "field_path": "specs.battery_life"
+        }
+      ],
+      "warnings": []
+    },
+    "specs": {
+      "lang": "en",
+      "summary": "Example Wireless Earbuds X1 by ExampleBrand cost 1,999 rupees. Rated 4.1 out of 5 from 1,250 ratings.",
+      "sections": [
+        {
+          "heading": "Key specs",
+          "items": ["Battery life: 30 hours", "Bluetooth 5.3", "Water resistance: IPX5"]
+        }
+      ],
+      "simpler": "These earbuds cost 1,999 rupees. People rate them 4 out of 5.",
+      "followups": ["Read the reviews", "Add to cart", "Compare with similar"],
+      "grounding": [
+        {
+          "claim": "cost 1,999 rupees",
+          "field_path": "price.amount"
+        },
+        {
+          "claim": "Rated 4.1 out of 5",
+          "field_path": "rating.value"
+        },
+        {
+          "claim": "1,250 ratings",
+          "field_path": "rating.count"
+        },
+        {
+          "claim": "Battery life: 30 hours",
+          "field_path": "specs.battery_life"
+        }
+      ],
+      "warnings": []
+    },
+    "reviews": {
+      "lang": "en",
+      "summary": "Based on 3 visible reviews: most mention good battery life; one mentions a loose fit.",
+      "sections": [
+        {
+          "heading": "Pros",
+          "items": ["Battery life (2 mentions)"]
+        },
+        {
+          "heading": "Cons",
+          "items": ["Fit (1 mention)"]
+        },
+        {
+          "heading": "Verdict",
+          "items": ["Mostly positive about battery; fit varies."]
+        }
+      ],
+      "simpler": null,
+      "followups": ["Read one review", "Add to cart"],
+      "grounding": [
+        {
+          "claim": "good battery life",
+          "field_path": "reviews[0]"
+        },
+        {
+          "claim": "loose fit",
+          "field_path": "reviews[2]"
+        }
+      ],
+      "warnings": []
+    },
+    "images": null,
+    "comparison": null
+  }
+}

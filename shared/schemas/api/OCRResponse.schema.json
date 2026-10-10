@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OCRResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["text", "lang"],
+  "properties": {
+    "text": { "type": "string" },
+    "lang": { "type": "string" }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "VisionDescribeResponse",
+  "description": "Cached by image URL.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["image_url", "output", "cached"],
+  "properties": {
+    "image_url": { "type": "string" },
+    "output": { "$ref": "../AccessibleOutput.schema.json" },
+    "cached": { "type": "boolean" }
+  }
+}

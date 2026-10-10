@@ -8,3 +8,8 @@ __pycache__/
 .venv/
 backend/config/models.local.json
 docs/vendor/
+.wxt/
+extension/.output/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/

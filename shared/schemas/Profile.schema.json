@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Profile",
+  "description": "Stays on the device (browser.storage.local). Only `prefs` is sent to the backend.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["conditions", "prefs"],
+  "properties": {
+    "conditions": {
+      "title": "Conditions",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["visual", "speech", "motor", "ageing", "colour"],
+      "properties": {
+        "visual": { "$ref": "#/$defs/ConditionState" },
+        "speech": { "$ref": "#/$defs/ConditionState" },
+        "motor": { "$ref": "#/$defs/ConditionState" },
+        "ageing": { "$ref": "#/$defs/ConditionState" },
+        "colour": { "$ref": "#/$defs/ColourConditionState" }
+      }
+    },
+    "prefs": { "$ref": "#/$defs/Prefs" }
+  },
+  "$defs": {
+    "ConditionState": {
+      "title": "ConditionState",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["score", "active", "source"],
+      "properties": {
+        "score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "active": { "type": "boolean" },
+        "source": { "type": "string", "enum": ["inferred", "user"] }
+      }
+    },
+    "ColourConditionState": {
+      "title": "ColourConditionState",
+      "description": "Colour vision is never inferred, so source is always user.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["score", "active", "source"],
+      "properties": {
+        "score": { "type": "number", "minimum": 0, "maximum": 1 },
+        "active": { "type": "boolean" },
+        "source": { "type": "string", "const": "user" }
+      }
+    },
+    "Prefs": {
+      "title": "Prefs",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lang", "tts_rate", "text_scale", "verbosity", "lite_mode"],
+      "properties": {
+        "lang": { "type": "string", "description": "BCP-47-ish code, e.g. en, hi, te." },
+        "tts_rate": { "type": "number", "minimum": 0.5, "maximum": 2 },
+        "text_scale": { "type": "number", "minimum": 1, "maximum": 3 },
+        "verbosity": { "$ref": "#/$defs/Verbosity" },
+        "lite_mode": { "type": "boolean" }
+      }
+    },
+    "Verbosity": { "title": "Verbosity", "type": "string", "enum": ["short", "normal"] }
+  }
+}

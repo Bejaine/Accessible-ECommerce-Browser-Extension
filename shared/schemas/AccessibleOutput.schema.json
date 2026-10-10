@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AccessibleOutput",
+  "description": "All user-facing text. Structured content; renderers decide presentation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["lang", "summary", "sections", "followups", "grounding", "warnings"],
+  "properties": {
+    "lang": { "type": "string" },
+    "summary": {
+      "type": "string",
+      "description": "At most two short sentences, spoken first.",
+      "maxLength": 400
+    },
+    "sections": { "type": "array", "items": { "$ref": "#/$defs/Section" } },
+    "simpler": { "type": ["string", "null"], "description": "Plain-language version." },
+    "followups": { "type": "array", "items": { "type": "string" } },
+    "grounding": { "type": "array", "items": { "$ref": "#/$defs/Grounding" } },
+    "warnings": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "Section": {
+      "title": "Section",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["heading", "items"],
+      "properties": {
+        "heading": { "type": "string" },
+        "items": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "Grounding": {
+      "title": "Grounding",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["claim", "field_path"],
+      "properties": {
+        "claim": { "type": "string" },
+        "field_path": {
+          "type": "string",
+          "description": "e.g. price.amount, specs.battery, reviews[3]"
+        }
+      }
+    }
+  }
+}
