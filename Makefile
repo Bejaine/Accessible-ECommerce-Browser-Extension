@@ -5,7 +5,7 @@ VENV := .venv
 BIN := $(CURDIR)/$(VENV)/bin
 GEN_PY := $(CURDIR)/shared/generated/py
 
-.PHONY: setup types types-check check lint lint-ts lint-py test test-ext test-backend validate backend ext ext-firefox build eval-inference
+.PHONY: setup types types-check check lint lint-ts lint-py test test-ext test-backend validate backend ext ext-firefox build eval-inference e2e
 
 setup:
 	npm install
@@ -65,3 +65,7 @@ build:
 
 eval-inference:
 	npm run -w extension eval:inference
+
+# Persona runs on MockMart with the real backend (MOCK=1); writes eval/e2e/report.md.
+e2e:
+	npm run -w extension e2e
