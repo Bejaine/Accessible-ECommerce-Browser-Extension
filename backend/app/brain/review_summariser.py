@@ -37,7 +37,9 @@ async def summarise_product(p: ProductJSON) -> CheckResult:
         return sorted(found, key=lambda pair: -pair[1].mentions.total)
 
     pros, cons, mixed = by_mentions("positive"), by_mentions("negative"), by_mentions("mixed")
-    for heading, kind, group in (("Pros", "pro", pros), ("Cons", "con", cons + mixed)):
+    # "Good points"/"Drawbacks", not "Pros"/"Cons": out of context MT gave "प्रो"/"విపక్ష"-like
+    # words (Track A's live run).
+    for heading, kind, group in (("Good points", "pro", pros), ("Drawbacks", "con", cons + mixed)):
         items = []
         for i, x in group:
             m = x.mentions

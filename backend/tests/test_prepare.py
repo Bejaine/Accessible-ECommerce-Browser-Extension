@@ -69,7 +69,7 @@ def test_reviews(product):
     assert out.summary.startswith("In the shop's review summary, people like the battery life")
     assert "690" not in out.summary
     headings = [s.heading for s in out.sections]
-    assert headings[:2] == ["Pros", "Cons"]
+    assert headings[:2] == ["Good points", "Drawbacks"]
     assert "Star ratings" in headings
     cons = out.sections[1].items
     assert cons[0].text == "Low-light camera: 68 of 96 mentions are negative"

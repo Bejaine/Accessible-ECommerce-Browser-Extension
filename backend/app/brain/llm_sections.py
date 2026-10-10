@@ -31,6 +31,8 @@ log = logging.getLogger(__name__)
 MAX_REVIEW_ITEMS = 20
 MAX_REVIEW_CHARS = 600
 MAX_DROPPED_SHARE = 0.3
+# Headings that translate badly out of context (Track A: "Pros" -> "प्रो", "Cons" -> "विपक्ष").
+HEADINGS = {"Pros": "Good points", "Cons": "Drawbacks"}
 MAX_ITEM_CHARS = 80
 _MISSING = re.compile(r"\b(doesn't|does not|don't|do not|not) (list|show|say|mention|give)", re.I)
 _SENTENCE_LIMIT = 2
@@ -173,8 +175,8 @@ SECTION_TASKS = {
         "positive and 235 negative mentions.' If there are no insights, start with 'Based on "
         "the N reviews shown on the page' citing reviews.basis_count. Then the main likes "
         "and the main complaint. Sections "
-        "'Pros' (kind pro) for POSITIVE insights, 'Mixed opinions' (kind text) for MIXED "
-        "insights and 'Cons' (kind con) for NEGATIVE insights; every insight goes in exactly "
+        "'Good points' (kind pro) for POSITIVE insights, 'Mixed opinions' (kind text) for MIXED "
+        "insights and 'Drawbacks' (kind con) for NEGATIVE insights; every insight goes in exactly "
         "one of them, with its mention counts, e.g. 'Battery life: 189 of 212 mentions are "
         "positive', 'Camera quality: 21 positive and 12 negative mentions', 'Heat: 11 of 12 "
         "mentions are negative'. Leave out a section that would be empty. If there are no "
@@ -340,7 +342,7 @@ def assemble(
                     continue
             items.append({"text": text, "kind": kind, "grounding_index": fact.index})
         if items:
-            b.section(section["heading"], items)
+            b.section(HEADINGS.get(section["heading"], section["heading"]), items)
 
     warnings: list[str] = []
     if name == "overview" and p.variants:
