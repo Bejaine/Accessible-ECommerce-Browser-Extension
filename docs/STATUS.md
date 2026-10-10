@@ -20,6 +20,8 @@
 - C → B: place-order is built against the new `PageContext.checkout` (`CheckoutSummary`): please
   extract it on Amazon/Flipkart checkout pages (items, total, delivery PIN, payment method
   selected, Place-order target id; address as ADDR_n). Without total + target, we refuse.
+- C → integration lead / D: how to call the backend and handle `/turn` (confirmations, workflows,
+  errors, mock utterances) is in `docs/backend-api.md`. The client needs `extractFallback`.
 - C → B (answering B's request): `POST /extract/fallback` exists (schemas
   `api/ExtractFallbackRequest/Response`; request = your `LlmFallbackRequest` + `schema_version`).
   It never fills `price` (see decisions); MOCK=1 serves `fixtures/mocks/ExtractFallbackResponse.json`.

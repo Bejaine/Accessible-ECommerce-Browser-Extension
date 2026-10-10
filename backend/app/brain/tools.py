@@ -579,6 +579,8 @@ CHIPS: dict[str, tuple[str, dict[str, Any]]] = {
     "best rated": ("recommend", {"prefer": "best_rated"}),
     "where am i?": ("where_am_i", {}),
     "stop": ("order_task", {"stop": True}),
+    # After the extension ran a confirmed order step, "Continue" lets the task read the new page.
+    "continue": ("order_task", {}),
     "track my order": ("order_task", {"task": "track"}),
     "cancel an order": ("order_task", {"task": "cancel"}),
     "return an order": ("order_task", {"task": "return"}),
