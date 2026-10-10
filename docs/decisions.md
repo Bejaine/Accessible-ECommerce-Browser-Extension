@@ -296,7 +296,8 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   recorded (13 short/onboarding phrases, 2.2 MB as 16 kHz WAV, ~32 KB/s); long messages are
   spoken live, or by the device voice in lite mode.
 - The spoken control words in `player.controls_hint` are 'रुको'/'दोबारा' and 'ఆపు'/'మళ్లీ': the
-  local matcher (Track D) must accept them. Telugu strings still need a native speaker's review.
+  local matcher (Track D) must accept them. Telugu strings reviewed by a native speaker
+  (2026-10-11): no changes needed.
 
 ## 2026-10-11 — translate_many: an answer's lines in few MT calls (Track A; affects Track C)
 - `bhashini.translate_many(lines, src, tgt)` returns the same length and order, or raises
