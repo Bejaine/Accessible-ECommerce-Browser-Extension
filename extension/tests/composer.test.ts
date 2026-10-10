@@ -84,7 +84,7 @@ describe('composer: single conditions', () => {
     const p = profile(['ageing']);
     const m = resolveMode(p);
     expect(m.output_channels).toEqual(['audio', 'large_text']);
-    expect(m.tts_rate).toBe(0.85);
+    expect(m.tts_rate).toBe(0.75);
     expect(m.max_options).toBe(3);
     expect(m.verbosity).toBe('short');
     expect(confirmEveryAction(p)).toBe(true);
@@ -128,7 +128,7 @@ describe('composer: required combinations (docs/conditions.md)', () => {
     (other) => {
       const p = profile(['ageing', other]);
       const m = resolveMode(p);
-      expect(m.tts_rate).toBeLessThanOrEqual(0.85);
+      expect(m.tts_rate).toBeLessThanOrEqual(0.75);
       expect(m.max_options).toBeLessThanOrEqual(3);
       expect(confirmEveryAction(p)).toBe(true);
     },
@@ -141,7 +141,7 @@ describe('composer: required combinations (docs/conditions.md)', () => {
       input_rung: 'voice',
       input_channels: ['voice', 'phrase', 'switch'],
       output_channels: ['audio', 'large_text'],
-      tts_rate: 0.85,
+      tts_rate: 0.75,
       scan_interval_ms: 2500,
       max_options: 3,
       verbosity: 'short',
@@ -158,11 +158,11 @@ describe('composer: fixtures', () => {
 
 describe('composer: prefs', () => {
   it('ageing starts speech slower, keeps an already-slower choice, and the user can change it', () => {
-    expect(mode(['ageing']).tts_rate).toBe(0.85);
+    expect(mode(['ageing']).tts_rate).toBe(0.75);
     expect(mode(['ageing'], { tts_rate: 0.7 }).tts_rate).toBe(0.7);
     const p = profile(['ageing']);
     p.prefs.tts_rate = stepRate(stepRate(p.prefs.tts_rate, 1), 1);
-    expect(resolveMode(p).tts_rate).toBe(1.05);
+    expect(resolveMode(p).tts_rate).toBe(1.25);
   });
 
   it('turning ageing on again does not reset a rate the user changed while it was on', () => {
@@ -172,10 +172,11 @@ describe('composer: prefs', () => {
     expect(p.prefs.tts_rate).toBe(1.2);
   });
 
-  it('speed steps by 0.1 and stays within 0.5-2', () => {
-    expect(stepRate(1, -1)).toBe(0.9);
+  it("speed steps by 0.25 (Track A's player) and stays within 0.5-2", () => {
+    expect(stepRate(1, -1)).toBe(0.75);
     expect(stepRate(0.5, -1)).toBe(0.5);
-    expect(stepRate(1.95, 1)).toBe(2);
+    expect(stepRate(1.75, 1)).toBe(2);
+    expect(stepRate(2, 1)).toBe(2);
   });
 
   it('text_first starts at keyboard without implying any impairment', () => {

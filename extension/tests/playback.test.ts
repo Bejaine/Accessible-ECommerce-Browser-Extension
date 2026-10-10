@@ -8,133 +8,12 @@ import { createMockBackend } from '../src/core/backend';
 import { createBus } from '../src/core/bus';
 import { setConditionActive } from '../src/core/composer';
 import { createProfileStore } from '../src/core/profile';
-import { createSpeaker, sentences } from '../src/render/speaker';
+import type { Player, PlayerEvent, PlayerSnapshot } from '../src/audio/player';
+import { createPlayerSpeaker } from '../src/core/voice';
 import { createPlaybackBar } from '../src/ui/playbackBar';
 import { recordingSpeaker } from './helpers/fakeSpeaker';
 
 const reviews = reviewsFixture as AccessibleOutput;
-
-/** A fake speech engine: utterances wait until the test ends them. */
-function fakeSynth() {
-  const spoken: { text: string; rate: number; end: () => void }[] = [];
-  class Utterance {
-    lang = '';
-    rate = 1;
-    onend: (() => void) | null = null;
-    onerror: (() => void) | null = null;
-    constructor(public text: string) {}
-  }
-  vi.stubGlobal('SpeechSynthesisUtterance', Utterance);
-  let active: Utterance | null = null;
-  const synth = {
-    speak: (u: Utterance) => {
-      active = u;
-      spoken.push({ text: u.text, rate: u.rate, end: () => u.onend?.() });
-    },
-    cancel: () => {
-      active = null;
-    },
-  } as unknown as SpeechSynthesis;
-  const finishCurrent = () => {
-    const u = active;
-    active = null;
-    u?.onend?.();
-  };
-  return { synth, spoken, finishCurrent, texts: () => spoken.map((s) => s.text) };
-}
-
-describe('speaker (the assistant voice)', () => {
-  afterEach(() => vi.unstubAllGlobals());
-
-  it('never splits a number at its decimal point', () => {
-    expect(sentences('It is 6.67 inches. Rated 4.2 out of 5.')).toEqual([
-      'It is 6.67 inches. Rated 4.2 out of 5.',
-    ]);
-    expect(sentences('Speech speed 1.1×')).toEqual(['Speech speed 1.1×']);
-  });
-
-  it('splits into sentences, keeping very short ones together', () => {
-    expect(
-      sentences('Yes. It costs ₹99. The battery lasts two days, which buyers like a lot.'),
-    ).toEqual(['Yes. It costs ₹99.', 'The battery lasts two days, which buyers like a lot.']);
-  });
-
-  it('reads the summary first, then each section, one sentence at a time', () => {
-    const f = fakeSynth();
-    const speaker = createSpeaker({ synth: f.synth });
-    speaker.speakOutput(reviews);
-    expect(f.texts()).toEqual([sentences(reviews.summary)[0]]);
-    expect(speaker.state).toBe('playing');
-    while (speaker.state === 'playing' && f.spoken.length < 50) f.finishCurrent();
-    expect(f.texts()).toContain(reviews.sections[0]!.heading);
-    expect(speaker.state).toBe('idle');
-  });
-
-  it('pause stops at the current sentence; resume starts it again', () => {
-    const f = fakeSynth();
-    const speaker = createSpeaker({ synth: f.synth });
-    speaker.speakOutput(reviews);
-    f.finishCurrent();
-    const second = f.texts().at(-1);
-    speaker.pause();
-    expect(speaker.state).toBe('paused');
-    expect(speaker.sentence).toBe(second);
-    speaker.resume();
-    expect(f.texts().at(-1)).toBe(second);
-    expect(speaker.state).toBe('playing');
-  });
-
-  it('next / previous section, back one sentence and from the start', () => {
-    const f = fakeSynth();
-    const speaker = createSpeaker({ synth: f.synth });
-    speaker.speakOutput(reviews);
-    speaker.nextSection();
-    expect(f.texts().at(-1)).toBe(reviews.sections[0]!.heading);
-    speaker.nextSection();
-    expect(f.texts().at(-1)).toBe(reviews.sections[1]!.heading);
-    speaker.previousSection();
-    expect(f.texts().at(-1)).toBe(reviews.sections[0]!.heading);
-    f.finishCurrent();
-    speaker.back();
-    expect(f.texts().at(-1)).toBe(reviews.sections[0]!.heading);
-    speaker.repeatAll();
-    expect(f.texts().at(-1)).toBe(sentences(reviews.summary)[0]);
-  });
-
-  it('a prompt over a playing answer resumes the answer afterwards; over a paused one it stays paused', () => {
-    const f = fakeSynth();
-    const speaker = createSpeaker({ synth: f.synth });
-    speaker.speakOutput(reviews);
-    const first = f.texts().at(-1);
-    speaker.prompt('Speech speed 1.1×', 'en');
-    expect(f.texts().at(-1)).toBe('Speech speed 1.1×');
-    f.finishCurrent();
-    expect(f.texts().at(-1)).toBe(first);
-
-    speaker.pause();
-    speaker.prompt('Resume', 'en');
-    f.finishCurrent();
-    expect(speaker.state).toBe('paused');
-    expect(f.texts().at(-1)).toBe('Resume');
-  });
-
-  it('a new speed applies straight away (the sentence restarts at the new rate)', () => {
-    const f = fakeSynth();
-    const speaker = createSpeaker({ synth: f.synth });
-    speaker.speakOutput(reviews);
-    speaker.setRate(0.8);
-    expect(f.spoken.at(-1)).toMatchObject({ text: f.spoken[0]!.text, rate: 0.8 });
-  });
-
-  it('stop empties the queue', () => {
-    const f = fakeSynth();
-    const speaker = createSpeaker({ synth: f.synth });
-    speaker.speakOutput(reviews);
-    speaker.stop();
-    expect(speaker.state).toBe('idle');
-    expect(speaker.sentence).toBeNull();
-  });
-});
 
 describe('playback bar', () => {
   it('is hidden when idle, shows the current sentence, and flips Pause / Resume', () => {
@@ -247,43 +126,166 @@ describe('playback in the app: single key, mini-menu and voice words', () => {
   });
 });
 
-describe('choosing a device voice', () => {
-  afterEach(() => vi.unstubAllGlobals());
-  const voice = (name: string, lang: string, localService: boolean) =>
-    ({ name, lang, localService, default: false, voiceURI: name }) as SpeechSynthesisVoice;
-  const chromeLinux = [
-    voice('Google US English', 'en-US', false),
-    voice('Google UK English Female', 'en-GB', false),
-    voice('Google हिन्दी', 'hi-IN', false),
-  ];
+/** A small stand-in for Track A's player: same interface, records what it was asked to play. */
+function fakePlayer() {
+  const listeners = new Set<(e: PlayerEvent) => void>();
+  const played: string[] = [];
+  let items: string[] = [];
+  let pos = 0;
+  let state: Player['state'] = 'idle';
+  let rate = 1;
+  let lang: 'en' | 'hi' | 'te' = 'en';
+  const emit = (e: PlayerEvent) => listeners.forEach((l) => l(e));
+  const setState = (s: Player['state']) => {
+    state = s;
+    emit({ type: 'state', state: s });
+  };
+  const speak = () => {
+    const text = items[pos];
+    if (text === undefined) return;
+    played.push(text);
+    emit({ type: 'sentence', section: 0, index: pos, text, source: 'text' } as PlayerEvent);
+  };
+  const load = (texts: string[], l = lang) => {
+    items = texts;
+    lang = l;
+    pos = 0;
+    setState('playing');
+    speak();
+  };
+  const player = {
+    play: (sections: { segments: { text: string }[] }[], l: 'en' | 'hi' | 'te') =>
+      load(
+        sections.flatMap((s) => s.segments.map((x) => x.text)),
+        l,
+      ),
+    playOutput: (o: AccessibleOutput) =>
+      load([o.summary, ...o.sections.map((s) => s.heading)], o.lang),
+    pause: () => state === 'playing' && setState('paused'),
+    resume: () => state === 'paused' && (setState('playing'), speak()),
+    toggle: () => undefined,
+    stop: () => setState('idle'),
+    repeatSentence: () => speak(),
+    repeatAll: () => ((pos = 0), speak()),
+    back: () => ((pos = Math.max(0, pos - 1)), speak()),
+    nextSection: () => ((pos += 1), speak()),
+    previousSection: () => ((pos = Math.max(0, pos - 1)), speak()),
+    slower: () => ((rate = Math.max(0.5, rate - 0.25)), emit({ type: 'rate', rate })),
+    faster: () => ((rate = Math.min(2, rate + 0.25)), emit({ type: 'rate', rate })),
+    get state() {
+      return state;
+    },
+    get rate() {
+      return rate;
+    },
+    snapshot: (): PlayerSnapshot | null =>
+      items.length
+        ? ({
+            sections: [{ segments: items.map((text) => ({ text })) }],
+            lang,
+            section: 0,
+            index: pos,
+          } as PlayerSnapshot)
+        : null,
+    restore: (snap: PlayerSnapshot) => {
+      items = snap.sections[0]!.segments.map((s) => s.text);
+      pos = snap.index;
+      setState('playing');
+      speak();
+    },
+    subscribe: (l: (e: PlayerEvent) => void) => (listeners.add(l), () => listeners.delete(l)),
+    /** Test helper: the current clip finished and there is nothing after it. */
+    finish: () => {
+      setState('idle');
+      emit({ type: 'end' });
+    },
+    textOnly: () => emit({ type: 'text-only', text: 'x' }),
+  };
+  return { player: player as unknown as Player & { finish(): void; textOnly(): void }, played };
+}
 
-  it('prefers on-device voices, then the Indian variant; none for a missing language', async () => {
-    const { pickVoice } = await import('../src/render/speaker');
-    expect(pickVoice(chromeLinux, 'hi')?.name).toBe('Google हिन्दी');
-    expect(pickVoice(chromeLinux, 'en')?.name).toBe('Google US English');
-    expect(pickVoice(chromeLinux, 'te')).toBeNull();
-    const withLocal = [
-      ...chromeLinux,
-      voice('Piper English', 'en_US', true),
-      voice('eSpeak Hindi', 'hi', true),
-    ];
-    expect(pickVoice(withLocal, 'en')?.name).toBe('Piper English');
-    expect(pickVoice(withLocal, 'hi')?.name).toBe('eSpeak Hindi');
+describe("voice adapter over Track A's player", () => {
+  it('plays answers through the player and reports state and the current sentence', () => {
+    const { player, played } = fakePlayer();
+    const speaker = createPlayerSpeaker(player);
+    const seen: (string | null)[] = [];
+    speaker.onChange((_, __, sentence) => seen.push(sentence));
+    speaker.speakOutput(reviews);
+    expect(played[0]).toBe(reviews.summary);
+    expect(speaker.state).toBe('playing');
+    expect(speaker.sentence).toBe(reviews.summary);
+    speaker.nextSection();
+    expect(played.at(-1)).toBe(reviews.sections[0]!.heading);
+    expect(seen).toContain(reviews.summary);
   });
 
-  it('no Telugu voice: nothing garbled is spoken, and the app is told once', async () => {
-    const f = fakeSynth();
-    (f.synth as unknown as { getVoices: () => SpeechSynthesisVoice[] }).getVoices = () =>
-      chromeLinux;
+  it('short answers: only the summary and warnings', () => {
+    const { player, played } = fakePlayer();
+    createPlayerSpeaker(player).speakOutput(
+      { ...reviews, warnings: ['Heads up.'] },
+      { verbosity: 'short' },
+    );
+    expect(played).toEqual([reviews.summary]);
+    expect(player.snapshot()!.sections[0]!.segments.map((s) => s.text)).toEqual([
+      reviews.summary,
+      'Heads up.',
+    ]);
+  });
+
+  it('a prompt over a playing answer: the answer carries on afterwards from the same sentence', () => {
+    const { player, played } = fakePlayer();
+    const speaker = createPlayerSpeaker(player);
+    speaker.speakOutput(reviews);
+    speaker.nextSection();
+    const at = played.at(-1);
+    speaker.prompt('Speech speed 1.25×', 'en');
+    expect(played.at(-1)).toBe('Speech speed 1.25×');
+    player.finish();
+    expect(played.at(-1)).toBe(at);
+    expect(speaker.state).toBe('playing');
+  });
+
+  it('a prompt over a paused answer keeps it paused; Resume brings the answer back', () => {
+    const { player, played } = fakePlayer();
+    const speaker = createPlayerSpeaker(player);
+    speaker.speakOutput(reviews);
+    speaker.pause();
+    speaker.prompt('Resume', 'en');
+    player.finish();
+    expect(speaker.state).toBe('paused');
+    speaker.resume();
+    expect(played.at(-1)).toBe(reviews.summary);
+    expect(speaker.state).toBe('playing');
+  });
+
+  it('several lines in different languages play one after another', () => {
+    const { player, played } = fakePlayer();
+    createPlayerSpeaker(player).sayLines([
+      { text: 'For English, press 1.', lang: 'en' },
+      { text: 'हिंदी के लिए 2 दबाएँ।', lang: 'hi' },
+    ]);
+    expect(played).toEqual(['For English, press 1.']);
+    player.finish();
+    expect(played.at(-1)).toBe('हिंदी के लिए 2 दबाएँ।');
+  });
+
+  it('follows the saved speed by stepping the player (0.25 steps)', () => {
+    const { player } = fakePlayer();
+    const speaker = createPlayerSpeaker(player);
+    speaker.setRate(0.75);
+    expect(player.rate).toBe(0.75);
+    speaker.setRate(1.5);
+    expect(player.rate).toBe(1.5);
+  });
+
+  it('a language with no voice is reported once', () => {
+    const { player } = fakePlayer();
     const onNoVoice = vi.fn();
-    const speaker = createSpeaker({ synth: f.synth, onNoVoice });
-    speaker.say('ఇది తెలుగు. రెండవ వాక్యం ఇక్కడ ఉంది, ఇది కొంచెం పొడవుగా ఉంది.', 'te');
-    await vi.waitFor(() => expect(speaker.state).toBe('idle'));
-    expect(f.spoken).toHaveLength(0);
+    const speaker = createPlayerSpeaker(player, { onNoVoice });
+    speaker.say('తెలుగు', 'te');
+    player.textOnly();
+    player.textOnly();
     expect(onNoVoice).toHaveBeenCalledOnce();
     expect(onNoVoice).toHaveBeenCalledWith('te');
-    speaker.say('Hindi is fine. यह हिंदी है।', 'hi');
-    await vi.waitFor(() => expect(f.spoken.length).toBeGreaterThan(0));
-    expect(f.spoken[0]!.text).toContain('Hindi is fine.');
   });
 });

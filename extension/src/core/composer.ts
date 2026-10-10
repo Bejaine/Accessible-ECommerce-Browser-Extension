@@ -106,8 +106,9 @@ export function confirmEveryAction(profile: Profile): boolean {
   return profile.conditions.ageing.active;
 }
 
-/** Slower starting speech for ageing; the user can change it afterwards. */
-export const AGEING_START_RATE = 0.85;
+/** Slower starting speech for ageing; the user can change it afterwards. Track A's player
+ *  moves in 0.25 steps, so this is the nearest step below normal. */
+export const AGEING_START_RATE = 0.75;
 
 type ConditionName = keyof Profile['conditions'];
 
@@ -133,8 +134,9 @@ export function setConditionActive(
   }
 }
 
-/** One step of the speech-rate control ("slower" / "faster"), kept within 0.5-2. */
-export const RATE_STEP = 0.1;
+/** One step of the speech-rate control ("slower" / "faster"), kept within 0.5-2. Matches
+ *  Track A's player, whose speeds are 0.25 apart. */
+export const RATE_STEP = 0.25;
 export function stepRate(rate: number, direction: 1 | -1): number {
   return clamp(Math.round((rate + direction * RATE_STEP) * 100) / 100, 0.5, 2);
 }

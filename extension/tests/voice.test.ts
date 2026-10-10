@@ -8,6 +8,7 @@ import { createMockBackend, type BackendClient } from '../src/core/backend';
 import { createBus, type Bus } from '../src/core/bus';
 import { setConditionActive } from '../src/core/composer';
 import { createProfileStore, type ProfileStore } from '../src/core/profile';
+import { recordingSpeaker } from './helpers/fakeSpeaker';
 
 function fakeMic(next: () => Promise<Utterance>): Mic & { modes: string[] } {
   const modes: string[] = [];
@@ -97,7 +98,7 @@ describe('voice input (Track A mic) -> ASR -> local fast path or turn', () => {
     });
     const turn = vi.spyOn(backend, 'turn');
     await app.listen();
-    await vi.waitFor(() => expect(store.get().prefs.tts_rate).toBe(0.9));
+    await vi.waitFor(() => expect(store.get().prefs.tts_rate).toBe(0.75));
     expect(turn).not.toHaveBeenCalled();
   });
 
@@ -176,7 +177,7 @@ describe('page preparation (Track C /product/prepare)', () => {
     app = mountApp(container, await createProfileStore(), bus, backend, {
       mic: fakeMic(async () => speech()),
     });
-    expect(prepare).toHaveBeenCalledOnce();
+    await vi.waitFor(() => expect(prepare).toHaveBeenCalledOnce());
     expect(prepare.mock.calls[0]![0].product.title).toBe('Example Phone');
     await prepare.mock.results[0]!.value; // sections are cached once prepare resolves
     bus.emit({ type: 'phrase', id: 'reviews', text: 'What do reviews say?' });
@@ -184,5 +185,100 @@ describe('page preparation (Track C /product/prepare)', () => {
       prepared.sections.reviews!.summary,
     );
     expect(turn).not.toHaveBeenCalled();
+  });
+});
+
+describe('wiring across tracks', () => {
+  let host: HTMLElement;
+  let app: App;
+
+  afterEach(() => {
+    app?.unmount();
+    host?.remove();
+    document.head.querySelector('script[type="application/ld+json"]')?.remove();
+    document.body.querySelectorAll('input').forEach((i) => i.remove());
+    vi.useRealTimers();
+  });
+
+  async function mountWith(mic: Mic, opts: { demo?: boolean } = {}, backend = createMockBackend()) {
+    fakeBrowser.reset();
+    host = document.createElement('div');
+    const container = document.createElement('div');
+    host.attachShadow({ mode: 'open' }).appendChild(container);
+    document.body.appendChild(host);
+    app = mountApp(container, await createProfileStore(), createBus(), backend, {
+      mic,
+      speaker: recordingSpeaker().speaker,
+      demo: opts.demo ?? false,
+    });
+    return backend;
+  }
+
+  it("secure zone (Track B) mutes Track A's mic in a password field and says so; leaving unmutes", async () => {
+    vi.useFakeTimers();
+    const mute = vi.fn();
+    const unmute = vi.fn();
+    const mic = { ...fakeMic(async () => speech()), mute, unmute };
+    await mountWith(mic);
+    const password = document.createElement('input');
+    password.type = 'password';
+    document.body.append(password);
+    password.focus();
+    password.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+    expect(mute).toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(100);
+    expect(host.shadowRoot!.getElementById('asl-live')!.textContent).toContain(
+      "Listening is paused while you're in a payment or password field.",
+    );
+    password.blur();
+    document.body.focus();
+    password.dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+    await vi.advanceTimersByTimeAsync(10);
+    expect(unmute).toHaveBeenCalled();
+  });
+
+  function productPage() {
+    const ld = document.createElement('script');
+    ld.type = 'application/ld+json';
+    ld.textContent = JSON.stringify({
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: 'Example Phone',
+      offers: { '@type': 'Offer', price: '9999', priceCurrency: 'INR' },
+    });
+    document.head.append(ld);
+  }
+
+  it("extraction fallback (Track B's tier 3) runs on a real backend before /product/prepare", async () => {
+    productPage();
+    const backend = createMockBackend();
+    const fallback = vi.spyOn(backend, 'extractFallback');
+    const prepare = vi.spyOn(backend, 'prepareProduct');
+    await mountWith(
+      fakeMic(async () => speech()),
+      { demo: false },
+      backend,
+    );
+    await vi.waitFor(() => expect(prepare).toHaveBeenCalledOnce());
+    expect(fallback).toHaveBeenCalledOnce();
+    expect(fallback.mock.calls[0]![0]).toMatchObject({
+      schema_version: '1.0',
+      missing: expect.any(Array),
+    });
+    expect(prepare.mock.calls[0]![0].product.title).toBe('Example Phone'); // page tiers win
+  });
+
+  it('never in demo mode: the mock would describe the fixture phone, not this page (rule 1)', async () => {
+    productPage();
+    const backend = createMockBackend();
+    const fallback = vi.spyOn(backend, 'extractFallback');
+    const prepare = vi.spyOn(backend, 'prepareProduct');
+    await mountWith(
+      fakeMic(async () => speech()),
+      { demo: true },
+      backend,
+    );
+    await vi.waitFor(() => expect(prepare).toHaveBeenCalledOnce());
+    expect(fallback).not.toHaveBeenCalled();
   });
 });

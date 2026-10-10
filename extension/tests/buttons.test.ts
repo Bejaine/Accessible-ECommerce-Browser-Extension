@@ -179,7 +179,7 @@ describe('every button does something, in every state', () => {
     visibleButtons()
       .find((b) => b.textContent === 'Slower')!
       .click();
-    await vi.waitFor(() => expect(calls).toContain('rate:0.9'));
+    await vi.waitFor(() => expect(calls).toContain('rate:0.75'));
     visibleButtons()
       .find((b) => b.textContent === 'Faster')!
       .click();

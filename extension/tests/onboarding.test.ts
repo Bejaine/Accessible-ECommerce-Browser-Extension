@@ -183,7 +183,7 @@ describe('settings panel', () => {
     );
     expect(ageing.textContent).toContain('(you turned this on)');
     expect(el.querySelector('section p')?.textContent).toContain(
-      '3 choices at a time, speech 0.85×',
+      '3 choices at a time, speech 0.75×',
     );
 
     const named = (name: string) =>
