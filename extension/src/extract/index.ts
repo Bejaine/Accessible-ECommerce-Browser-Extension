@@ -6,10 +6,17 @@ import { flipkartAdapter } from './adapters/flipkart';
 import type { SiteAdapter } from './adapters/types';
 import { hasType, jsonLdNodes, productFromJsonLd, productFromMeta } from './jsonld';
 import { mergeTiers, type TierResult } from './product';
+import { isSecureZoneActive } from './secure';
 import { buildPageMap } from './targets';
 import { siteOf } from './util';
 
 export { applyFallback, buildFallbackRequest, buildLlmFallbackRequest, needsFallback } from './llm';
+export {
+  isSecureElement,
+  isSecureZoneActive,
+  muteMicInSecureZone,
+  watchSecureZone,
+} from './secure';
 export { buildPageMap, resolveTarget } from './targets';
 
 const ADAPTERS: SiteAdapter[] = [amazonAdapter, flipkartAdapter];
@@ -69,6 +76,20 @@ export function extractPageContext(
   const site = siteOf(url);
   const pageType = detectPageType(doc, url);
   const adapter = adapterFor(site);
+
+  // Secure zone: extract nothing while the user types a password, card number or OTP.
+  if (isSecureZoneActive(doc)) {
+    return {
+      schema_version: '1.0',
+      page_type: pageType,
+      url,
+      site,
+      products: [],
+      orders: [],
+      targets: [],
+      secure_zone_active: true,
+    };
+  }
 
   let products: ProductJSON[] = [];
   if (pageType === 'product') {
