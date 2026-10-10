@@ -43,9 +43,15 @@ def spec_value(value: str | float | int | bool, unit: str | None) -> str:
 
 
 def short_title(title: str) -> str:
-    """Drop the variant details in brackets: "Zentra Pulse 5G (Black, 8GB)" -> "Zentra Pulse 5G"."""
-    short = re.sub(r"\s*[(\[].*$", "", title).strip(" ,-|")
-    return short or title
+    """The name without the listing's sales text: "Zentra Pulse 5G (Black, 8GB)" -> "Zentra
+    Pulse 5G"; "Apple iPhone 16 128 GB: 5G Mobile Phone with ..." -> "Apple iPhone 16 128 GB"."""
+    short = re.sub(r"\s*[(\[].*$", "", title).strip(" ,-|") or title
+    if len(short) > 40:
+        cuts = [short.find(sep, 10) for sep in (": ", " | ", " - ", ", ")]
+        cuts = [c for c in cuts if c > 0]
+        if cuts:
+            short = short[: min(cuts)].strip(" ,-|:")
+    return short
 
 
 def join_words(parts: list[str]) -> str:

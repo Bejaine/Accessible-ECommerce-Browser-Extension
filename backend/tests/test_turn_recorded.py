@@ -7,13 +7,13 @@ import asyncio
 
 import pytest
 
-from app.brain import orchestrator
+from app.brain import orchestrator, session
 from app.models import TurnRequest
 
 
 @pytest.fixture(autouse=True)
-def fresh_sessions(monkeypatch):
-    monkeypatch.setattr(orchestrator, "_sessions", orchestrator.TTLCache(60))
+def fresh_sessions():
+    session.reset()
 
 
 def turn(mock_body, text, *, lang="en", alts=(), conf=0.9, page=None, session="s"):
@@ -47,7 +47,8 @@ def test_hinglish_add_to_cart_asks_to_confirm(mock_body):
     assert r.actions == [], "never act before the user confirms"
     assert [a.target_id for a in r.confirmation.pending_actions] == ["t-add-to-cart"]
     assert r.confirmation.read_back.total.amount == 17999
-    # Translation isn't available yet (Track A), so the answer says it is English.
+    # MOCK: Track A's MT fixture only translates its recorded sample, so this stays English
+    # and says so (in real mode /turn translates through bhashini.translate).
     assert r.output.lang.value == "en"
 
 
@@ -106,7 +107,9 @@ def test_two_misses_in_a_row_go_straight_to_chips(mock_body):
 
 def test_cheapest_on_a_search_page(mock_body):
     r = turn(mock_body, "which one is the cheapest", page="PageContext.search")
-    assert r.output.summary == "Best match by lowest price: Orbita M3 5G, ₹13,999, rated 3.9."
+    assert r.output.summary.startswith("For what you asked, Orbita M3 5G comes first.")
+    assert "₹13,999 against ₹17,999" in r.output.summary
+    assert r.output.warnings == ["Sponsored listings were left out."]
 
 
 def test_compare_on_a_search_page(mock_body):

@@ -14,7 +14,8 @@ from dataclasses import dataclass, field
 from typing import Any
 from urllib.parse import quote_plus
 
-from app.brain import prepare, recommender, vision
+from app.brain import compare as compare_mod
+from app.brain import features, prepare, session, vision
 from app.brain.format import brief, join_words, money, number, short_title, spec_value
 from app.brain.grounding import Unresolved, resolve
 from app.brain.llm import LLMError
@@ -238,57 +239,46 @@ async def describe_photo(
     return ToolResult(f"Describe photo {index + 1}", result.output, dropped=result.dropped)
 
 
-async def compare(ctx: Context, product_ids: list[str]) -> ToolResult:
-    chosen = [ctx.products[i] for i in dict.fromkeys(product_ids) if i in ctx.products]
+PREFER = {"cheapest": {"price": 1.0}, "best_rated": {"rating": 1.0}, "balanced": {}}
+
+
+def _stated(ctx: Context, priorities, max_price, min_rating) -> session.Session:
+    s = session.get(ctx.req.session_id)
+    s.state(priorities, max_price, min_rating)
+    return s
+
+
+async def compare(
+    ctx: Context,
+    product_ids: list[str] | None = None,
+    priorities: list[dict[str, str]] | None = None,
+    max_price: float | None = None,
+    min_rating: float | None = None,
+) -> ToolResult:
+    """Compare products on this page and/or ones the shopper looked at earlier (any site),
+    ranked by what they said matters."""
+    s = _stated(ctx, priorities, max_price, min_rating)
+    pool = {**s.seen, **ctx.products}
+    chosen = [pool[i] for i in dict.fromkeys(product_ids or []) if i in pool]
     if len(chosen) < 2:
-        chosen = ctx.page.products[:3]
-    if len(chosen) < 2:
-        raise ToolInputError("need two products to compare")
-    b = OutputBuilder()
-    names = [short_title(p.title) if p.title else p.id for p in chosen]
-    rows = [
-        ["Price"]
-        + [money(p.price.amount, p.price.currency) if p.price else "not listed" for p in chosen],
-        ["Rating"]
-        + [
-            f"{number(p.rating.value)} ({number(p.rating.count)} ratings)"
-            if p.rating
-            else "not listed"
-            for p in chosen
-        ],
-    ]
-    shared = [k for k in chosen[0].specs if all(k in p.specs for p in chosen[1:])][:4]
-    for key in shared:
-        rows.append(
-            [chosen[0].specs[key].label]
-            + [brief(spec_value(p.specs[key].value, p.specs[key].unit), 30) for p in chosen]
+        here = ctx.page.products[:1] if ctx.page.page_type.value == "product" else ctx.page.products
+        chosen = list(
+            {p.id: p for p in [*chosen, *here, *reversed(list(s.seen.values()))]}.values()
         )
-    spoken = []
-    for name, p in zip(names, chosen, strict=True):
-        if p.title:
-            b.ground(name, "title", p.id)
-        parts = []
-        if p.price:
-            b.ground(money(p.price.amount, p.price.currency), "price.amount", p.id)
-            parts.append(f"costs {money(p.price.amount, p.price.currency)}")
-        if p.rating:
-            b.ground(number(p.rating.value), "rating.value", p.id)
-            b.ground(number(p.rating.count), "rating.count", p.id)
-            parts.append(f"is rated {number(p.rating.value)}")
-        for key in shared:
-            b.ground(
-                brief(spec_value(p.specs[key].value, p.specs[key].unit), 30),
-                f"specs.{key}.value",
-                p.id,
-            )
-        spoken.append(f"{name} {join_words(parts) or 'has no price or rating on the page'}.")
-    table = {"columns": [""] + names, "rows": rows, "spoken": " ".join(spoken)}
-    b.section("Comparison", table=table)
-    b.derive(len(chosen))
-    result = b.checked(
-        {p.id: p for p in chosen},
-        f"I compared {len(chosen)} products. {spoken[0]}",
-        followups=["Which is cheapest?", "Which is best rated?"],
+    if len(chosen) < 2:
+        out = plain_output(
+            "I need at least two products to compare. Open another product, or search, and "
+            "ask me again.",
+            followups=["Search again"],
+        )
+        return ToolResult("Compare products", out)
+    here = ctx.main_product() if ctx.page.page_type.value == "product" else None
+    result = compare_mod.build(
+        chosen[:6],
+        s.priorities or None,
+        max_price=s.max_price,
+        min_rating=s.min_rating,
+        keep=here.id if here else None,
     )
     return ToolResult("Compare products", result.output, dropped=result.dropped)
 
@@ -298,55 +288,66 @@ async def recommend(
     prefer: str = "balanced",
     max_price: float | None = None,
     min_rating: float | None = None,
+    priorities: list[dict[str, str]] | None = None,
 ) -> ToolResult:
-    prefer = prefer if prefer in recommender.WEIGHTS else "balanced"
-    ranked = recommender.rank(ctx.page.products, prefer, max_price=max_price, min_rating=min_rating)  # type: ignore[arg-type]
-    b = OutputBuilder()
-    if not ranked:
+    """Best products on this page for what the shopper wants; sponsored listings never win."""
+    s = _stated(ctx, priorities, max_price, min_rating)
+    weights = {**PREFER.get(prefer, {}), **s.priorities}
+    candidates = [p for p in ctx.page.products if not p.sponsored] or list(ctx.page.products)
+    if not candidates:
         return ToolResult(
-            "Recommend",
-            plain_output("No product on this page matches that.", followups=["Search again"]),
+            "Recommend", plain_output("There are no products on this page to pick from.")
         )
-    top = ranked[:3]
-    items = []
-    for i, r in enumerate(top, 1):
-        p = r.product
-        name = short_title(p.title) if p.title else p.id
-        b.derive(i)
-        bits = [name]
-        if p.title:
-            b.ground(name, "title", p.id)
-        if p.price:
-            b.ground(money(p.price.amount, p.price.currency), "price.amount", p.id)
-            bits.append(money(p.price.amount, p.price.currency))
-        if p.rating:
-            b.ground(number(p.rating.value), "rating.value", p.id)
-            bits.append(f"rated {number(p.rating.value)}")
-        items.append(
-            b.item(
-                f"{i}. " + ", ".join(bits),
-                path="title" if p.title else None,
-                subject_id=p.id,
-                claim=name,
-            )
-        )
-    b.section("Top picks", items)
-    why = {
-        "cheapest": "lowest price",
-        "best_rated": "highest rating",
-        "balanced": "price and rating together",
-    }
-    b.derive(len(ranked))
-    first = items[0]["text"].split(". ", 1)[1]
-    result = b.checked(
-        {r.product.id: r.product for r in ranked},
-        f"Best match by {why[prefer]}: {first}.",
-        followups=["Open the first one", "Compare the top two"],
-        warnings=["Sponsored listings were left out."]
-        if any(p.sponsored for p in ctx.page.products)
-        else [],
+    warnings = (
+        ["Sponsored listings were left out."] if len(candidates) < len(ctx.page.products) else []
+    )
+    result = compare_mod.build(
+        candidates,
+        weights or None,
+        max_price=s.max_price,
+        min_rating=s.min_rating,
+        heading="Top picks",
+        warnings=warnings,
     )
     return ToolResult("Recommend", result.output, dropped=result.dropped)
+
+
+async def set_preferences(
+    ctx: Context,
+    priorities: list[dict[str, str]] | None = None,
+    max_price: float | None = None,
+    min_rating: float | None = None,
+) -> ToolResult:
+    """Remember what the shopper said matters, for this session's comparisons."""
+    s = _stated(ctx, priorities, max_price, min_rating)
+    b = OutputBuilder()
+    said = []
+    important = [f for f, w in s.priorities.items() if w >= 0.6]
+    ignored = [f for f, w in s.priorities.items() if w == 0]
+    if important:
+        said.append(
+            f"{join_words([features.LABELS.get(f, f).lower() for f in important])} "
+            f"{'matters' if len(important) == 1 else 'matter'} most"
+        )
+    if ignored:
+        said.append(
+            f"{join_words([features.LABELS.get(f, f).lower() for f in ignored])} "
+            f"{'doesn' if len(ignored) == 1 else 'don'}'t matter"
+        )
+    if s.max_price is not None:
+        b.derive(s.max_price)
+        said.append(f"your budget is {money(s.max_price, 'INR')}")
+    if s.min_rating is not None:
+        b.derive(s.min_rating)
+        said.append(f"at least {number(s.min_rating)} stars")
+    if not said:
+        return ToolResult(
+            "Set preferences",
+            plain_output("Tell me what matters to you, like camera, battery or price."),
+        )
+    summary = f"Got it: {'; '.join(said)}. I'll use this when I compare."
+    out = b.checked({}, summary, followups=["Compare these", "Which is best for me?"]).output
+    return ToolResult("Set preferences", out)
 
 
 async def where_am_i(ctx: Context) -> ToolResult:
@@ -559,6 +560,7 @@ READ_TOOLS = {
     "recommend",
     "where_am_i",
     "unclear",
+    "set_preferences",
 }
 
 
@@ -575,6 +577,8 @@ def label_for(name: str, args: dict[str, Any]) -> str:
         )
     if name == "describe_photo":
         return "Describe the photo"
+    if name == "set_preferences":
+        return "Remember what matters to you"
     return {"compare": "Compare products", "where_am_i": "Describe this page"}.get(name, "Help")
 
 
@@ -586,6 +590,7 @@ TOOLS: dict[str, Tool] = {
     "describe_photo": describe_photo,
     "compare": compare,
     "recommend": recommend,
+    "set_preferences": set_preferences,
     "where_am_i": where_am_i,
     "add_to_cart": add_to_cart,
     "press": press,
@@ -640,6 +645,26 @@ _PID = {
     "product_id": {"type": "string", "description": "A product id from PAGE; omit for this product"}
 }
 
+_PREFS = {
+    "priorities": {
+        "type": "array",
+        "description": "Features the user said matter (or don't).",
+        "items": {
+            "type": "object",
+            "properties": {
+                "feature": {"type": "string", "enum": features.ALL_NAMES},
+                "importance": {
+                    "type": "string",
+                    "enum": ["must", "high", "medium", "low", "ignore"],
+                },
+            },
+            "required": ["feature", "importance"],
+        },
+    },
+    "max_price": {"type": "number", "description": "Budget in rupees, if stated"},
+    "min_rating": {"type": "number"},
+}
+
 TOOL_SPECS = [
     _spec(
         "read_section",
@@ -676,19 +701,36 @@ TOOL_SPECS = [
     ),
     _spec(
         "compare",
-        "Compare two or more products listed on the page.",
-        {"product_ids": {"type": "array", "items": {"type": "string"}}},
-        ["product_ids"],
+        "Compare products: ones on this page and/or ones the user looked at earlier (SEEN, "
+        "any site). Pass any priorities or budget the user states in this utterance.",
+        {
+            "product_ids": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "Ids from PAGE or SEEN; omit to compare this product with the "
+                "ones seen before (or the results on a search page)",
+            },
+            **_PREFS,
+        },
+        [],
     ),
     _spec(
         "recommend",
-        "Pick the best products on this page for the user's stated preference or budget.",
+        "Pick the best products on this page for what the user wants (budget, cheapest, "
+        "best rated, or features that matter to them).",
         {
             "prefer": {"type": "string", "enum": ["cheapest", "best_rated", "balanced"]},
-            "max_price": {"type": "number"},
-            "min_rating": {"type": "number"},
+            **_PREFS,
         },
         ["prefer"],
+    ),
+    _spec(
+        "set_preferences",
+        "Remember what matters to the user when choosing, e.g. 'I want a good camera, battery "
+        "doesn't matter, under 20000'. Use when they state preferences without asking for a "
+        "comparison.",
+        dict(_PREFS),
+        [],
     ),
     _spec("where_am_i", "Describe the current page and what can be done on it.", {}, []),
     _spec(

@@ -6,9 +6,12 @@ With MOCK=1 responses come from fixtures/serpapi/amazon_product.<ASIN>.json.
 from __future__ import annotations
 
 import json
+import os
 import re
 from datetime import UTC, datetime
 from typing import Any
+
+import httpx
 
 from app.config import get_settings
 from app.errors import ApiError
@@ -31,9 +34,37 @@ async def amazon_product(asin: str) -> dict[str, Any]:
             )
         result = json.loads(path.read_text())
     else:
-        raise ApiError(ErrorCode.internal, "Live SerpApi calls are not wired up yet.", status=501)
+        result = await _fetch(asin, settings.serpapi_api_key)
     _cache.set(asin, result)
     return result
+
+
+async def _fetch(asin: str, api_key: str) -> dict[str, Any]:
+    """The one live amazon_product call per ASIN (rule 9); cached by the caller."""
+    if not api_key:
+        raise ApiError(ErrorCode.upstream_unavailable, "SerpApi is not configured.", status=503)
+    params = {
+        "engine": "amazon_product",
+        "asin": asin,
+        "amazon_domain": "amazon.in",
+        "api_key": api_key,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            res = await client.get("https://serpapi.com/search.json", params=params)
+    except httpx.HTTPError as exc:
+        raise ApiError(
+            ErrorCode.upstream_unavailable, "SerpApi is unreachable.", status=503, retryable=True
+        ) from exc
+    if res.status_code == 429:
+        raise ApiError(ErrorCode.rate_limited, "SerpApi rate limit.", status=429, retryable=True)
+    if res.status_code >= 400:
+        raise ApiError(ErrorCode.upstream_unavailable, f"SerpApi {res.status_code}.", status=503)
+    data = res.json()
+    if os.getenv("SERPAPI_RECORD", "0") == "1":
+        path = get_settings().fixtures_dir / "serpapi" / f"amazon_product.{asin}.json"
+        path.write_text(json.dumps(data, indent=2, ensure_ascii=False) + "\n")
+    return data
 
 
 # --- amazon_product response -> ProductJSON -------------------------------------------------
@@ -187,3 +218,68 @@ def to_product(raw: dict[str, Any]) -> dict[str, Any]:
         "source": {"method": "serpapi", "extracted_at": extracted_at, "fields": {}},
         "missing": missing,
     }
+
+
+# --- "Compare with similar items" -> ProductJSON, for the comparison section ---
+
+_COMPARE_SKIP = {
+    "position", "asin", "title", "thumbnail", "link", "serpapi_link", "price",
+    "extracted_price", "rating", "reviews",
+}  # fmt: skip
+
+
+def similar_products(raw: dict[str, Any], exclude_asin: str) -> list[dict[str, Any]]:
+    """Amazon's own comparison table as ProductJSON dicts (source serpapi). Their prices are
+    Amazon's at the time of the call, not the live page's; callers say so."""
+    domain = raw.get("search_parameters", {}).get("amazon_domain", "amazon.in")
+    created = raw.get("search_metadata", {}).get("created_at", "")
+    extracted_at = (
+        datetime.strptime(created, "%Y-%m-%d %H:%M:%S UTC").replace(tzinfo=UTC).isoformat()
+        if created
+        else datetime.now(UTC).isoformat()
+    )
+    out = []
+    for item in raw.get("compare_with_similar") or []:
+        asin = item.get("asin")
+        if not asin or asin == exclude_asin or not item.get("title"):
+            continue
+        specs = {
+            k: {**_spec(k, v), "label": k.replace("_", " ").capitalize()}
+            for k, v in item.items()
+            if k not in _COMPARE_SKIP and isinstance(v, str) and v not in ("✓", "")
+        }
+        missing = []
+        price = None
+        if item.get("extracted_price") is not None:
+            price = {"amount": item["extracted_price"], "currency": "INR", "mrp": None}
+        else:
+            missing.append("price")
+        rating = None
+        if item.get("rating") is not None:
+            rating = {"value": item["rating"], "count": int(item.get("reviews") or 0)}
+        else:
+            missing.append("rating")
+        out.append(
+            {
+                "schema_version": "1.0",
+                "id": f"{domain}:{asin}",
+                "url": item.get("link") or f"https://www.{domain}/dp/{asin}",
+                "site": domain,
+                "title": item["title"],
+                "brand": None,
+                "price": price,
+                "rating": rating,
+                "availability": None,
+                "category": None,
+                "specs": specs,
+                "variants": None,
+                "images": [],
+                "delivery": None,
+                "seller": None,
+                "sponsored": None,
+                "reviews": None,
+                "source": {"method": "serpapi", "extracted_at": extracted_at, "fields": {}},
+                "missing": [*missing, "availability", "delivery", "seller", "reviews"],
+            }
+        )
+    return out

@@ -16,20 +16,18 @@ import logging
 import re
 from typing import Any
 
-from app.brain import intent, language, tools
+from app.brain import intent, language, session, tools
 from app.brain.llm import LLMError, LLMSettings, complete_tool_call
 from app.brain.output import plain_output
 from app.brain.redact import redact
 from app.config import get_settings
 from app.errors import ApiError
 from app.models import SCHEMA_VERSION, AccessibleOutput, ErrorCode, TurnRequest, TurnResponse
-from app.services.cache import TTLCache
 
 log = logging.getLogger(__name__)
 
 MAX_TARGETS = 60
 LOW_ASR = 0.5
-_sessions = TTLCache(ttl_seconds=1800)  # session_id -> consecutive misses
 
 SYSTEM_PROMPT = """\
 You route ONE shopper utterance to exactly ONE tool. The shopper may be blind, elderly, have a \
@@ -47,6 +45,12 @@ Rules:
 - confidence = your probability that the tool and arguments are what the shopper meant: \
 0.8 or more only when it is clear; 0.5-0.8 when plausible but you are unsure; below 0.5 when \
 guessing. Give up to 2 alternatives (other plausible meanings), most likely first.
+- "Compare with the one I saw before" / "which of these is better for me" -> compare (use SEEN
+  ids). Pass priorities/budget the shopper states ("good camera, battery doesn't matter,
+  under 20000"); when they only state preferences, call set_preferences.
+- The transcript has no confidence score, so judge it yourself: a very short or broken
+  transcript that could be several commands (e.g. "a cart": add to cart or open the cart?)
+  gets confidence below 0.8, with the other meaning as an alternative.
 - If nothing fits, call unclear.
 """
 
@@ -56,16 +60,17 @@ class NoRecording(Exception):
 
 
 def _misses(session_id: str) -> int:
-    return _sessions.get(session_id) or 0
+    return session.get(session_id).misses
 
 
 def _set_misses(session_id: str, n: int) -> None:
-    _sessions.set(session_id, n)
+    session.get(session_id).misses = n
 
 
 def page_brief(req: TurnRequest) -> dict[str, Any]:
     """What the model needs to choose a tool: ids, labels, a few facts. Not whole products."""
     page = req.page
+    mem = session.get(req.session_id)
     products = []
     for p in page.products[:20]:
         products.append(
@@ -94,6 +99,13 @@ def page_brief(req: TurnRequest) -> dict[str, Any]:
         "site": page.site,
         "products": products,
         "orders": [{"id": o.id, "status": o.status} for o in page.orders],
+        # Looked at earlier in this session (maybe on another site), for "compare with ...".
+        "SEEN": [
+            {"id": p.id, "title": (p.title or "")[:60], "site": p.site}
+            for p in mem.seen.values()
+            if p.id not in {q.id for q in page.products}
+        ],
+        "stated_preferences": {"priorities": mem.priorities, "max_price": mem.max_price},
         "targets": [
             {"id": t.id, "kind": t.kind.value, "label": t.label[:60], "zone": t.zone.value}
             for t in targets
@@ -114,6 +126,8 @@ async def handle_turn(req: TurnRequest) -> TurnResponse:
         )
     ctx = tools.Context(req)
     user_lang = req.input.lang.value
+    if req.page.page_type.value == "product" and req.page.products:
+        session.get(req.session_id).remember(req.page.products[0])
 
     # Direct paths: no LLM needed.
     if req.input.target_id:
@@ -126,7 +140,7 @@ async def handle_turn(req: TurnRequest) -> TurnResponse:
 
     text = (req.input.text or "").strip()
     if not text:
-        raise ApiError(ErrorCode.validation, "There was nothing to understand.", status=400)
+        return await _nothing_heard(req, ctx)
     english = await language.translate(text, user_lang, "en") or text
     said = redact(english).text
     alternatives = [
@@ -168,7 +182,8 @@ async def handle_turn(req: TurnRequest) -> TurnResponse:
     asr_confidence = req.input.asr_meta.confidence if req.input.asr_meta else None
     if asr_confidence is not None and asr_confidence < LOW_ASR:
         # The transcript itself is doubtful (e.g. dysarthric speech): however sure the model
-        # is about these words, they may not be what was said. Ask, never act.
+        # is about these words, they may not be what was said. Ask, never act. Track A's ASR
+        # gives no confidence today (null = unknown, no cap); intent confidence decides then.
         confidence = min(confidence, intent.ACT - 0.01)
     decision = intent.decision(confidence)
     if name == "unclear":
@@ -198,6 +213,28 @@ async def handle_turn(req: TurnRequest) -> TurnResponse:
     )
     result = tools.ToolResult("Not sure", plain_output(summary, followups=chips))
     return await _respond(req, ctx, "unclear", min(confidence, 0.49), [], result)
+
+
+SILENT_MIC = 0.05  # mic_level (0-1, from Track A's capture) below this: nothing was said
+
+
+async def _nothing_heard(req: TurnRequest, ctx: tools.Context) -> TurnResponse:
+    """No words. A near-silent mic is a mic/environment problem, not unclear speech
+    (docs/conditions.md): say so and offer other input. Otherwise the user spoke but ASR got
+    nothing: that is a miss, and phrase chips are offered."""
+    asr = req.input.asr_meta
+    if req.input.kind.value != "voice":
+        raise ApiError(ErrorCode.validation, "There was nothing to understand.", status=400)
+    chips = tools.phrase_chips(ctx)
+    if asr is not None and asr.mic_level is not None and asr.mic_level < SILENT_MIC:
+        summary = (
+            "I couldn't hear anything. Please check your microphone, or type or choose an option."
+        )
+    else:
+        _set_misses(req.session_id, _misses(req.session_id) + 1)
+        summary = "I didn't catch that. You can choose one of these."
+    result = tools.ToolResult("Not heard", plain_output(summary, followups=chips))
+    return await _respond(req, ctx, "unclear", 0.0, [], result)
 
 
 def _plain_args(args: dict[str, Any]) -> dict[str, Any]:

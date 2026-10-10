@@ -12,10 +12,11 @@ import hashlib
 import logging
 from collections.abc import Awaitable, Callable
 
-from app.brain import review_summariser, sections, vision
+from app.brain import compare, review_summariser, sections, vision
 from app.brain.grounding import CheckResult
 from app.brain.llm import LLMError
 from app.brain.llm_sections import llm_section
+from app.errors import ApiError
 from app.models import (
     SCHEMA_VERSION,
     AccessibleOutput,
@@ -23,11 +24,12 @@ from app.models import (
     ProductPrepareRequest,
     ProductPrepareResponse,
 )
+from app.services import serpapi
 from app.services.cache import TTLCache
 
 log = logging.getLogger(__name__)
 
-Builder = Callable[[ProductJSON], Awaitable[CheckResult]]
+Builder = Callable[[ProductJSON], Awaitable[CheckResult | None]]
 
 
 def llm_first(name: str, template: Builder) -> Builder:
@@ -57,11 +59,37 @@ async def images_with_vlm(product: ProductJSON) -> CheckResult:
     )
 
 
+SIMILAR_NOTE = "Prices of the other models are from Amazon's comparison and may have changed."
+
+
+async def comparison_section(product: ProductJSON) -> CheckResult | None:
+    """Amazon: this product (live page) against Amazon's "compare with similar items" (SerpApi,
+    one cached call per ASIN). Elsewhere comparisons come from /turn (products seen before)."""
+    site, _, asin = product.id.partition(":")
+    if not site.startswith("amazon") or not asin:
+        return None
+    try:
+        raw = await serpapi.amazon_product(asin)
+    except ApiError as exc:
+        log.info("no SerpApi comparison for %s: %s", product.id, exc.message)
+        return None
+    similar = [ProductJSON.model_validate(d) for d in serpapi.similar_products(raw, asin)]
+    if not similar:
+        return None
+    return compare.build(
+        [product, *similar],
+        heading="Compared with similar models",
+        warnings=[SIMILAR_NOTE],
+        keep=product.id,
+    )
+
+
 BUILDERS: dict[str, Builder] = {
     "overview": llm_first("overview", sections.overview),
     "specs": llm_first("specs", sections.specs),
     "reviews": llm_first("reviews", review_summariser.summarise_product),
     "images": images_with_vlm,
+    "comparison": comparison_section,
 }
 
 _cache = TTLCache(ttl_seconds=3600)
@@ -78,6 +106,8 @@ async def _build(name: str, builder: Builder, product: ProductJSON) -> Accessibl
     except Exception:  # one broken section must not cost the user the others
         log.exception("section %s failed for %s", name, product.id)
         return None
+    if result is None:
+        return None
     for reason in result.dropped:
         log.warning("grounding dropped (%s, %s): %s", name, product.id, reason)
     return result.output
@@ -90,8 +120,6 @@ async def prepare_sections(product: ProductJSON) -> dict[str, AccessibleOutput |
         return cached
     built = await asyncio.gather(*(_build(n, b, product) for n, b in BUILDERS.items()))
     result: dict[str, AccessibleOutput | None] = dict(zip(BUILDERS, built, strict=True))
-    # Comparison needs candidates (search results or SerpApi "similar"); not precomputed yet.
-    result["comparison"] = None
     _cache.set(key, result)
     return result
 

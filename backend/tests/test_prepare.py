@@ -116,7 +116,7 @@ def test_prepare_runs_all_sections_and_caches(product, monkeypatch):
     )
     first = run(prepare_mod.prepare(req))
     second = run(prepare_mod.prepare(req))
-    assert sorted(calls) == ["images", "overview", "reviews", "specs"]
+    assert sorted(calls) == ["comparison", "images", "overview", "reviews", "specs"]
     assert first == second
     assert first.sections.comparison is None
 
@@ -124,7 +124,7 @@ def test_prepare_runs_all_sections_and_caches(product, monkeypatch):
     cheaper.price.amount = 16999
     req2 = req.model_copy(update={"product": cheaper})
     third = run(prepare_mod.prepare(req2))
-    assert len(calls) == 8, "a changed price must not be served from the cache"
+    assert len(calls) == 10, "a changed price must not be served from the cache"
     assert "₹16,999" in third.sections.overview.summary
 
 

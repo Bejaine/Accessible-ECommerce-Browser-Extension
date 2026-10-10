@@ -97,8 +97,9 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - The main product photo is described by Gemini during `/product/prepare` (more on request via
   `/turn` "describe the photo"); descriptions are cached by image URL and returned in
   `product.images[i].description`. Outputs carry a warning that the description is AI-made.
-- Numbers and printed text the VLM reads are kept only if the page confirms them (OCR text, alt
-  text or title); "IP67 Rating" read off a banner is dropped until OCR (Track A) fills `ocr_text`.
+- Numbers and printed text the VLM reads are kept only if page data confirms them (title, alt
+  text, spec values); "IP67 Rating" read off a banner is dropped. OCR text is never used as
+  confirmation: it misreads numbers and units (Track A, 2026-10-11 live findings).
 - The backend downloads images only from the shops' image hosts (Amazon, Flipkart CDNs), https,
   max 4 MB. Requests set `store: false`; we send only public product photos (Responsible AI slide).
 - A transcript with ASR confidence < 0.5 never acts directly in `/turn`: it asks first.
@@ -145,6 +146,25 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - One utterance per `listen()`: energy VAD, silence timeout 1.0 s (2.5 s in speech mode), 19 s
   cap, 300 ms pre-roll; output 16 kHz mono 16-bit WAV, confirmed accepted by live Hindi ASR.
 - The mic is open only while listening; `mute()` (secure zone) closes it and discards audio.
+
+## 2026-10-11 — Comparison by stated preferences (Track C; affects D, core)
+- Code ranks, words explain: specs are mapped to comparable features (camera MP, battery mAh,
+  RAM, storage, screen, weight…) across Amazon/Flipkart/SerpApi naming; weights come only from
+  what the shopper says ("camera matters, battery doesn't, under ₹20,000"), never from the
+  disability profile. Missing values are "not listed", never guessed; if no listing has an
+  asked-for feature the answer says so.
+- `/turn` remembers, per session_id only (30 min, in memory): products opened (any site) and stated
+  preferences. New tool `set_preferences`; `compare` also uses products seen earlier. No persona
+  database; saving preferences across sessions would be an on-device profile + schema change.
+- `/product/prepare` `comparison` section: Amazon only, from SerpApi `compare_with_similar` (other
+  models' prices flagged as Amazon's); always shows the product being viewed with its rank.
+
+## 2026-10-11 — /turn with the real ASR (Track C, after Track A's feedback; affects A, D)
+- Track A's ASR sends text only: `asr_meta.confidence` null, `alternatives` []. Null is treated
+  as unknown (no cap); the intent confidence decides (≥0.8 act, 0.5–0.8 ask, <0.5 chips), and
+  the model is told a short or broken transcript must score below 0.8.
+- Empty transcript: `mic_level` < 0.05 → "I couldn't hear anything, check your microphone"
+  (not counted as a miss); otherwise a miss with phrase chips. Previously HTTP 400.
 
 ## 2026-10-11 — Masking around MT (Track A; affects Track C)
 - `masking.mask(text, keep=())` replaces prices, number+unit, decimals, model names and brands
