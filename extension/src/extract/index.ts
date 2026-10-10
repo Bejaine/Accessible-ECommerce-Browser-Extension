@@ -9,7 +9,7 @@ import { mergeTiers, type TierResult } from './product';
 import { buildPageMap } from './targets';
 import { siteOf } from './util';
 
-export { buildLlmFallbackRequest } from './llm';
+export { applyFallback, buildFallbackRequest, buildLlmFallbackRequest, needsFallback } from './llm';
 export { buildPageMap, resolveTarget } from './targets';
 
 const ADAPTERS: SiteAdapter[] = [amazonAdapter, flipkartAdapter];
