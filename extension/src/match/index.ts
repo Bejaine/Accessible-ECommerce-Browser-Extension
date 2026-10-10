@@ -34,7 +34,7 @@ export type CommandId =
 export const COMMANDS: Record<CommandId, string[]> = {
   // Hindi and Telugu forms from Track A's player.controls_hint.
   pause: ['pause', 'wait', 'hold on', 'रुको', 'ఆపు'],
-  resume: ['resume', 'continue', 'play'],
+  resume: ['resume', 'continue', 'play', 'जारी रखो', 'కొనసాగించు'],
   stop: ['stop', 'quiet', 'be quiet'],
   repeat: ['repeat', 'repeat that', 'say again', 'again', 'दोबारा', 'మళ్లీ'],
   repeat_all: ['repeat all', 'start again', 'from the start'],

@@ -7,6 +7,7 @@ import type { Lang, Profile, ResolvedMode } from '@shared/index';
 import { setConditionActive } from '../core/composer';
 import type { ProfileStore } from '../core/profile';
 import { announce } from './announce';
+import { DEFAULT_DWELL_MS, DWELL_TIMES_MS } from './dwell';
 import { formatRate } from './speechSpeed';
 import { label, type UiKey } from './strings';
 
@@ -47,6 +48,8 @@ export interface SettingsOptions {
   onRunSetup: () => void;
   /** The assistant's own voice (device preference). */
   voice: { get(): boolean; set(on: boolean): void };
+  /** Dwell to click (device preference); null = off. */
+  dwell: { get(): number | null; set(ms: number | null): void };
 }
 
 export interface Settings {
@@ -135,6 +138,27 @@ export function createSettings(opts: SettingsOptions): Settings {
     saved('settings.short', checked);
   });
 
+  // Dwell to click, and how long to rest.
+  const dwell = checkbox(label('settings.dwell'), (checked) => {
+    opts.dwell.set(checked ? Number(dwellSelect.value) || DEFAULT_DWELL_MS : null);
+    dwellRow.hidden = !checked;
+    saved('settings.dwell', checked);
+  });
+  dwell.hint.textContent = label('settings.dwell_hint');
+  const dwellRow = document.createElement('label');
+  const dwellName = document.createElement('span');
+  dwellName.textContent = label('settings.dwell_time');
+  const dwellSelect = document.createElement('select');
+  for (const ms of DWELL_TIMES_MS) {
+    const option = document.createElement('option');
+    option.value = String(ms);
+    option.textContent = label('settings.seconds').replace('{seconds}', String(ms / 1000));
+    dwellSelect.append(option);
+  }
+  dwellSelect.value = String(DEFAULT_DWELL_MS);
+  dwellSelect.addEventListener('change', () => opts.dwell.set(Number(dwellSelect.value)));
+  dwellRow.append(dwellName, dwellSelect);
+
   // Text size.
   const textRow = document.createElement('div');
   textRow.className = 'asl-chips';
@@ -198,7 +222,18 @@ export function createSettings(opts: SettingsOptions): Settings {
     button(label('settings.setup'), opts.onRunSetup),
   );
 
-  panel.append(current, modes, voice.row, short.row, textRow, langRow, switchRow, actions);
+  panel.append(
+    current,
+    modes,
+    voice.row,
+    short.row,
+    dwell.row,
+    dwellRow,
+    textRow,
+    langRow,
+    switchRow,
+    actions,
+  );
   wrap.append(toggle, panel);
 
   return {
@@ -216,6 +251,10 @@ export function createSettings(opts: SettingsOptions): Settings {
           : '';
       }
       voice.box.checked = opts.voice.get();
+      const dwellMs = opts.dwell.get();
+      dwell.box.checked = dwellMs !== null;
+      dwellRow.hidden = dwellMs === null;
+      if (dwellMs !== null) dwellSelect.value = String(dwellMs);
       short.box.checked = profile.prefs.verbosity === 'short';
       textValue.textContent = `${Math.round(profile.prefs.text_scale * 100)}%`;
       select.value = profile.prefs.lang;

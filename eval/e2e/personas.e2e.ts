@@ -114,6 +114,9 @@ async function scanPick(shadow: ShadowRoot, re: RegExp, interval: number): Promi
     if (++waits > 80) throw new Error(`scanning never reached ${re} (at "${highlighted()}")`);
     vi.advanceTimersByTime(interval);
   }
+  // A person's reaction time after the highlight arrives (scanning slows down for presses that
+  // land right on a move); real time, since only timers are faked and the scan doesn't move.
+  await realSleep(600);
   key('Space');
   await realSleep(350); // the switch ignores presses closer than 300 ms (tremor debounce)
   return 1;

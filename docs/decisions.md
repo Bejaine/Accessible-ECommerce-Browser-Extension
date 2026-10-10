@@ -385,3 +385,14 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - `--test-type` hides the "unsupported command-line flag" bar; web-ext's
   `--disable-blink-features=AutomationControlled` stays (otherwise navigator.webdriver is true and
   shops may block the session as a bot).
+
+## Motor and playback stretch features (Track D)
+- Adaptive scanning only slows down from the composer's `scan_interval_ms` (late press = within
+  max(300 ms, 15 %) of a move → +20 %, up to 5 s) and comes back after 5 unhurried presses; a
+  press still selects what is highlighted, so behaviour stays predictable.
+- Dwell to click works only on our overlay's controls, never the shop's page; it is a device
+  preference (`DevicePrefs.dwellMs`, off by default), not part of the Profile contract.
+- Resume after a page change: the answer's player snapshot sits in `browser.storage.local` while it
+  plays (cleared on end/stop, 2-minute limit, same site only) and is offered paused; nothing
+  autoplays.
+

@@ -34,6 +34,10 @@ export interface Controls {
 
 const keyName = (code: string) => code.replace(/^(Key|Digit)/, '');
 
+/** ResolvedMode.scan_interval_ms upper bound. */
+export const MAX_SCAN_MS = 5000;
+const formatSeconds = (ms: number) => String(Math.round(ms / 100) / 10);
+
 export function createControls(opts: ControlsOptions): Controls {
   const lang = opts.lang;
   let phrases: Phrase[] = [];
@@ -59,6 +63,14 @@ export function createControls(opts: ControlsOptions): Controls {
     pausedLabel: pausedText,
     onHighlight: (h) => bar.update(h, scanner.level === 'paused' ? pausedText : undefined),
     speak: opts.auditory ? (text) => announce(text) : undefined,
+    // Slows down when presses land just after the highlight moved; never faster than the mode.
+    adaptive: {
+      maxMs: MAX_SCAN_MS,
+      onChange: (ms) =>
+        announce(label('scan.pace', lang).replace('{seconds}', formatSeconds(ms)), {
+          speak: opts.auditory,
+        }),
+    },
   });
   opts.container.append(board.element, bar.element);
 

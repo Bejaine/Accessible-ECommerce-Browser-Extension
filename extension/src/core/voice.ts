@@ -6,6 +6,8 @@
 // - sayLines(): several lines in different languages, one after another (setup page)
 // - setRate(): follow prefs.tts_rate by stepping the player (its speeds are 0.25 apart)
 // - onChange(): playing / paused / idle and the current sentence, for the playback bar
+// - snapshot() / offerResume(): where the answer is (never a prompt), and after a page change
+//   that position as a paused answer, so Resume (word, key or bar) carries on from there
 import type { AccessibleOutput, Lang } from '@shared/index';
 import type { Player, PlayerEvent, PlayerSnapshot } from '../audio/player';
 
@@ -25,6 +27,10 @@ export interface Speaker {
   previousSection(): void;
   stop(): void;
   setRate(rate: number): void;
+  /** Where the current answer is (prompts and setup lines are not answers); null when idle. */
+  snapshot(): PlayerSnapshot | null;
+  /** Hold a saved position as a paused answer; Resume restores it. */
+  offerResume(snap: PlayerSnapshot): void;
   readonly state: PlaybackState;
   readonly speaking: boolean;
   readonly sentence: string | null;
@@ -172,6 +178,16 @@ export function createPlayerSpeaker(
         player.slower();
         if (player.rate === before) break;
       }
+    },
+    snapshot() {
+      if (inPrompt) return interrupted?.snap ?? null;
+      if (lines.length > 0) return null;
+      return player.snapshot();
+    },
+    offerResume(snap) {
+      if (player.state !== 'idle') return; // something newer is already playing
+      interrupted = { snap, playing: false };
+      emit();
     },
     get state() {
       // A paused answer behind a finished prompt still counts as paused (Resume brings it back).
