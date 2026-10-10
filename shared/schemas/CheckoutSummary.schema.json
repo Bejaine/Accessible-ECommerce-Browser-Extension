@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CheckoutSummary",
+  "description": "What the checkout page shows before the order is placed. Read aloud and read back (total, delivery PIN) before the user confirms placing the order (rule 2). Personal data is a placeholder; the extension maps it back locally.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "id",
+    "items",
+    "subtotal",
+    "delivery_charge",
+    "total",
+    "delivery_pin_code",
+    "delivery_address",
+    "payment_method",
+    "place_order_target_id",
+    "missing"
+  ],
+  "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/SchemaVersion" },
+    "id": {
+      "type": "string",
+      "pattern": "^CHECKOUT_[0-9]+$",
+      "description": "Placeholder id; used as a grounding subject_id."
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "title": "CheckoutItem",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["title", "quantity", "price"],
+        "properties": {
+          "title": { "type": "string" },
+          "quantity": { "type": "integer", "minimum": 1 },
+          "price": {
+            "description": "The line's price as the page shows it.",
+            "anyOf": [{ "$ref": "common.schema.json#/$defs/Money" }, { "type": "null" }]
+          }
+        }
+      }
+    },
+    "subtotal": {
+      "anyOf": [{ "$ref": "common.schema.json#/$defs/Money" }, { "type": "null" }]
+    },
+    "delivery_charge": {
+      "anyOf": [{ "$ref": "common.schema.json#/$defs/Money" }, { "type": "null" }]
+    },
+    "total": {
+      "description": "The order total the page shows (what the user will pay). Required to place an order.",
+      "anyOf": [{ "$ref": "common.schema.json#/$defs/Money" }, { "type": "null" }]
+    },
+    "delivery_pin_code": {
+      "type": ["string", "null"],
+      "pattern": "^[0-9]{6}$",
+      "description": "Delivery PIN code as shown (not a secret; read back before placing)."
+    },
+    "delivery_address": {
+      "type": ["string", "null"],
+      "pattern": "^ADDR_[0-9]+$",
+      "description": "Placeholder (ADDR_n), never the real address; the extension reads it aloud itself."
+    },
+    "payment_method": {
+      "title": "CheckoutPayment",
+      "description": "The payment method the page shows as selected.",
+      "anyOf": [
+        {
+          "type": "string",
+          "enum": ["upi", "saved_card", "card", "netbanking", "cod", "other"]
+        },
+        { "type": "null" }
+      ]
+    },
+    "place_order_target_id": {
+      "type": ["string", "null"],
+      "description": "ActionTarget id of the 'Place order' button."
+    },
+    "missing": {
+      "type": "array",
+      "description": "Fields the page doesn't show, e.g. delivery_charge.",
+      "items": { "type": "string" }
+    }
+  }
+}

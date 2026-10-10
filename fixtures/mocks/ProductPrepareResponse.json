@@ -215,11 +215,6 @@
               "text": "Sold by Zentra Official Store",
               "kind": "text",
               "grounding_index": 7
-            },
-            {
-              "text": "Colour: Midnight Black (selected), Sage Green",
-              "kind": "text",
-              "grounding_index": 11
             }
           ],
           "table": null,
@@ -314,21 +309,6 @@
               "text": "Internal Storage: 128 GB",
               "kind": "spec",
               "grounding_index": 3
-            },
-            {
-              "text": "Screen Size: 6.67 inches",
-              "kind": "spec",
-              "grounding_index": 4
-            },
-            {
-              "text": "Refresh Rate: 120 Hz",
-              "kind": "spec",
-              "grounding_index": 5
-            },
-            {
-              "text": "Operating System: Android 15",
-              "kind": "spec",
-              "grounding_index": 6
             }
           ],
           "table": null,

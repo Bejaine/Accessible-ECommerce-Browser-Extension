@@ -27,7 +27,7 @@
   "confirmation": {
     "schema_version": "1.0",
     "id": "conf-1",
-    "prompt": "Add Zentra Pulse 5G, Midnight Black, quantity 1, for ₹17,999 to your cart?",
+    "prompt": "अपने कार्ट में Zentra Pulse 5G जोड़ें? मात्रा 1, कीमत ₹17,999।",
     "risk": "low",
     "pending_actions": [
       {
@@ -55,15 +55,33 @@
   "output": {
     "schema_version": "1.0",
     "lang": "hi",
-    "summary": "Zentra Pulse 5G, Midnight Black, ₹17,999 में कार्ट में जोड़ूँ?",
-    "sections": [],
+    "summary": "अपने कार्ट में Zentra Pulse 5G जोड़ें? मात्रा 1, कीमत ₹17,999।",
+    "sections": [
+      {
+        "heading": "चुना गया",
+        "items": [
+          {
+            "text": "रंग: Midnight Black",
+            "kind": "text",
+            "grounding_index": 0
+          }
+        ],
+        "table": null,
+        "simpler": null
+      }
+    ],
     "simpler": null,
-    "followups": ["हाँ", "नहीं"],
+    "followups": ["हाँ।", "नहीं।"],
     "grounding": [
       {
         "claim": "Midnight Black",
         "subject_id": "amazon.in:B0ZNTRA5G1",
         "field_path": "variants[0].value"
+      },
+      {
+        "claim": "Zentra Pulse 5G",
+        "subject_id": "amazon.in:B0ZNTRA5G1",
+        "field_path": "title"
       },
       {
         "claim": "₹17,999",

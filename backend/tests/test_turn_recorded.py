@@ -95,14 +95,16 @@ def test_unclear_speech_asks_instead_of_acting(mock_body):
 def test_noise_offers_phrase_chips(mock_body):
     r = turn(mock_body, "mmm hmm uh", alts=["mm hmm", "um"], conf=0.2)
     assert r.intent.confidence < 0.5
-    assert r.output.followups == ["Price", "Specs", "Reviews", "Add to cart"]
+    # The fixture persona has verbosity "short": at most 3 options (docs/conditions.md).
+    assert r.output.followups == ["Price", "Specs", "Reviews"]
 
 
 def test_two_misses_in_a_row_go_straight_to_chips(mock_body):
     turn(mock_body, "a cart", alts=["a cart", "the cart"], conf=0.41, session="same")
     r = turn(mock_body, "a cart", alts=["a cart", "the cart"], conf=0.41, session="same")
     assert not r.output.summary.startswith("Did you mean"), "never ask a third time"
-    assert r.output.followups == ["Price", "Specs", "Reviews", "Add to cart"]
+    # The fixture persona has verbosity "short": at most 3 options (docs/conditions.md).
+    assert r.output.followups == ["Price", "Specs", "Reviews"]
 
 
 def test_cheapest_on_a_search_page(mock_body):
@@ -142,3 +144,14 @@ def test_photo_request_falls_back_to_the_label_when_it_cannot_be_described(mock_
     assert r.output.summary.endswith(
         "Its label says: Zentra Pulse 5G front and back, Midnight Black."
     )
+
+
+def test_did_you_mean_offers_two_different_options(mock_body):
+    """The recorded model answer for "a cart" gives one meaning; the sound-alike command is
+    added, and the consequential one carries no actions (it gets its own confirmation)."""
+    r = turn(mock_body, "a cart", alts=["a cart", "the cart", "add cart"], conf=0.41)
+    assert r.output.summary == "Did you mean Open the cart, or Add to cart?"
+    options = {a.intent: a for a in r.intent.alternatives}
+    assert set(options) == {"go_to_cart", "add_to_cart"}
+    assert options["add_to_cart"].actions == []
+    assert r.actions == [] and r.confirmation is None

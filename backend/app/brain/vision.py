@@ -278,18 +278,39 @@ def with_descriptions(p: ProductJSON) -> ProductJSON:
     return ProductJSON.model_validate(data)
 
 
+_products = TTLCache(ttl_seconds=3600)  # product id -> ProductJSON seen by /product/prepare
+
+
+def remember_product(p: ProductJSON) -> None:
+    _products.set(p.id, p)
+
+
 async def describe(req: VisionDescribeRequest) -> VisionDescribeResponse:
-    """POST /vision/describe for any shop image URL (no product data: numbers and printed text
-    can't be confirmed, so they are left out)."""
+    """POST /vision/describe. With the `product_id` of a prepared product, the description is
+    checked against that product's data and grounded in images[i].description. Without one,
+    there is nothing to cite: numbers and printed text are dropped (nothing can confirm them),
+    only visual description remains, marked as AI-made (the one ungrounded output; see
+    docs/decisions.md)."""
     was_cached = cached(req.image_url) is not None
-    d = await describe_url(req.image_url)
-    b = OutputBuilder()
+    product = _products.get(req.product_id) if getattr(req, "product_id", None) else None
+    d = await describe_url(req.image_url, product)
+    index = (
+        next((i for i, img in enumerate(product.images) if img.url == req.image_url), None)
+        if product
+        else None
+    )
+    b = OutputBuilder(product.id if product and index is not None else None)
     items = [b.item(f"Colour: {c}") for c in d.colours]
     items += [b.item(f"Shown: {x}") for x in d.items_shown]
     items += [b.item(f"Not clear in the photo: {u}") for u in d.unclear]
     if items:
         b.section("In the photo", items)
-    out = b.checked({}, spoken(d), warnings=[AI_NOTE]).output
+    said = spoken(d)
+    subjects: dict[str, ProductJSON] = {}
+    if product is not None and index is not None:
+        b.ground(said, f"images[{index}].description")
+        subjects = {product.id: with_descriptions(product)}
+    out = b.checked(subjects, said, warnings=[AI_NOTE]).output
     return VisionDescribeResponse.model_validate(
         {
             "schema_version": SCHEMA_VERSION,

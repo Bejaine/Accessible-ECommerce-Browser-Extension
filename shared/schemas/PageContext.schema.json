@@ -34,6 +34,10 @@
     "products": { "type": "array", "items": { "$ref": "ProductJSON.schema.json" } },
     "orders": { "type": "array", "items": { "$ref": "OrderJSON.schema.json" } },
     "targets": { "type": "array", "items": { "$ref": "ActionTarget.schema.json" } },
+    "checkout": {
+      "description": "Checkout pages only: the order summary before placing (optional; added in 1.0 without a version bump, see docs/decisions.md).",
+      "anyOf": [{ "$ref": "CheckoutSummary.schema.json" }, { "type": "null" }]
+    },
     "secure_zone_active": {
       "type": "boolean",
       "description": "True while focus is in a payment/password/OTP area: mic off, nothing extracted."

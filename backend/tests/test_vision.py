@@ -167,3 +167,31 @@ def test_ocr_text_is_not_evidence_but_specs_are(iphone):
     evidence = vision._evidence(p, p.images[0].url)
     assert "99MP" not in evidence and "500 mAb" not in evidence
     assert "6.1 Inches" in evidence  # a spec value
+
+
+def test_vision_route_grounds_its_answer_for_a_prepared_product(client, iphone):
+    vision.remember_product(iphone)
+    url = iphone.images[0].url
+    res = client.post(
+        "/vision/describe",
+        json={"schema_version": "1.0", "image_url": url, "lang": "en", "product_id": iphone.id},
+    )
+    body = res.json()
+    assert res.status_code == 200
+    assert body["output"]["grounding"] == [
+        {
+            "claim": body["output"]["summary"],
+            "subject_id": iphone.id,
+            "field_path": "images[0].description",
+        }
+    ]
+
+
+def test_vision_route_without_a_product_keeps_no_numbers_or_text(client):
+    url = "https://m.media-amazon.com/images/I/512jrg8-68L._SL1500_.jpg"
+    body = client.post(
+        "/vision/describe", json={"schema_version": "1.0", "image_url": url, "lang": "en"}
+    ).json()
+    assert body["output"]["grounding"] == []
+    assert not any(ch.isdigit() for ch in body["output"]["summary"])
+    assert body["output"]["warnings"] == [vision.AI_NOTE]
