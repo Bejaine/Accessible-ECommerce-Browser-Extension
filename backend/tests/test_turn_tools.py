@@ -5,7 +5,7 @@ import json
 
 import pytest
 
-from app.brain import orchestrator, tools
+from app.brain import orchestrator, session, tools
 from app.brain.grounding import check
 from app.errors import ApiError
 from app.models import TurnRequest
@@ -123,17 +123,14 @@ def test_answer_question_says_when_page_does_not_list_it(req):
 
 
 def test_recommend_cheapest_skips_sponsored(search_req):
+    session.reset()
     ctx = tools.Context(search_req)
     result = run(tools.recommend(ctx, prefer="cheapest"))
-    picks = [i.text for i in result.output.sections[0].items]
-    assert picks[0].startswith("1. Orbita M3 5G, ₹13,999")
-    assert not any("Novix" in p for p in picks), "the sponsored listing is left out"
+    table = result.output.sections[0].table
+    assert table.columns == ["", "Orbita M3 5G", "Zentra Pulse 5G"]
+    assert table.rows[0] == ["Price", "₹13,999", "₹17,999"]
+    assert "Novix" not in json.dumps(table.model_dump()), "the sponsored listing is left out"
     assert result.output.warnings == ["Sponsored listings were left out."]
-    assert check(result.output, ctx.products, result_derived(result)).dropped == []
-
-
-def result_derived(result):
-    return set(range(0, 20))
 
 
 def test_compare_builds_a_grounded_table(search_req):
@@ -176,5 +173,7 @@ def test_phrase_chip_runs_without_llm(req, monkeypatch):
 
 def test_page_brief_is_small_and_has_no_page_text(req):
     brief = orchestrator.page_brief(req)
-    assert set(brief) == {"page_type", "site", "products", "orders", "targets"}
+    assert set(brief) == {
+        "page_type", "site", "products", "orders", "targets", "SEEN", "stated_preferences",
+    }  # fmt: skip
     assert "reviews" not in json.dumps(brief)

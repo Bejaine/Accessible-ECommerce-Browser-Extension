@@ -119,3 +119,15 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   If they miss it, say the price couldn't be read and point to the page; never guess it.
 - A value is kept only if its snippet is verbatim in the request text and the value is in that
   snippet; "name = value" highlight lines are not specs. Requests are redacted again server-side.
+
+## 2026-10-11 — Comparison by stated preferences (Track C; affects D, core)
+- Code ranks, words explain: specs are mapped to comparable features (camera MP, battery mAh,
+  RAM, storage, screen, weight…) across Amazon/Flipkart/SerpApi naming; weights come only from
+  what the shopper says ("camera matters, battery doesn't, under ₹20,000"), never from the
+  disability profile. Missing values are "not listed", never guessed; if no listing has an
+  asked-for feature the answer says so.
+- `/turn` remembers, per session_id only (30 min, in memory): products opened (any site) and stated
+  preferences. New tool `set_preferences`; `compare` also uses products seen earlier. No persona
+  database; saving preferences across sessions would be an on-device profile + schema change.
+- `/product/prepare` `comparison` section: Amazon only, from SerpApi `compare_with_similar` (other
+  models' prices flagged as Amazon's); always shows the product being viewed with its rank.
