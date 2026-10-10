@@ -94,25 +94,52 @@ go in their own small PR and must be announced to the team before merging.
 
 ## Contracts (summary — the JSON Schemas in shared/schemas/ win if this ever disagrees)
 
-- `ProductJSON` — id, url, site, title, brand, price {amount, currency, mrp?}, rating? {value, count},
-  availability, category, specs {key: {value, unit?}}, variants?, images [{url, alt?, description?}],
-  delivery? {text, cost?, date?}, seller?, source {method: jsonld|adapter|llm|serpapi, extracted_at} (per-field source when merged),
-  missing [field names]. Unknown values are `null` and listed in `missing`, never guessed.
-- `PageContext` — page_type (search|product|reviews|cart|checkout|other), url, site,
-  products [ProductJSON], targets [ActionTarget {id, kind, label}]. Selectors stay client-side.
-- `Profile` — conditions {visual|speech|motor|ageing|colour: {score 0–1, active bool, source: inferred|user}}
-  (colour is always source=user),
-  prefs {lang, tts_rate, text_scale, verbosity: short|normal, lite_mode bool}. Any combination of
-  conditions can be active; `src/core/composer.ts` resolves them into one `ResolvedMode`
-  {input_channels, input_rung, output_channels, tts_rate, scan_interval_ms, max_options, verbosity}.
-- `OrderJSON` — id (placeholder), items, status, dates, available_actions (track|return|cancel).
-- `TurnRequest` — session_id, input {kind: voice|text|phrase|switch, text, lang, asr_meta?},
-  page PageContext, prefs, history (last 6 turns).
-- `TurnResponse` — intent, actions [ClientAction {type: click|fill|select|navigate|scroll, target_id, value?}],
-  output AccessibleOutput, confirmation? Confirmation {prompt, action_ref, risk: low|high}.
-- `AccessibleOutput` — lang, summary (≤2 short sentences, spoken first), sections [{heading, items}],
-  simpler? (plain-language version), followups [suggested next utterances], grounding [{claim, field_path}],
-  warnings [string]. Content is structured, not prose; renderers decide presentation.
+Wire conventions: snake_case keys; ISO 8601 dates (`format: date-time` or `date`); closed enums;
+`additionalProperties: false`; every top-level wire object has `schema_version` (const "1.0").
+Data fields are required-but-nullable (`T | null`) and unknowns are listed in `missing`;
+optional fields are only for request options. `Lang` = "en" | "hi" | "te" (more via schema PR).
+`Money` = {amount: number ≥ 0, currency: ^[A-Z]{3}$}.
+
+- `ProductJSON` — id `site:native_id` (e.g. `amazon.in:B0XXXX`), url, site, title, brand,
+  price {amount, currency, mrp (same currency)}, rating {value 0–5 normalised, count}, availability
+  {status: in_stock|low_stock|out_of_stock|preorder|unknown, text}, category, specs {snake_case_key:
+  {label, value, unit}} (numbers parsed: "5000 mAh" → 5000 + "mAh"), variants [{name, value, selected,
+  available, target_id}], images [{url, alt, description, ocr_text}], delivery {text, cost: Money,
+  date}, seller, sponsored, reviews {basis_count, summary_text, insights [{topic, sentiment:
+  positive|negative|mixed, mentions {total, positive, negative}}], histogram {"1".."5"}, items [{rating,
+  title, text, date, verified}]}, source {method, extracted_at, fields}, missing [dot paths].
+- `OrderJSON` — id (placeholder ORDER_n), items [{title, quantity, price: Money, product_url}], status,
+  dates {ordered, expected_delivery, delivered}, available_actions [track|return|cancel].
+- `PageContext` — page_type (search|product|reviews|cart|checkout|orders|order_detail|other), url, site,
+  products [ProductJSON], orders [OrderJSON], targets [ActionTarget], secure_zone_active.
+- `ActionTarget` — id, kind, label, zone (search|results|product|cart|checkout|orders|help),
+  state {disabled, selected, expanded}, colour_name (swatches). Selectors stay client-side.
+- `Profile` — conditions {visual|speech|motor|ageing|colour: {score 0–1, active, source}} (colour is
+  source=user only), prefs {lang, tts_rate 0.5–2, text_scale 1–3, verbosity, lite_mode, text_first,
+  switch_key, preferred_payment: upi|saved_card|cod|null}. Only prefs leave the device.
+- `ResolvedMode` — output of `src/core/composer.ts`: input_channels, input_rung, output_channels,
+  tts_rate, scan_interval_ms 500–5000, max_options 1–10, verbosity.
+- `AsrMeta` — {confidence 0–1 | null, mic_level | null, alternatives [string]}.
+- `TurnRequest` — session_id, input {kind: voice|text|phrase|switch, text (user's own language) | null,
+  lang, target_id | null, phrase_id | null, asr_meta | null}, page PageContext, prefs, history (≤ 6
+  turns, English). The backend translates inside /turn; the client never pre-translates.
+- `TurnResponse` — intent {name, confidence 0–1, alternatives ≤ 2 [{label, intent, actions}]},
+  actions [ClientAction] (safe to run now), confirmation | null, workflow {name: place_order|
+  track_order|return_order|cancel_order, step, total_steps} | null, output AccessibleOutput (user's
+  language). Workflow state is kept by the backend per session_id.
+- `ClientAction` — id, type (click|fill|select|navigate|scroll), target_id | null, value | null,
+  expected_effect {kind: cart_count_increase|url_change|element_appears|element_disappears|value_set|
+  none, detail | null}.
+- `Confirmation` — id, prompt, risk (low|high), pending_actions [ClientAction] (run only after the
+  user says yes; never also listed in `actions`), read_back {quantity, total: Money, pin_code} | null.
+- `AccessibleOutput` — lang, summary (≤ 2 short sentences, spoken first), sections [{heading, items
+  [{text, kind: text|pro|con|spec|row|warning, grounding_index | null}], table {columns, rows, spoken}
+  | null, simpler | null}], simpler | null, followups, grounding [{claim, subject_id, field_path}],
+  warnings. field_path is a dot path into the ProductJSON/OrderJSON named by subject_id
+  (e.g. `specs.battery.value`, `reviews.items[3].text`). Sentence splitting for speech is done by
+  the client player. Prepared product sections are in English and translated lazily.
+- `ErrorResponse` — error, code (rate_limited|auth_expired|upstream_unavailable|validation|not_found|
+  secure_zone|internal), retryable.
 
 Backend endpoints: `POST /product/prepare` (fetch + parallel precompute), `POST /ocr`, `POST /speech/asr`, `POST /speech/tts`, `POST /translate`, `POST /turn`,
 `POST /vision/describe`, `POST /reviews/summarize`, `GET /health`. Every endpoint validates
