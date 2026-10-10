@@ -1,0 +1,56 @@
+{
+  "description": "Saved real pages for extractor tests (Track B). Captured logged-out with curl, then sanitised by tools/sanitize.mjs. Each entry gives the source URL the extractor is run with and the page type it must detect.",
+  "captured": "2026-10-10",
+  "pages": [
+    {
+      "file": "amazon-product-earphones.html",
+      "url": "https://www.amazon.in/dp/B0C3ZYFZ77",
+      "page_type": "product"
+    },
+    {
+      "file": "amazon-product-cooker.html",
+      "url": "https://www.amazon.in/dp/B00VNMLOFO",
+      "page_type": "product"
+    },
+    {
+      "file": "amazon-product-phone.html",
+      "url": "https://www.amazon.in/dp/B0H1X5XP25",
+      "page_type": "product"
+    },
+    {
+      "file": "flipkart-product-earphones.html",
+      "url": "https://www.flipkart.com/triggr-ultrabuds-go-40h-playtime-ai-enc-dynamic-drivers-type-c-fast-charging-bluetooth/p/itm3444507dffea3?pid=ACCHMY2CYXGG6H3Q",
+      "page_type": "product"
+    },
+    {
+      "file": "flipkart-product-phone.html",
+      "url": "https://www.flipkart.com/ai-nova-2-5g-black-64-gb/p/itme6e69f9ec9956?pid=MOBHKHPYYA5KZSYP",
+      "page_type": "product"
+    },
+    {
+      "file": "amazon-search-earphones.html",
+      "url": "https://www.amazon.in/s?k=bluetooth+earphones",
+      "page_type": "search"
+    },
+    {
+      "file": "amazon-search-cooker.html",
+      "url": "https://www.amazon.in/s?k=pressure+cooker",
+      "page_type": "search"
+    },
+    {
+      "file": "flipkart-search-earphones.html",
+      "url": "https://www.flipkart.com/search?q=bluetooth+earphones",
+      "page_type": "search"
+    },
+    {
+      "file": "flipkart-search-mobiles.html",
+      "url": "https://www.flipkart.com/search?q=mobile+phone",
+      "page_type": "search"
+    },
+    {
+      "file": "flipkart-cart.html",
+      "url": "https://www.flipkart.com/viewcart",
+      "page_type": "cart"
+    }
+  ]
+}

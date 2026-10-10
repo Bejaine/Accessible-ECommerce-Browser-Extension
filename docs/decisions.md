@@ -54,6 +54,18 @@ VisionDescribeRequest.product_id) are optional and non-null. Generated Pydantic/
 OCRRequest's oneOf; JSON Schema validation does.
 Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 
+## 2026-10-10 — Extraction tiers and field precedence (Track B, affects C and D)
+- Tiers run fastest-first: JSON-LD/meta → site adapter; a later tier overrides a field it found
+  (adapters read what the user sees: price, stock, delivery, seller). `source.fields` records
+  the tier per field. Anything not found is null and listed in `missing`, never guessed.
+- Amazon shows the rating histogram as percentages; `reviews.histogram` counts are
+  round(percent × rating.count / 100), so they carry Amazon's ±1% rounding. Say "about".
+- Flipkart's CSS classes are generated, so its adapter reads structure and wording, never class
+  names. Image-only colour options without a name on the page are left out of `variants`.
+- `reviews.basis_count` = review items actually read from the page (not the site's total).
+- Page map: ids are `t1, t2, …`, stable for the document's lifetime; max 200 targets, search and
+  cart zones first; labels only, input values are never read.
+
 ## 2026-10-10 — Section summaries via Groq, verified (Track C; affects demo, B/core, slides)
 - `/product/prepare` writes overview/specs/reviews with Groq (`gpt-oss-120b` for reviews,
   `gpt-oss-20b` for the others, strict JSON). The model must cite a ProductJSON field for every
@@ -63,6 +75,6 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   minute; beyond that the template answers until the limit resets. Results are cached per product.
 - Demo machine needs `GROQ_API_KEY` in `.env` (see `.env.example`). Groq's free tier may use what we
   send; we send only public product data, never user data (note for the Responsible AI slide).
-- SerpApi data notes: star "counts" are percentages (not used as a histogram); review counts use a
-  lower bound so we never claim more reviews than were read; listing errors (e.g. RAM = storage)
-  are read as written with a warning, never corrected.
+- SerpApi converter (`services/serpapi.py`): star "counts" are percentages (not used as a
+  histogram); review counts use a lower bound so we never claim more reviews than were read;
+  listing errors (e.g. RAM = storage) are read as written with a warning, never corrected.
