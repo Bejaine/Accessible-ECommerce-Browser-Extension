@@ -1,13 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "ReviewsSummarizeRequest",
-  "description": "Response is an AccessibleOutput (pros, cons, verdict with mention counts).",
+  "description": "Reviews come from product.reviews. Response is an AccessibleOutput (pros, cons, verdict with mention counts).",
   "type": "object",
   "additionalProperties": false,
-  "required": ["product", "review_texts", "lang"],
+  "required": ["schema_version", "product"],
   "properties": {
-    "product": { "$ref": "../ProductJSON.schema.json" },
-    "review_texts": { "type": "array", "items": { "type": "string" } },
-    "lang": { "type": "string" }
+    "schema_version": {
+      "$ref": "../common.schema.json#/$defs/SchemaVersion"
+    },
+    "product": {
+      "$ref": "../ProductJSON.schema.json"
+    }
   }
 }

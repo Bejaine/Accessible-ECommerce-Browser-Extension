@@ -4,10 +4,14 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from .. import AccessibleOutput_schema, ProductJSON_schema
+from .. import AccessibleOutput_schema, ProductJSON_schema, common_schema
 
 
 class PreparedSections(BaseModel):
+    """
+    Precomputed in parallel, in English, and translated lazily: translation and TTS run only for the section the user asks for.
+    """
+
     model_config = ConfigDict(
         extra="forbid",
     )
@@ -19,13 +23,14 @@ class PreparedSections(BaseModel):
 
 
 class ProductPrepareResponse(BaseModel):
-    """
-    Cached sections, precomputed in parallel. Translation and TTS happen only for the section the user asks for.
-    """
-
     model_config = ConfigDict(
         extra="forbid",
     )
+    schema_version: common_schema.SchemaVersion
     product_id: str
     product: ProductJSON_schema.ProductJSON
-    sections: PreparedSections = Field(..., title="PreparedSections")
+    sections: PreparedSections = Field(
+        ...,
+        description="Precomputed in parallel, in English, and translated lazily: translation and TTS run only for the section the user asks for.",
+        title="PreparedSections",
+    )

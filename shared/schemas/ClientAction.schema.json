@@ -4,8 +4,10 @@
   "description": "An action the extension performs in the user's tab. The backend never touches the shop.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["type", "target_id"],
+  "required": ["schema_version", "id", "type", "target_id", "value", "expected_effect"],
   "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/SchemaVersion" },
+    "id": { "type": "string", "minLength": 1 },
     "type": {
       "title": "ClientActionType",
       "type": "string",
@@ -18,6 +20,28 @@
     "value": {
       "type": ["string", "null"],
       "description": "Text to fill, option to select, or URL to navigate to."
+    },
+    "expected_effect": {
+      "title": "ExpectedEffect",
+      "description": "What the extension checks afterwards to tell the user whether it worked.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "detail"],
+      "properties": {
+        "kind": {
+          "title": "EffectKind",
+          "type": "string",
+          "enum": [
+            "cart_count_increase",
+            "url_change",
+            "element_appears",
+            "element_disappears",
+            "value_set",
+            "none"
+          ]
+        },
+        "detail": { "type": ["string", "null"] }
+      }
     }
   }
 }

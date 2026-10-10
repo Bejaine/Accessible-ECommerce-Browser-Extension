@@ -1,20 +1,21 @@
 {
+  "schema_version": "1.0",
   "id": "ORDER_1",
   "items": [
     {
-      "title": "Example Wireless Earbuds X1",
+      "title": "Zentra Buds Air (White)",
       "quantity": 1,
       "price": {
         "amount": 1999,
         "currency": "INR"
       },
-      "product_url": "https://mock-store.local/product/B0MOCK0001"
+      "product_url": "https://www.amazon.in/dp/B0ZNTRBDS1"
     }
   ],
   "status": "shipped",
   "dates": {
-    "ordered": "2026-10-08",
-    "expected_delivery": "2026-10-14",
+    "ordered": "2026-10-07",
+    "expected_delivery": "2026-10-12",
     "delivered": null
   },
   "available_actions": ["track", "cancel"]

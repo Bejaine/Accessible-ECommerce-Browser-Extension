@@ -1,23 +1,24 @@
 {
+  "schema_version": "1.0",
   "conditions": {
     "visual": {
-      "score": 0.8,
+      "score": 1,
       "active": true,
       "source": "user"
     },
     "speech": {
-      "score": 0,
+      "score": 0.1,
       "active": false,
       "source": "inferred"
     },
     "motor": {
-      "score": 0,
+      "score": 0.2,
       "active": false,
       "source": "inferred"
     },
     "ageing": {
-      "score": 0,
-      "active": false,
+      "score": 0.74,
+      "active": true,
       "source": "inferred"
     },
     "colour": {
@@ -27,10 +28,13 @@
     }
   },
   "prefs": {
-    "lang": "en",
-    "tts_rate": 1,
-    "text_scale": 1,
-    "verbosity": "normal",
-    "lite_mode": false
+    "lang": "hi",
+    "tts_rate": 0.85,
+    "text_scale": 1.5,
+    "verbosity": "short",
+    "lite_mode": false,
+    "text_first": false,
+    "switch_key": "Space",
+    "preferred_payment": "upi"
   }
 }

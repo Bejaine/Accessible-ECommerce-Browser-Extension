@@ -3,10 +3,20 @@
   "title": "VisionDescribeRequest",
   "type": "object",
   "additionalProperties": false,
-  "required": ["image_url", "lang"],
+  "required": ["schema_version", "image_url", "lang"],
   "properties": {
-    "image_url": { "type": "string" },
-    "product_id": { "type": ["string", "null"] },
-    "lang": { "type": "string" }
+    "schema_version": {
+      "$ref": "../common.schema.json#/$defs/SchemaVersion"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "product_id": {
+      "type": "string",
+      "description": "Request option: ProductJSON id for context."
+    },
+    "lang": {
+      "$ref": "../common.schema.json#/$defs/Lang"
+    }
   }
 }

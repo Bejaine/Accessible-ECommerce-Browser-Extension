@@ -1,0 +1,199 @@
+{
+  "schema_version": "1.0",
+  "page_type": "search",
+  "url": "https://www.amazon.in/s?k=5g+phone+under+20000",
+  "site": "amazon.in",
+  "products": [
+    {
+      "schema_version": "1.0",
+      "id": "amazon.in:B0NVXA15G5",
+      "url": "https://www.amazon.in/dp/B0NVXA15G5",
+      "site": "amazon.in",
+      "title": "Novix A15 5G (Ocean Blue, 6GB RAM, 128GB Storage)",
+      "brand": "Novix",
+      "price": {
+        "amount": 15499,
+        "currency": "INR",
+        "mrp": 19999
+      },
+      "rating": {
+        "value": 4.0,
+        "count": 1204
+      },
+      "availability": {
+        "status": "in_stock",
+        "text": null
+      },
+      "category": "Smartphones",
+      "specs": {},
+      "variants": null,
+      "images": [
+        {
+          "url": "https://m.media-amazon.com/images/I/novix-a15-5g.jpg",
+          "alt": "Novix A15 5G (Ocean Blue, 6GB RAM, 128GB Storage)",
+          "description": null,
+          "ocr_text": null
+        }
+      ],
+      "delivery": {
+        "text": "FREE delivery Wed, 15 Oct",
+        "cost": null,
+        "date": null
+      },
+      "seller": null,
+      "sponsored": true,
+      "reviews": null,
+      "source": {
+        "method": "adapter",
+        "extracted_at": "2026-10-10T10:00:00Z",
+        "fields": {}
+      },
+      "missing": ["specs", "variants", "seller", "reviews", "delivery.cost", "delivery.date"]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "amazon.in:B0ZNTRA5G1",
+      "url": "https://www.amazon.in/dp/B0ZNTRA5G1",
+      "site": "amazon.in",
+      "title": "Zentra Pulse 5G (Midnight Black, 8GB RAM, 128GB Storage)",
+      "brand": "Zentra",
+      "price": {
+        "amount": 17999,
+        "currency": "INR",
+        "mrp": 24999
+      },
+      "rating": {
+        "value": 4.2,
+        "count": 3418
+      },
+      "availability": {
+        "status": "in_stock",
+        "text": null
+      },
+      "category": "Smartphones",
+      "specs": {},
+      "variants": null,
+      "images": [
+        {
+          "url": "https://m.media-amazon.com/images/I/zentra-pulse-5g-front.jpg",
+          "alt": "Zentra Pulse 5G (Midnight Black, 8GB RAM, 128GB Storage)",
+          "description": null,
+          "ocr_text": null
+        }
+      ],
+      "delivery": {
+        "text": "FREE delivery Tue, 14 Oct",
+        "cost": null,
+        "date": null
+      },
+      "seller": null,
+      "sponsored": false,
+      "reviews": null,
+      "source": {
+        "method": "adapter",
+        "extracted_at": "2026-10-10T10:00:00Z",
+        "fields": {}
+      },
+      "missing": ["specs", "variants", "seller", "reviews", "delivery.cost", "delivery.date"]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "amazon.in:B0ORBM35G3",
+      "url": "https://www.amazon.in/dp/B0ORBM35G3",
+      "site": "amazon.in",
+      "title": "Orbita M3 5G (Graphite, 6GB RAM, 128GB Storage)",
+      "brand": "Orbita",
+      "price": {
+        "amount": 13999,
+        "currency": "INR",
+        "mrp": 17999
+      },
+      "rating": {
+        "value": 3.9,
+        "count": 856
+      },
+      "availability": {
+        "status": "low_stock",
+        "text": "Only 3 left in stock."
+      },
+      "category": "Smartphones",
+      "specs": {},
+      "variants": null,
+      "images": [
+        {
+          "url": "https://m.media-amazon.com/images/I/orbita-m3-5g.jpg",
+          "alt": "Orbita M3 5G (Graphite, 6GB RAM, 128GB Storage)",
+          "description": null,
+          "ocr_text": null
+        }
+      ],
+      "delivery": {
+        "text": "FREE delivery Thu, 16 Oct",
+        "cost": null,
+        "date": null
+      },
+      "seller": null,
+      "sponsored": false,
+      "reviews": null,
+      "source": {
+        "method": "adapter",
+        "extracted_at": "2026-10-10T10:00:00Z",
+        "fields": {}
+      },
+      "missing": ["specs", "variants", "seller", "reviews", "delivery.cost", "delivery.date"]
+    }
+  ],
+  "orders": [],
+  "targets": [
+    {
+      "schema_version": "1.0",
+      "id": "t-search",
+      "kind": "input",
+      "label": "Search Amazon.in",
+      "zone": "search",
+      "state": null,
+      "colour_name": null
+    },
+    {
+      "schema_version": "1.0",
+      "id": "t-r1",
+      "kind": "link",
+      "label": "Novix A15 5G (Ocean Blue, 6GB RAM, 128GB Storage)",
+      "zone": "results",
+      "state": null,
+      "colour_name": null
+    },
+    {
+      "schema_version": "1.0",
+      "id": "t-r2",
+      "kind": "link",
+      "label": "Zentra Pulse 5G (Midnight Black, 8GB RAM, 128GB Storage)",
+      "zone": "results",
+      "state": null,
+      "colour_name": null
+    },
+    {
+      "schema_version": "1.0",
+      "id": "t-r3",
+      "kind": "link",
+      "label": "Orbita M3 5G (Graphite, 6GB RAM, 128GB Storage)",
+      "zone": "results",
+      "state": null,
+      "colour_name": null
+    },
+    {
+      "schema_version": "1.0",
+      "id": "t-sort",
+      "kind": "select",
+      "label": "Sort by",
+      "zone": "results",
+      "state": {
+        "disabled": false,
+        "selected": false,
+        "expanded": false
+      },
+      "colour_name": null
+    }
+  ],
+  "secure_zone_active": false
+}

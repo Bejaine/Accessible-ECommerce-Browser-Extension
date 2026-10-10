@@ -7,6 +7,7 @@ const KEY = 'profile';
 export function defaultProfile(): Profile {
   const off = { score: 0, active: false, source: 'inferred' as const };
   return {
+    schema_version: '1.0',
     conditions: {
       visual: { ...off },
       speech: { ...off },
@@ -14,7 +15,16 @@ export function defaultProfile(): Profile {
       ageing: { ...off },
       colour: { score: 0, active: false, source: 'user' },
     },
-    prefs: { lang: 'en', tts_rate: 1, text_scale: 1, verbosity: 'normal', lite_mode: false },
+    prefs: {
+      lang: 'en',
+      tts_rate: 1,
+      text_scale: 1,
+      verbosity: 'normal',
+      lite_mode: false,
+      text_first: false,
+      switch_key: 'Space',
+      preferred_payment: null,
+    },
   };
 }
 

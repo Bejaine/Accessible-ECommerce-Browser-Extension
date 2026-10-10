@@ -6,6 +6,8 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .. import common_schema
+
 
 class Encoding(StrEnum):
     opus = "opus"
@@ -17,13 +19,14 @@ class ASRRequest(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    lang: str
+    schema_version: common_schema.SchemaVersion
+    lang: common_schema.Lang
     audio_base64: str
     encoding: Encoding
-    sample_rate: int | None = Field(None, ge=8000)
+    sample_rate: int | None = Field(None, description="Request option.", ge=8000)
     mic_level: float | None = Field(
         None,
-        description="Our own RMS level, to tell silence from unclear speech.",
+        description="Request option: our own RMS level, to tell silence from unclear speech.",
         ge=0.0,
         le=1.0,
     )

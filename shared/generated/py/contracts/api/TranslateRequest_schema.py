@@ -4,11 +4,14 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict
 
+from .. import common_schema
+
 
 class TranslateRequest(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
+    schema_version: common_schema.SchemaVersion
     text: str
-    source_lang: str
-    target_lang: str
+    source_lang: common_schema.Lang
+    target_lang: common_schema.Lang

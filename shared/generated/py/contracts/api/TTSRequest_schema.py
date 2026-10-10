@@ -4,11 +4,14 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from .. import common_schema
+
 
 class TTSRequest(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
+    schema_version: common_schema.SchemaVersion
     text: str = Field(..., min_length=1)
-    lang: str
-    voice: str | None = None
+    lang: common_schema.Lang
+    voice: str | None = Field(None, description="Request option.")

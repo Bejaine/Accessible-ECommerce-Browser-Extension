@@ -4,17 +4,16 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict
 
-from .. import ProductJSON_schema
+from .. import ProductJSON_schema, common_schema
 
 
 class ReviewsSummarizeRequest(BaseModel):
     """
-    Response is an AccessibleOutput (pros, cons, verdict with mention counts).
+    Reviews come from product.reviews. Response is an AccessibleOutput (pros, cons, verdict with mention counts).
     """
 
     model_config = ConfigDict(
         extra="forbid",
     )
+    schema_version: common_schema.SchemaVersion
     product: ProductJSON_schema.ProductJSON
-    review_texts: list[str]
-    lang: str

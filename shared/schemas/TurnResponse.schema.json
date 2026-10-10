@@ -3,23 +3,65 @@
   "title": "TurnResponse",
   "type": "object",
   "additionalProperties": false,
-  "required": ["intent", "actions", "output"],
+  "required": ["schema_version", "intent", "actions", "confirmation", "workflow", "output"],
   "properties": {
-    "intent": { "type": "string" },
-    "confidence": {
-      "type": ["number", "null"],
-      "minimum": 0,
-      "maximum": 1,
-      "description": ">= 0.8 act; 0.5-0.8 ask 'Did you mean X or Y?'; < 0.5 offer phrase chips."
+    "schema_version": { "$ref": "common.schema.json#/$defs/SchemaVersion" },
+    "intent": {
+      "title": "Intent",
+      "description": "confidence >= 0.8 act; 0.5-0.8 ask 'Did you mean X or Y?'; < 0.5 offer phrase chips.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "confidence", "alternatives"],
+      "properties": {
+        "name": { "type": "string" },
+        "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+        "alternatives": {
+          "type": "array",
+          "maxItems": 2,
+          "items": {
+            "title": "IntentAlternative",
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["label", "intent", "actions"],
+            "properties": {
+              "label": { "type": "string" },
+              "intent": { "type": "string" },
+              "actions": { "type": "array", "items": { "$ref": "ClientAction.schema.json" } }
+            }
+          }
+        }
+      }
     },
-    "alternatives": {
+    "actions": {
       "type": "array",
-      "maxItems": 2,
-      "items": { "type": "string" },
-      "description": "Top two alternative intents for disambiguation."
+      "description": "Safe to run now. Consequential actions go in confirmation.pending_actions instead.",
+      "items": { "$ref": "ClientAction.schema.json" }
     },
-    "actions": { "type": "array", "items": { "$ref": "ClientAction.schema.json" } },
-    "output": { "$ref": "AccessibleOutput.schema.json" },
-    "confirmation": { "anyOf": [{ "$ref": "Confirmation.schema.json" }, { "type": "null" }] }
+    "confirmation": { "anyOf": [{ "$ref": "Confirmation.schema.json" }, { "type": "null" }] },
+    "workflow": {
+      "description": "Workflow state is kept by the backend per session_id.",
+      "anyOf": [{ "$ref": "#/$defs/Workflow" }, { "type": "null" }]
+    },
+    "output": {
+      "$ref": "AccessibleOutput.schema.json",
+      "description": "In the user's language."
+    }
+  },
+  "$defs": {
+    "Workflow": {
+      "title": "Workflow",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "step", "total_steps"],
+      "properties": {
+        "name": {
+          "title": "WorkflowName",
+          "type": "string",
+          "enum": ["place_order", "track_order", "return_order", "cancel_order"]
+        },
+        "step": { "type": "integer", "minimum": 1 },
+        "total_steps": { "type": "integer", "minimum": 1 }
+      }
+    }
   }
 }

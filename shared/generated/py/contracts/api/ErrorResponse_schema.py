@@ -2,7 +2,21 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from enum import StrEnum
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from .. import common_schema
+
+
+class ErrorCode(StrEnum):
+    rate_limited = "rate_limited"
+    auth_expired = "auth_expired"
+    upstream_unavailable = "upstream_unavailable"
+    validation = "validation"
+    not_found = "not_found"
+    secure_zone = "secure_zone"
+    internal = "internal"
 
 
 class ErrorResponse(BaseModel):
@@ -13,6 +27,7 @@ class ErrorResponse(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    error: str
-    code: str
+    schema_version: common_schema.SchemaVersion
+    error: str = Field(..., description="Calm, user-presentable message.")
+    code: ErrorCode = Field(..., title="ErrorCode")
     retryable: bool

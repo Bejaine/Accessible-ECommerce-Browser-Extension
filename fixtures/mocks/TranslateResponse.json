@@ -1,5 +1,6 @@
 {
-  "text": "बैटरी लाइफ: 30 hours",
+  "schema_version": "1.0",
+  "text": "बैटरी क्षमता: 5000 mAh",
   "source_lang": "en",
   "target_lang": "hi"
 }

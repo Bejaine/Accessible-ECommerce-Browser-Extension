@@ -3,10 +3,20 @@
   "title": "HealthResponse",
   "type": "object",
   "additionalProperties": false,
-  "required": ["status", "mock", "version"],
+  "required": ["schema_version", "status", "mock", "version"],
   "properties": {
-    "status": { "type": "string", "const": "ok" },
-    "mock": { "type": "boolean" },
-    "version": { "type": "string" }
+    "schema_version": {
+      "$ref": "../common.schema.json#/$defs/SchemaVersion"
+    },
+    "status": {
+      "type": "string",
+      "const": "ok"
+    },
+    "mock": {
+      "type": "boolean"
+    },
+    "version": {
+      "type": "string"
+    }
   }
 }

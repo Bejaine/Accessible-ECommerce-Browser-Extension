@@ -1,169 +1,480 @@
 {
-  "product_id": "mock-B0MOCK0001",
+  "schema_version": "1.0",
+  "product_id": "amazon.in:B0ZNTRA5G1",
   "product": {
-    "id": "mock-B0MOCK0001",
-    "url": "https://mock-store.local/product/B0MOCK0001",
-    "site": "mock-store",
-    "title": "Example Wireless Earbuds X1",
-    "brand": "ExampleBrand",
+    "schema_version": "1.0",
+    "id": "amazon.in:B0ZNTRA5G1",
+    "url": "https://www.amazon.in/dp/B0ZNTRA5G1",
+    "site": "amazon.in",
+    "title": "Zentra Pulse 5G (Midnight Black, 8GB RAM, 128GB Storage)",
+    "brand": "Zentra",
     "price": {
-      "amount": 1999,
+      "amount": 17999,
       "currency": "INR",
-      "mrp": 3999
+      "mrp": 24999
     },
     "rating": {
-      "value": 4.1,
-      "count": 1250
+      "value": 4.2,
+      "count": 3418
     },
-    "availability": "In stock",
-    "category": "Headphones",
+    "availability": {
+      "status": "in_stock",
+      "text": "In stock"
+    },
+    "category": "Smartphones",
     "specs": {
-      "battery_life": {
-        "value": 30,
-        "unit": "hours"
+      "battery": {
+        "label": "Battery Capacity",
+        "value": 5000,
+        "unit": "mAh"
       },
-      "bluetooth_version": {
-        "value": "5.3",
-        "unit": null
+      "ram": {
+        "label": "RAM",
+        "value": 8,
+        "unit": "GB"
       },
-      "water_resistance": {
-        "value": "IPX5",
+      "storage": {
+        "label": "Internal Storage",
+        "value": 128,
+        "unit": "GB"
+      },
+      "display_size": {
+        "label": "Screen Size",
+        "value": 6.67,
+        "unit": "inches"
+      },
+      "refresh_rate": {
+        "label": "Refresh Rate",
+        "value": 120,
+        "unit": "Hz"
+      },
+      "os": {
+        "label": "Operating System",
+        "value": "Android 15",
         "unit": null
       }
     },
     "variants": [
       {
         "name": "colour",
-        "value": "Black",
+        "value": "Midnight Black",
         "selected": true,
         "available": true,
         "target_id": "t-swatch-black"
       },
       {
         "name": "colour",
-        "value": "White",
+        "value": "Sage Green",
         "selected": false,
         "available": true,
-        "target_id": "t-swatch-white"
+        "target_id": "t-swatch-green"
       }
     ],
     "images": [
       {
-        "url": "https://mock-store.local/img/x1-main.jpg",
-        "alt": "Earbuds in open charging case",
-        "description": null
+        "url": "https://m.media-amazon.com/images/I/zentra-pulse-5g-front.jpg",
+        "alt": "Zentra Pulse 5G front and back, Midnight Black",
+        "description": null,
+        "ocr_text": null
+      },
+      {
+        "url": "https://m.media-amazon.com/images/I/zentra-pulse-5g-box.jpg",
+        "alt": "What's in the box",
+        "description": null,
+        "ocr_text": "Handset, 33W charger, USB-C cable, SIM ejector, protective case"
       }
     ],
     "delivery": {
-      "text": "Free delivery by Tuesday",
-      "cost": 0,
+      "text": "FREE delivery Tuesday, 14 October",
+      "cost": {
+        "amount": 0,
+        "currency": "INR"
+      },
       "date": "2026-10-14"
     },
-    "seller": "Mock Retail",
+    "seller": "Zentra Official Store",
+    "sponsored": false,
+    "reviews": {
+      "basis_count": 690,
+      "summary_text": "Customers like the battery life and display. Some mention the camera struggles in low light, and opinions on heating while gaming are mixed.",
+      "insights": [
+        {
+          "topic": "Battery life",
+          "sentiment": "positive",
+          "mentions": {
+            "total": 212,
+            "positive": 189,
+            "negative": 23
+          }
+        },
+        {
+          "topic": "Display",
+          "sentiment": "positive",
+          "mentions": {
+            "total": 148,
+            "positive": 131,
+            "negative": 17
+          }
+        },
+        {
+          "topic": "Low-light camera",
+          "sentiment": "negative",
+          "mentions": {
+            "total": 96,
+            "positive": 28,
+            "negative": 68
+          }
+        },
+        {
+          "topic": "Heating",
+          "sentiment": "mixed",
+          "mentions": {
+            "total": 54,
+            "positive": 25,
+            "negative": 29
+          }
+        }
+      ],
+      "histogram": {
+        "1": 274,
+        "2": 137,
+        "3": 307,
+        "4": 820,
+        "5": 1880
+      },
+      "items": [
+        {
+          "rating": 5,
+          "title": "Battery lasts two days",
+          "text": "With normal use I charge it every second day. The screen is bright outdoors.",
+          "date": "2026-09-21",
+          "verified": true
+        },
+        {
+          "rating": 4,
+          "title": "Good value",
+          "text": "Smooth for daily apps and the 120Hz screen feels fast. Night photos are average.",
+          "date": "2026-09-18",
+          "verified": true
+        },
+        {
+          "rating": 2,
+          "title": "Camera disappointing at night",
+          "text": "Daylight photos are fine but indoor and night photos are noisy.",
+          "date": "2026-09-12",
+          "verified": true
+        },
+        {
+          "rating": 4,
+          "title": null,
+          "text": "Gets a little warm during long games, otherwise no complaints.",
+          "date": "2026-09-05",
+          "verified": false
+        },
+        {
+          "rating": 5,
+          "title": "Easy for my father to use",
+          "text": "Large text and loud speaker. He uses it for calls and UPI without help.",
+          "date": "2026-08-30",
+          "verified": true
+        }
+      ]
+    },
     "source": {
-      "method": "jsonld",
+      "method": "adapter",
       "extracted_at": "2026-10-10T10:00:00Z",
       "fields": {
-        "specs": "adapter"
+        "title": "jsonld",
+        "price": "adapter",
+        "specs": "adapter",
+        "reviews.insights": "serpapi"
       }
     },
     "missing": []
   },
   "sections": {
     "overview": {
+      "schema_version": "1.0",
       "lang": "en",
-      "summary": "Example Wireless Earbuds X1 by ExampleBrand cost 1,999 rupees. Rated 4.1 out of 5 from 1,250 ratings.",
+      "summary": "Zentra Pulse 5G costs ₹17,999, down from ₹24,999. It is rated 4.2 out of 5 from 3,418 ratings.",
       "sections": [
         {
-          "heading": "Key specs",
-          "items": ["Battery life: 30 hours", "Bluetooth 5.3", "Water resistance: IPX5"]
+          "heading": "At a glance",
+          "items": [
+            {
+              "text": "In stock",
+              "kind": "text",
+              "grounding_index": 2
+            },
+            {
+              "text": "FREE delivery Tuesday, 14 October",
+              "kind": "text",
+              "grounding_index": 3
+            }
+          ],
+          "table": null,
+          "simpler": null
         }
       ],
-      "simpler": "These earbuds cost 1,999 rupees. People rate them 4 out of 5.",
-      "followups": ["Read the reviews", "Add to cart", "Compare with similar"],
+      "simpler": "This phone costs ₹17,999. People like it.",
+      "followups": ["Tell me the specs", "What do reviews say?", "Add to cart"],
       "grounding": [
         {
-          "claim": "cost 1,999 rupees",
+          "claim": "₹17,999",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
           "field_path": "price.amount"
         },
         {
-          "claim": "Rated 4.1 out of 5",
+          "claim": "₹24,999",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "price.mrp"
+        },
+        {
+          "claim": "In stock",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "availability.status"
+        },
+        {
+          "claim": "FREE delivery Tuesday",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "delivery.text"
+        },
+        {
+          "claim": "rated 4.2 out of 5",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
           "field_path": "rating.value"
         },
         {
-          "claim": "1,250 ratings",
+          "claim": "3,418 ratings",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
           "field_path": "rating.count"
-        },
-        {
-          "claim": "Battery life: 30 hours",
-          "field_path": "specs.battery_life"
         }
       ],
       "warnings": []
     },
     "specs": {
+      "schema_version": "1.0",
       "lang": "en",
-      "summary": "Example Wireless Earbuds X1 by ExampleBrand cost 1,999 rupees. Rated 4.1 out of 5 from 1,250 ratings.",
+      "summary": "Key specs: 5000 mAh battery, 8 GB RAM and 128 GB storage, with a 6.67 inch 120 Hz screen.",
       "sections": [
         {
-          "heading": "Key specs",
-          "items": ["Battery life: 30 hours", "Bluetooth 5.3", "Water resistance: IPX5"]
+          "heading": "Specs",
+          "items": [
+            {
+              "text": "Battery: 5000 mAh",
+              "kind": "spec",
+              "grounding_index": 0
+            },
+            {
+              "text": "RAM: 8 GB",
+              "kind": "spec",
+              "grounding_index": 1
+            },
+            {
+              "text": "Storage: 128 GB",
+              "kind": "spec",
+              "grounding_index": 2
+            },
+            {
+              "text": "Screen: 6.67 inches, 120 Hz",
+              "kind": "spec",
+              "grounding_index": 3
+            },
+            {
+              "text": "Operating system: Android 15",
+              "kind": "spec",
+              "grounding_index": 4
+            }
+          ],
+          "table": null,
+          "simpler": null
         }
       ],
-      "simpler": "These earbuds cost 1,999 rupees. People rate them 4 out of 5.",
-      "followups": ["Read the reviews", "Add to cart", "Compare with similar"],
+      "simpler": null,
+      "followups": ["What do reviews say?", "What's in the box?"],
       "grounding": [
         {
-          "claim": "cost 1,999 rupees",
-          "field_path": "price.amount"
+          "claim": "5000 mAh",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "specs.battery.value"
         },
         {
-          "claim": "Rated 4.1 out of 5",
-          "field_path": "rating.value"
+          "claim": "8 GB",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "specs.ram.value"
         },
         {
-          "claim": "1,250 ratings",
-          "field_path": "rating.count"
+          "claim": "128 GB",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "specs.storage.value"
         },
         {
-          "claim": "Battery life: 30 hours",
-          "field_path": "specs.battery_life"
+          "claim": "6.67 inches",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "specs.display_size.value"
+        },
+        {
+          "claim": "Android 15",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "specs.os.value"
         }
       ],
       "warnings": []
     },
     "reviews": {
+      "schema_version": "1.0",
       "lang": "en",
-      "summary": "Based on 3 visible reviews: most mention good battery life; one mentions a loose fit.",
+      "summary": "Based on 690 reviews, people like the battery and display. The main complaint is low-light photos.",
       "sections": [
         {
           "heading": "Pros",
-          "items": ["Battery life (2 mentions)"]
+          "items": [
+            {
+              "text": "Battery life: 189 of 212 mentions are positive",
+              "kind": "pro",
+              "grounding_index": 0
+            },
+            {
+              "text": "Display: 131 of 148 mentions are positive",
+              "kind": "pro",
+              "grounding_index": 1
+            }
+          ],
+          "table": null,
+          "simpler": null
         },
         {
           "heading": "Cons",
-          "items": ["Fit (1 mention)"]
+          "items": [
+            {
+              "text": "Low-light camera: 68 of 96 mentions are negative",
+              "kind": "con",
+              "grounding_index": 2
+            },
+            {
+              "text": "Heating while gaming: opinions are mixed (54 mentions)",
+              "kind": "con",
+              "grounding_index": 3
+            }
+          ],
+          "table": null,
+          "simpler": null
         },
         {
-          "heading": "Verdict",
-          "items": ["Mostly positive about battery; fit varies."]
+          "heading": "Compared with Novix A15 5G",
+          "items": [],
+          "table": {
+            "columns": ["", "Zentra Pulse 5G", "Novix A15 5G"],
+            "rows": [
+              ["Price", "₹17,999", "₹15,499"],
+              ["Rating", "4.2 (3,418 ratings)", "4.0 (1,204 ratings)"],
+              ["RAM", "8 GB", "6 GB"]
+            ],
+            "spoken": "Zentra Pulse 5G costs ₹17,999 and is rated 4.2. Novix A15 5G costs ₹15,499 and is rated 4.0. Zentra has 8 GB RAM, Novix has 6 GB."
+          },
+          "simpler": "Zentra costs ₹2,500 more and has slightly better ratings."
         }
       ],
-      "simpler": null,
-      "followups": ["Read one review", "Add to cart"],
+      "simpler": "Most buyers like the battery and screen. Night photos are not great.",
+      "followups": ["Read a review", "Compare with Orbita M3", "Add to cart"],
       "grounding": [
         {
-          "claim": "good battery life",
-          "field_path": "reviews[0]"
+          "claim": "battery mentions",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "reviews.insights[0].mentions"
         },
         {
-          "claim": "loose fit",
-          "field_path": "reviews[2]"
+          "claim": "display mentions",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "reviews.insights[1].mentions"
+        },
+        {
+          "claim": "low-light camera mentions",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "reviews.insights[2].mentions"
+        },
+        {
+          "claim": "heating mentions",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "reviews.insights[3].mentions"
+        },
+        {
+          "claim": "₹17,999",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "price.amount"
+        },
+        {
+          "claim": "₹15,499",
+          "subject_id": "amazon.in:B0NVXA15G5",
+          "field_path": "price.amount"
+        },
+        {
+          "claim": "rated 4.2",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "rating.value"
+        },
+        {
+          "claim": "rated 4.0",
+          "subject_id": "amazon.in:B0NVXA15G5",
+          "field_path": "rating.value"
+        },
+        {
+          "claim": "8 GB RAM",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "specs.ram.value"
         }
       ],
       "warnings": []
     },
-    "images": null,
+    "images": {
+      "schema_version": "1.0",
+      "lang": "en",
+      "summary": "The box image lists the handset, a 33W charger, a USB-C cable, a SIM ejector and a protective case.",
+      "sections": [
+        {
+          "heading": "In the box",
+          "items": [
+            {
+              "text": "Handset",
+              "kind": "text",
+              "grounding_index": 0
+            },
+            {
+              "text": "33W charger",
+              "kind": "text",
+              "grounding_index": 0
+            },
+            {
+              "text": "USB-C cable",
+              "kind": "text",
+              "grounding_index": 0
+            },
+            {
+              "text": "SIM ejector",
+              "kind": "text",
+              "grounding_index": 0
+            },
+            {
+              "text": "Protective case",
+              "kind": "text",
+              "grounding_index": 0
+            }
+          ],
+          "table": null,
+          "simpler": null
+        }
+      ],
+      "simpler": null,
+      "followups": ["Describe the front image"],
+      "grounding": [
+        {
+          "claim": "box contents",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "images[1].ocr_text"
+        }
+      ],
+      "warnings": []
+    },
     "comparison": null
   }
 }

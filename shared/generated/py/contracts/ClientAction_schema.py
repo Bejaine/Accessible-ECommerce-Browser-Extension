@@ -6,6 +6,8 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from . import common_schema
+
 
 class ClientActionType(StrEnum):
     click = "click"
@@ -13,6 +15,27 @@ class ClientActionType(StrEnum):
     select = "select"
     navigate = "navigate"
     scroll = "scroll"
+
+
+class EffectKind(StrEnum):
+    cart_count_increase = "cart_count_increase"
+    url_change = "url_change"
+    element_appears = "element_appears"
+    element_disappears = "element_disappears"
+    value_set = "value_set"
+    none = "none"
+
+
+class ExpectedEffect(BaseModel):
+    """
+    What the extension checks afterwards to tell the user whether it worked.
+    """
+
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    kind: EffectKind = Field(..., title="EffectKind")
+    detail: str | None
 
 
 class ClientAction(BaseModel):
@@ -23,8 +46,15 @@ class ClientAction(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
+    schema_version: common_schema.SchemaVersion
+    id: str = Field(..., min_length=1)
     type: ClientActionType = Field(..., title="ClientActionType")
     target_id: str | None = Field(..., description="ActionTarget id; null for navigate.")
     value: str | None = Field(
-        None, description="Text to fill, option to select, or URL to navigate to."
+        ..., description="Text to fill, option to select, or URL to navigate to."
+    )
+    expected_effect: ExpectedEffect = Field(
+        ...,
+        description="What the extension checks afterwards to tell the user whether it worked.",
+        title="ExpectedEffect",
     )

@@ -1,30 +1,104 @@
 {
+  "schema_version": "1.0",
   "lang": "en",
-  "summary": "Example Wireless Earbuds X1 by ExampleBrand cost 1,999 rupees. Rated 4.1 out of 5 from 1,250 ratings.",
+  "summary": "Based on 690 reviews, people like the battery and display. The main complaint is low-light photos.",
   "sections": [
     {
-      "heading": "Key specs",
-      "items": ["Battery life: 30 hours", "Bluetooth 5.3", "Water resistance: IPX5"]
+      "heading": "Pros",
+      "items": [
+        {
+          "text": "Battery life: 189 of 212 mentions are positive",
+          "kind": "pro",
+          "grounding_index": 0
+        },
+        {
+          "text": "Display: 131 of 148 mentions are positive",
+          "kind": "pro",
+          "grounding_index": 1
+        }
+      ],
+      "table": null,
+      "simpler": null
+    },
+    {
+      "heading": "Cons",
+      "items": [
+        {
+          "text": "Low-light camera: 68 of 96 mentions are negative",
+          "kind": "con",
+          "grounding_index": 2
+        },
+        {
+          "text": "Heating while gaming: opinions are mixed (54 mentions)",
+          "kind": "con",
+          "grounding_index": 3
+        }
+      ],
+      "table": null,
+      "simpler": null
+    },
+    {
+      "heading": "Compared with Novix A15 5G",
+      "items": [],
+      "table": {
+        "columns": ["", "Zentra Pulse 5G", "Novix A15 5G"],
+        "rows": [
+          ["Price", "₹17,999", "₹15,499"],
+          ["Rating", "4.2 (3,418 ratings)", "4.0 (1,204 ratings)"],
+          ["RAM", "8 GB", "6 GB"]
+        ],
+        "spoken": "Zentra Pulse 5G costs ₹17,999 and is rated 4.2. Novix A15 5G costs ₹15,499 and is rated 4.0. Zentra has 8 GB RAM, Novix has 6 GB."
+      },
+      "simpler": "Zentra costs ₹2,500 more and has slightly better ratings."
     }
   ],
-  "simpler": "These earbuds cost 1,999 rupees. People rate them 4 out of 5.",
-  "followups": ["Read the reviews", "Add to cart", "Compare with similar"],
+  "simpler": "Most buyers like the battery and screen. Night photos are not great.",
+  "followups": ["Read a review", "Compare with Orbita M3", "Add to cart"],
   "grounding": [
     {
-      "claim": "cost 1,999 rupees",
+      "claim": "battery mentions",
+      "subject_id": "amazon.in:B0ZNTRA5G1",
+      "field_path": "reviews.insights[0].mentions"
+    },
+    {
+      "claim": "display mentions",
+      "subject_id": "amazon.in:B0ZNTRA5G1",
+      "field_path": "reviews.insights[1].mentions"
+    },
+    {
+      "claim": "low-light camera mentions",
+      "subject_id": "amazon.in:B0ZNTRA5G1",
+      "field_path": "reviews.insights[2].mentions"
+    },
+    {
+      "claim": "heating mentions",
+      "subject_id": "amazon.in:B0ZNTRA5G1",
+      "field_path": "reviews.insights[3].mentions"
+    },
+    {
+      "claim": "₹17,999",
+      "subject_id": "amazon.in:B0ZNTRA5G1",
       "field_path": "price.amount"
     },
     {
-      "claim": "Rated 4.1 out of 5",
+      "claim": "₹15,499",
+      "subject_id": "amazon.in:B0NVXA15G5",
+      "field_path": "price.amount"
+    },
+    {
+      "claim": "rated 4.2",
+      "subject_id": "amazon.in:B0ZNTRA5G1",
       "field_path": "rating.value"
     },
     {
-      "claim": "1,250 ratings",
-      "field_path": "rating.count"
+      "claim": "rated 4.0",
+      "subject_id": "amazon.in:B0NVXA15G5",
+      "field_path": "rating.value"
     },
     {
-      "claim": "Battery life: 30 hours",
-      "field_path": "specs.battery_life"
+      "claim": "8 GB RAM",
+      "subject_id": "amazon.in:B0ZNTRA5G1",
+      "field_path": "specs.ram.value"
     }
   ],
   "warnings": []

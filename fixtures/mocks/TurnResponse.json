@@ -1,31 +1,76 @@
 {
-  "intent": "add_to_cart",
-  "confidence": 0.93,
-  "alternatives": ["buy_now", "read_reviews"],
-  "actions": [
-    {
-      "type": "click",
-      "target_id": "t-add-to-cart",
-      "value": null
+  "schema_version": "1.0",
+  "intent": {
+    "name": "add_to_cart",
+    "confidence": 0.91,
+    "alternatives": [
+      {
+        "label": "Buy now",
+        "intent": "buy_now",
+        "actions": [
+          {
+            "schema_version": "1.0",
+            "id": "act-2",
+            "type": "click",
+            "target_id": "t-buy-now",
+            "value": null,
+            "expected_effect": {
+              "kind": "url_change",
+              "detail": "Checkout page opens"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "actions": [],
+  "confirmation": {
+    "schema_version": "1.0",
+    "id": "conf-1",
+    "prompt": "Add Zentra Pulse 5G, Midnight Black, quantity 1, for ₹17,999 to your cart?",
+    "risk": "low",
+    "pending_actions": [
+      {
+        "schema_version": "1.0",
+        "id": "act-1",
+        "type": "click",
+        "target_id": "t-add-to-cart",
+        "value": null,
+        "expected_effect": {
+          "kind": "cart_count_increase",
+          "detail": "Cart count goes up by 1"
+        }
+      }
+    ],
+    "read_back": {
+      "quantity": 1,
+      "total": {
+        "amount": 17999,
+        "currency": "INR"
+      },
+      "pin_code": null
     }
-  ],
+  },
+  "workflow": null,
   "output": {
-    "lang": "en",
-    "summary": "I can add Example Wireless Earbuds X1 to your cart for 1,999 rupees.",
+    "schema_version": "1.0",
+    "lang": "hi",
+    "summary": "Zentra Pulse 5G, Midnight Black, ₹17,999 में कार्ट में जोड़ूँ?",
     "sections": [],
     "simpler": null,
-    "followups": ["Yes", "No"],
+    "followups": ["हाँ", "नहीं"],
     "grounding": [
       {
-        "claim": "1,999 rupees",
+        "claim": "Midnight Black",
+        "subject_id": "amazon.in:B0ZNTRA5G1",
+        "field_path": "variants[0].value"
+      },
+      {
+        "claim": "₹17,999",
+        "subject_id": "amazon.in:B0ZNTRA5G1",
         "field_path": "price.amount"
       }
     ],
     "warnings": []
-  },
-  "confirmation": {
-    "prompt": "Add Example Wireless Earbuds X1, quantity 1, for 1,999 rupees to your cart?",
-    "action_ref": "act-1",
-    "risk": "low"
   }
 }

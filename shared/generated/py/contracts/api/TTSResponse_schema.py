@@ -6,6 +6,8 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict
 
+from .. import common_schema
+
 
 class Encoding(StrEnum):
     wav = "wav"
@@ -17,7 +19,8 @@ class TTSResponse(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
+    schema_version: common_schema.SchemaVersion
     audio_base64: str
     encoding: Encoding
-    lang: str
+    lang: common_schema.Lang
     cached: bool

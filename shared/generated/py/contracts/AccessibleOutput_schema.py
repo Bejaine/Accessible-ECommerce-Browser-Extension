@@ -2,15 +2,44 @@
 
 from __future__ import annotations
 
+from enum import StrEnum
+
 from pydantic import BaseModel, ConfigDict, Field
 
+from . import common_schema
 
-class Section(BaseModel):
+
+class ItemKind(StrEnum):
+    text = "text"
+    pro = "pro"
+    con = "con"
+    spec = "spec"
+    row = "row"
+    warning = "warning"
+
+
+class SectionItem(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    heading: str
-    items: list[str]
+    text: str
+    kind: ItemKind = Field(..., title="ItemKind")
+    grounding_index: int | None = Field(
+        ..., description="Index into AccessibleOutput.grounding.", ge=0
+    )
+
+
+class Table(BaseModel):
+    """
+    E.g. a comparison. `spoken` is the version read aloud.
+    """
+
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    columns: list[str]
+    rows: list[list[str]]
+    spoken: str
 
 
 class Grounding(BaseModel):
@@ -18,23 +47,38 @@ class Grounding(BaseModel):
         extra="forbid",
     )
     claim: str
-    field_path: str = Field(..., description="e.g. price.amount, specs.battery, reviews[3]")
+    subject_id: str = Field(..., description="A ProductJSON or OrderJSON id.")
+    field_path: str = Field(
+        ...,
+        description="Dot path into that subject, e.g. specs.battery.value, reviews.items[3].text.",
+    )
+
+
+class Section(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    heading: str
+    items: list[SectionItem]
+    table: Table | None
+    simpler: str | None
 
 
 class AccessibleOutput(BaseModel):
     """
-    All user-facing text. Structured content; renderers decide presentation.
+    All user-facing text. Structured content; renderers decide presentation. Sentence splitting for speech is done by the client player.
     """
 
     model_config = ConfigDict(
         extra="forbid",
     )
-    lang: str
+    schema_version: common_schema.SchemaVersion
+    lang: common_schema.Lang
     summary: str = Field(
         ..., description="At most two short sentences, spoken first.", max_length=400
     )
     sections: list[Section]
-    simpler: str | None = Field(None, description="Plain-language version.")
+    simpler: str | None = Field(..., description="Plain-language version.")
     followups: list[str]
     grounding: list[Grounding]
     warnings: list[str]

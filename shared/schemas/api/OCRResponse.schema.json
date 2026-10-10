@@ -3,9 +3,16 @@
   "title": "OCRResponse",
   "type": "object",
   "additionalProperties": false,
-  "required": ["text", "lang"],
+  "required": ["schema_version", "text", "lang"],
   "properties": {
-    "text": { "type": "string" },
-    "lang": { "type": "string" }
+    "schema_version": {
+      "$ref": "../common.schema.json#/$defs/SchemaVersion"
+    },
+    "text": {
+      "type": "string"
+    },
+    "lang": {
+      "$ref": "../common.schema.json#/$defs/Lang"
+    }
   }
 }

@@ -23,7 +23,7 @@ def test_invalid_request_returns_error_shape(client, assert_schema):
     res = client.post("/turn", json={"nope": True})
     assert res.status_code == 422
     assert_schema("ErrorResponse", res.json())
-    assert res.json()["code"] == "invalid_request"
+    assert res.json()["code"] == "validation"
 
 
 def test_real_mode_stub_returns_calm_error(client, assert_schema, mock_body, monkeypatch):

@@ -6,10 +6,21 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from . import ClientAction_schema, common_schema
+
 
 class Risk(StrEnum):
     low = "low"
     high = "high"
+
+
+class ReadBack(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    quantity: int | None = Field(..., ge=1)
+    total: common_schema.Money | None
+    pin_code: str | None = Field(..., description="Delivery PIN code.")
 
 
 class Confirmation(BaseModel):
@@ -20,6 +31,12 @@ class Confirmation(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
+    schema_version: common_schema.SchemaVersion
+    id: str = Field(..., min_length=1)
     prompt: str
-    action_ref: str = Field(..., description="Which pending action this confirms.")
     risk: Risk
+    pending_actions: list[ClientAction_schema.ClientAction] = Field(
+        ...,
+        description="Run only after the user confirms. Never also listed in TurnResponse.actions.",
+    )
+    read_back: ReadBack | None = Field(..., description="Critical numbers read back before acting.")

@@ -3,16 +3,40 @@
   "title": "PageContext",
   "type": "object",
   "additionalProperties": false,
-  "required": ["page_type", "url", "site", "products", "targets"],
+  "required": [
+    "schema_version",
+    "page_type",
+    "url",
+    "site",
+    "products",
+    "orders",
+    "targets",
+    "secure_zone_active"
+  ],
   "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/SchemaVersion" },
     "page_type": {
       "title": "PageType",
       "type": "string",
-      "enum": ["search", "product", "reviews", "cart", "checkout", "other"]
+      "enum": [
+        "search",
+        "product",
+        "reviews",
+        "cart",
+        "checkout",
+        "orders",
+        "order_detail",
+        "other"
+      ]
     },
     "url": { "type": "string", "format": "uri" },
     "site": { "type": "string" },
     "products": { "type": "array", "items": { "$ref": "ProductJSON.schema.json" } },
-    "targets": { "type": "array", "items": { "$ref": "ActionTarget.schema.json" } }
+    "orders": { "type": "array", "items": { "$ref": "OrderJSON.schema.json" } },
+    "targets": { "type": "array", "items": { "$ref": "ActionTarget.schema.json" } },
+    "secure_zone_active": {
+      "type": "boolean",
+      "description": "True while focus is in a payment/password/OTP area: mic off, nothing extracted."
+    }
   }
 }

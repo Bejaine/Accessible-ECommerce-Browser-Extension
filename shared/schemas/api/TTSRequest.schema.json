@@ -3,10 +3,21 @@
   "title": "TTSRequest",
   "type": "object",
   "additionalProperties": false,
-  "required": ["text", "lang"],
+  "required": ["schema_version", "text", "lang"],
   "properties": {
-    "text": { "type": "string", "minLength": 1 },
-    "lang": { "type": "string" },
-    "voice": { "type": ["string", "null"] }
+    "schema_version": {
+      "$ref": "../common.schema.json#/$defs/SchemaVersion"
+    },
+    "text": {
+      "type": "string",
+      "minLength": 1
+    },
+    "lang": {
+      "$ref": "../common.schema.json#/$defs/Lang"
+    },
+    "voice": {
+      "type": "string",
+      "description": "Request option."
+    }
   }
 }

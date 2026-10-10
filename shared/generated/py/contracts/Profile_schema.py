@@ -7,8 +7,10 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from . import common_schema
 
-class Source(StrEnum):
+
+class ConditionSource(StrEnum):
     inferred = "inferred"
     user = "user"
 
@@ -19,7 +21,7 @@ class ConditionState(BaseModel):
     )
     score: float = Field(..., ge=0.0, le=1.0)
     active: bool
-    source: Source
+    source: ConditionSource = Field(..., title="ConditionSource")
 
 
 class ColourConditionState(BaseModel):
@@ -40,6 +42,12 @@ class Verbosity(StrEnum):
     normal = "normal"
 
 
+class PaymentMethod(StrEnum):
+    upi = "upi"
+    saved_card = "saved_card"
+    cod = "cod"
+
+
 class Conditions(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
@@ -55,20 +63,31 @@ class Prefs(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    lang: str = Field(..., description="BCP-47-ish code, e.g. en, hi, te.")
+    lang: common_schema.Lang
     tts_rate: float = Field(..., ge=0.5, le=2.0)
     text_scale: float = Field(..., ge=1.0, le=3.0)
     verbosity: Verbosity
     lite_mode: bool
+    text_first: bool = Field(
+        ...,
+        description="Prefer text over voice (a preference, not an impairment signal).",
+    )
+    switch_key: str = Field(
+        ...,
+        description="KeyboardEvent.code used as the single switch, e.g. Space.",
+        min_length=1,
+    )
+    preferred_payment: PaymentMethod | None
 
 
 class Profile(BaseModel):
     """
-    Stays on the device (browser.storage.local). Only `prefs` is sent to the backend.
+    Stays on the device (browser.storage.local). Only `prefs` leaves the device.
     """
 
     model_config = ConfigDict(
         extra="forbid",
     )
+    schema_version: common_schema.SchemaVersion
     conditions: Conditions = Field(..., title="Conditions")
     prefs: Prefs

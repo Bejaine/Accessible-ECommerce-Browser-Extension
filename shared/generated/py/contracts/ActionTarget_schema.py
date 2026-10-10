@@ -6,8 +6,10 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from . import common_schema
 
-class Kind(StrEnum):
+
+class TargetKind(StrEnum):
     button = "button"
     link = "link"
     input = "input"
@@ -18,6 +20,29 @@ class Kind(StrEnum):
     other = "other"
 
 
+class Zone(StrEnum):
+    """
+    Top level of two-level switch scanning.
+    """
+
+    search = "search"
+    results = "results"
+    product = "product"
+    cart = "cart"
+    checkout = "checkout"
+    orders = "orders"
+    help = "help"
+
+
+class TargetState(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    disabled: bool
+    selected: bool
+    expanded: bool
+
+
 class ActionTarget(BaseModel):
     """
     An interactive element on the page. Selectors stay client-side; only the id travels.
@@ -26,6 +51,12 @@ class ActionTarget(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
+    schema_version: common_schema.SchemaVersion
     id: str = Field(..., min_length=1)
-    kind: Kind
+    kind: TargetKind = Field(..., title="TargetKind")
     label: str
+    zone: Zone = Field(..., description="Top level of two-level switch scanning.", title="Zone")
+    state: TargetState | None
+    colour_name: str | None = Field(
+        ..., description="Colour name for swatches, from title/alt/label (or VLM)."
+    )

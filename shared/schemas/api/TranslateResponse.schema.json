@@ -3,10 +3,19 @@
   "title": "TranslateResponse",
   "type": "object",
   "additionalProperties": false,
-  "required": ["text", "source_lang", "target_lang"],
+  "required": ["schema_version", "text", "source_lang", "target_lang"],
   "properties": {
-    "text": { "type": "string" },
-    "source_lang": { "type": "string" },
-    "target_lang": { "type": "string" }
+    "schema_version": {
+      "$ref": "../common.schema.json#/$defs/SchemaVersion"
+    },
+    "text": {
+      "type": "string"
+    },
+    "source_lang": {
+      "$ref": "../common.schema.json#/$defs/Lang"
+    },
+    "target_lang": {
+      "$ref": "../common.schema.json#/$defs/Lang"
+    }
   }
 }

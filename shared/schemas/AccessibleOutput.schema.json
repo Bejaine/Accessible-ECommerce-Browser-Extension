@@ -1,12 +1,22 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "AccessibleOutput",
-  "description": "All user-facing text. Structured content; renderers decide presentation.",
+  "description": "All user-facing text. Structured content; renderers decide presentation. Sentence splitting for speech is done by the client player.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["lang", "summary", "sections", "followups", "grounding", "warnings"],
+  "required": [
+    "schema_version",
+    "lang",
+    "summary",
+    "sections",
+    "simpler",
+    "followups",
+    "grounding",
+    "warnings"
+  ],
   "properties": {
-    "lang": { "type": "string" },
+    "schema_version": { "$ref": "common.schema.json#/$defs/SchemaVersion" },
+    "lang": { "$ref": "common.schema.json#/$defs/Lang" },
     "summary": {
       "type": "string",
       "description": "At most two short sentences, spoken first.",
@@ -23,22 +33,56 @@
       "title": "Section",
       "type": "object",
       "additionalProperties": false,
-      "required": ["heading", "items"],
+      "required": ["heading", "items", "table", "simpler"],
       "properties": {
         "heading": { "type": "string" },
-        "items": { "type": "array", "items": { "type": "string" } }
+        "items": { "type": "array", "items": { "$ref": "#/$defs/SectionItem" } },
+        "table": { "anyOf": [{ "$ref": "#/$defs/Table" }, { "type": "null" }] },
+        "simpler": { "type": ["string", "null"] }
+      }
+    },
+    "SectionItem": {
+      "title": "SectionItem",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text", "kind", "grounding_index"],
+      "properties": {
+        "text": { "type": "string" },
+        "kind": {
+          "title": "ItemKind",
+          "type": "string",
+          "enum": ["text", "pro", "con", "spec", "row", "warning"]
+        },
+        "grounding_index": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Index into AccessibleOutput.grounding."
+        }
+      }
+    },
+    "Table": {
+      "title": "Table",
+      "description": "E.g. a comparison. `spoken` is the version read aloud.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["columns", "rows", "spoken"],
+      "properties": {
+        "columns": { "type": "array", "items": { "type": "string" } },
+        "rows": { "type": "array", "items": { "type": "array", "items": { "type": "string" } } },
+        "spoken": { "type": "string" }
       }
     },
     "Grounding": {
       "title": "Grounding",
       "type": "object",
       "additionalProperties": false,
-      "required": ["claim", "field_path"],
+      "required": ["claim", "subject_id", "field_path"],
       "properties": {
         "claim": { "type": "string" },
+        "subject_id": { "type": "string", "description": "A ProductJSON or OrderJSON id." },
         "field_path": {
           "type": "string",
-          "description": "e.g. price.amount, specs.battery, reviews[3]"
+          "description": "Dot path into that subject, e.g. specs.battery.value, reviews.items[3].text."
         }
       }
     }

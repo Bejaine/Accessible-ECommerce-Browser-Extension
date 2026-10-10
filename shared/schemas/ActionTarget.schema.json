@@ -4,13 +4,39 @@
   "description": "An interactive element on the page. Selectors stay client-side; only the id travels.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["id", "kind", "label"],
+  "required": ["schema_version", "id", "kind", "label", "zone", "state", "colour_name"],
   "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/SchemaVersion" },
     "id": { "type": "string", "minLength": 1 },
     "kind": {
+      "title": "TargetKind",
       "type": "string",
       "enum": ["button", "link", "input", "select", "checkbox", "radio", "swatch", "other"]
     },
-    "label": { "type": "string" }
+    "label": { "type": "string" },
+    "zone": {
+      "title": "Zone",
+      "description": "Top level of two-level switch scanning.",
+      "type": "string",
+      "enum": ["search", "results", "product", "cart", "checkout", "orders", "help"]
+    },
+    "state": { "anyOf": [{ "$ref": "#/$defs/TargetState" }, { "type": "null" }] },
+    "colour_name": {
+      "type": ["string", "null"],
+      "description": "Colour name for swatches, from title/alt/label (or VLM)."
+    }
+  },
+  "$defs": {
+    "TargetState": {
+      "title": "TargetState",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["disabled", "selected", "expanded"],
+      "properties": {
+        "disabled": { "type": "boolean" },
+        "selected": { "type": "boolean" },
+        "expanded": { "type": "boolean" }
+      }
+    }
   }
 }

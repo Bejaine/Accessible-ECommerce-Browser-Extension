@@ -3,30 +3,17 @@
 from __future__ import annotations
 
 from enum import StrEnum
-from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from . import PageContext_schema, Profile_schema
+from . import PageContext_schema, Profile_schema, common_schema
 
 
-class Kind(StrEnum):
+class InputKind(StrEnum):
     voice = "voice"
     text = "text"
     phrase = "phrase"
     switch = "switch"
-
-
-class TurnInput(BaseModel):
-    model_config = ConfigDict(
-        extra="forbid",
-    )
-    kind: Kind
-    text: str
-    lang: str
-    asr_meta: dict[str, Any] | None = Field(
-        None, description="Whatever the ASR returned plus our mic level."
-    )
 
 
 class Role(StrEnum):
@@ -39,13 +26,29 @@ class HistoryTurn(BaseModel):
         extra="forbid",
     )
     role: Role
-    text: str
+    text: str = Field(..., description="In English.")
+
+
+class TurnInput(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    kind: InputKind = Field(..., title="InputKind")
+    text: str | None = Field(
+        ...,
+        description="In the user's own language; the backend translates inside /turn. The client never pre-translates.",
+    )
+    lang: common_schema.Lang
+    target_id: str | None = Field(..., description="ActionTarget chosen by switch/tap.")
+    phrase_id: str | None = Field(..., description="Phrase chip chosen.")
+    asr_meta: common_schema.AsrMeta | None
 
 
 class TurnRequest(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
+    schema_version: common_schema.SchemaVersion
     session_id: str
     input: TurnInput = Field(..., title="TurnInput")
     page: PageContext_schema.PageContext

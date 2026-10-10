@@ -4,10 +4,30 @@
   "description": "Every backend error. The client turns it into a calm spoken message plus a retry or alternative.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["error", "code", "retryable"],
+  "required": ["schema_version", "error", "code", "retryable"],
   "properties": {
-    "error": { "type": "string" },
-    "code": { "type": "string" },
-    "retryable": { "type": "boolean" }
+    "schema_version": {
+      "$ref": "../common.schema.json#/$defs/SchemaVersion"
+    },
+    "error": {
+      "type": "string",
+      "description": "Calm, user-presentable message."
+    },
+    "code": {
+      "title": "ErrorCode",
+      "type": "string",
+      "enum": [
+        "rate_limited",
+        "auth_expired",
+        "upstream_unavailable",
+        "validation",
+        "not_found",
+        "secure_zone",
+        "internal"
+      ]
+    },
+    "retryable": {
+      "type": "boolean"
+    }
   }
 }

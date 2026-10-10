@@ -1,11 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "ProductPrepareResponse",
-  "description": "Cached sections, precomputed in parallel. Translation and TTS happen only for the section the user asks for.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["product_id", "product", "sections"],
+  "required": ["schema_version", "product_id", "product", "sections"],
   "properties": {
+    "schema_version": {
+      "$ref": "../common.schema.json#/$defs/SchemaVersion"
+    },
     "product_id": {
       "type": "string"
     },
@@ -14,6 +16,7 @@
     },
     "sections": {
       "title": "PreparedSections",
+      "description": "Precomputed in parallel, in English, and translated lazily: translation and TTS run only for the section the user asks for.",
       "type": "object",
       "additionalProperties": false,
       "required": ["overview", "specs", "reviews", "images", "comparison"],

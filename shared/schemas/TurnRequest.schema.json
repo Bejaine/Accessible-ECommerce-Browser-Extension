@@ -3,21 +3,33 @@
   "title": "TurnRequest",
   "type": "object",
   "additionalProperties": false,
-  "required": ["session_id", "input", "page", "prefs", "history"],
+  "required": ["schema_version", "session_id", "input", "page", "prefs", "history"],
   "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/SchemaVersion" },
     "session_id": { "type": "string" },
     "input": {
       "title": "TurnInput",
       "type": "object",
       "additionalProperties": false,
-      "required": ["kind", "text", "lang"],
+      "required": ["kind", "text", "lang", "target_id", "phrase_id", "asr_meta"],
       "properties": {
-        "kind": { "type": "string", "enum": ["voice", "text", "phrase", "switch"] },
-        "text": { "type": "string" },
-        "lang": { "type": "string" },
+        "kind": {
+          "title": "InputKind",
+          "type": "string",
+          "enum": ["voice", "text", "phrase", "switch"]
+        },
+        "text": {
+          "type": ["string", "null"],
+          "description": "In the user's own language; the backend translates inside /turn. The client never pre-translates."
+        },
+        "lang": { "$ref": "common.schema.json#/$defs/Lang" },
+        "target_id": {
+          "type": ["string", "null"],
+          "description": "ActionTarget chosen by switch/tap."
+        },
+        "phrase_id": { "type": ["string", "null"], "description": "Phrase chip chosen." },
         "asr_meta": {
-          "type": ["object", "null"],
-          "description": "Whatever the ASR returned plus our mic level."
+          "anyOf": [{ "$ref": "common.schema.json#/$defs/AsrMeta" }, { "type": "null" }]
         }
       }
     },
@@ -33,7 +45,7 @@
         "required": ["role", "text"],
         "properties": {
           "role": { "type": "string", "enum": ["user", "assistant"] },
-          "text": { "type": "string" }
+          "text": { "type": "string", "description": "In English." }
         }
       }
     }

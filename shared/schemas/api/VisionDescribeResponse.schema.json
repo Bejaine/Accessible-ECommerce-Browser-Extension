@@ -4,10 +4,19 @@
   "description": "Cached by image URL.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["image_url", "output", "cached"],
+  "required": ["schema_version", "image_url", "output", "cached"],
   "properties": {
-    "image_url": { "type": "string" },
-    "output": { "$ref": "../AccessibleOutput.schema.json" },
-    "cached": { "type": "boolean" }
+    "schema_version": {
+      "$ref": "../common.schema.json#/$defs/SchemaVersion"
+    },
+    "image_url": {
+      "type": "string"
+    },
+    "output": {
+      "$ref": "../AccessibleOutput.schema.json"
+    },
+    "cached": {
+      "type": "boolean"
+    }
   }
 }

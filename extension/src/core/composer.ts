@@ -4,6 +4,7 @@ import type { Profile, ResolvedMode } from '@shared/index';
 
 export function resolveMode(profile: Profile): ResolvedMode {
   return {
+    schema_version: '1.0',
     input_channels: ['voice', 'keyboard', 'phrase', 'switch'],
     input_rung: 'voice',
     output_channels: ['audio', 'visual'],

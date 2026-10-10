@@ -4,10 +4,13 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict
 
+from .. import common_schema
+
 
 class OCRResponse(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
+    schema_version: common_schema.SchemaVersion
     text: str
-    lang: str
+    lang: common_schema.Lang
