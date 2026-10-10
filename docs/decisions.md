@@ -102,3 +102,11 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - The backend downloads images only from the shops' image hosts (Amazon, Flipkart CDNs), https,
   max 4 MB. Requests set `store: false`; we send only public product photos (Responsible AI slide).
 - A transcript with ASR confidence < 0.5 never acts directly in `/turn`: it asks first.
+
+## 2026-10-11 — Schema: /extract/fallback (Track C for Track B; additive, no version bump)
+- New `api/ExtractFallbackRequest` (= `LlmFallbackRequest` in extension/src/extract/llm.ts plus
+  `schema_version`) and `api/ExtractFallbackResponse` {found, evidence, missing}. `found` holds
+  every extractable field required-but-nullable, reusing ProductJSON's Price/Rating/
+  Availability/SpecValue/Delivery; `evidence` gives per field the snippet it came from,
+  copied verbatim from the request text (the backend drops any value it can't find there).
+- New endpoint schemas only; no existing contract changes, so schema_version stays "1.0".
