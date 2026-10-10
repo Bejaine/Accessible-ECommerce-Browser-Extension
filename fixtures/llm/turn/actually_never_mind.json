@@ -1,0 +1,48 @@
+{
+  "model": "openai/gpt-oss-120b",
+  "response": {
+    "id": "chatcmpl-7031d519-1379-457d-9957-90d3787d4b47",
+    "object": "chat.completion",
+    "created": 1791663378,
+    "model": "openai/gpt-oss-120b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "id": "fc_5738a101-4818-4bce-bf51-24e74f30d43a",
+              "type": "function",
+              "function": {
+                "name": "order_task",
+                "arguments": "{\"alternatives\":[],\"confidence\":0.95,\"stop\":true,\"task\":\"return\"}"
+              }
+            }
+          ]
+        },
+        "logprobs": null,
+        "finish_reason": "tool_calls"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.212895501,
+      "prompt_tokens": 4032,
+      "prompt_time": 0.209337604,
+      "completion_tokens": 79,
+      "completion_time": 0.169443705,
+      "total_tokens": 4111,
+      "total_time": 0.378781309,
+      "completion_tokens_details": {
+        "reasoning_tokens": 31
+      }
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_c3da0d4bb9",
+    "x_groq": {
+      "id": "req_01m4kqb35yew7vcxw0m492r02h",
+      "seed": 203516150
+    },
+    "service_tier": "on_demand"
+  }
+}

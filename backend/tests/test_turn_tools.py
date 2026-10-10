@@ -50,9 +50,8 @@ def test_add_to_cart_is_a_confirmation_with_read_back(req):
         "total": {"amount": 35998.0, "currency": "INR"},
         "pin_code": None,
     }
-    assert result.output.summary == (
-        "Add Zentra Pulse 5G, Midnight Black, quantity 2, for ₹35,998, to your cart?"
-    )
+    assert result.output.summary == "Add Zentra Pulse 5G to your cart? Quantity 2, total ₹35,998."
+    assert [i.text for i in result.output.sections[0].items] == ["Colour: Midnight Black"]
     assert conf["pending_actions"][-1]["expected_effect"]["kind"] == "cart_count_increase"
 
 
@@ -181,6 +180,7 @@ def test_page_brief_is_small_and_has_no_page_text(req):
         "targets",
         "SEEN",
         "stated_preferences",
+        "TASK_IN_PROGRESS",
     }
     assert "reviews" not in json.dumps(brief)
 
@@ -281,3 +281,43 @@ def test_null_asr_confidence_does_not_block(mock_body, monkeypatch):
     )
     r = run(orchestrator.handle_turn(TurnRequest.model_validate(data)))
     assert [a.target_id for a in r.actions] == ["t-swatch-green"]
+
+
+# --- Track A's masking (brands kept) and number normaliser ---
+
+
+def test_brands_are_kept_and_lost_placeholders_keep_english(req, monkeypatch):
+    from app.brain import language
+    from app.services import bhashini, masking
+
+    seen_keep = []
+    real_mask = masking.mask
+
+    def spy_mask(text, keep=()):
+        seen_keep.append(list(keep))
+        return real_mask(text, keep=keep)
+
+    async def drops_names(text, source, target):
+        return "कार्ट में जोड़ें?"  # every placeholder lost
+
+    monkeypatch.setattr(masking, "mask", spy_mask)
+    monkeypatch.setattr(bhashini, "translate", drops_names)
+    out = run(language.translate("Add Zentra Pulse 5G to your cart?", "en", "hi", keep=["Zentra"]))
+    assert ["Zentra"] in seen_keep
+    assert out is None, "a translation that lost the product name is not used"
+
+
+def test_spoken_numbers_reach_the_model_as_digits(mock_body, monkeypatch):
+    sent = {}
+
+    async def tool_call(key, models, messages, tools_):
+        sent["payload"] = json.loads(messages[1]["content"])
+        sent["key"] = key
+        return "unclear", {"confidence": 0.3, "alternatives": []}
+
+    monkeypatch.setattr(orchestrator, "complete_tool_call", tool_call)
+    data = mock_body("TurnRequest")
+    data["input"].update(text="phones under fifteen thousand", lang="en")
+    run(orchestrator.handle_turn(TurnRequest.model_validate(data)))
+    assert sent["payload"]["utterance"] == "phones under 15000"
+    assert sent["key"] == "turn/phones_under_fifteen_thousand", "recordings keyed by what was said"

@@ -23,6 +23,7 @@ from app.brain.redact import redact
 from app.config import get_settings
 from app.errors import ApiError
 from app.models import SCHEMA_VERSION, AccessibleOutput, ErrorCode, TurnRequest, TurnResponse
+from app.services import numbers
 
 log = logging.getLogger(__name__)
 
@@ -51,6 +52,9 @@ guessing. Give up to 2 alternatives (other plausible meanings), most likely firs
 - The transcript has no confidence score, so judge it yourself: a very short or broken
   transcript that could be several commands (e.g. "a cart": add to cart or open the cart?)
   gets confidence below 0.8, with the other meaning as an alternative.
+- Orders: "where is my order", "cancel it", "return the cover" -> order_task. While
+  TASK_IN_PROGRESS is set, the user's answer (which order, a reason, "continue", "yes") goes to
+  order_task with the matching slot, and "stop" / "never mind" goes to order_task with stop.
 - If nothing fits, call unclear.
 """
 
@@ -98,7 +102,19 @@ def page_brief(req: TurnRequest) -> dict[str, Any]:
         "page_type": page.page_type.value,
         "site": page.site,
         "products": products,
-        "orders": [{"id": o.id, "status": o.status} for o in page.orders],
+        "orders": [
+            {
+                "id": o.id,
+                "status": o.status,
+                "items": [i.title[:60] for i in o.items[:3]],
+                "can": o.available_actions,
+            }
+            for o in page.orders
+        ],
+        # An order task in progress: answers, "continue" and "stop" go to order_task.
+        "TASK_IN_PROGRESS": (
+            {k: mem.workflow[k] for k in ("task", "awaiting", "order_id")} if mem.workflow else None
+        ),
         # Looked at earlier in this session (maybe on another site), for "compare with ...".
         "SEEN": [
             {"id": p.id, "title": (p.title or "")[:60], "site": p.site}
@@ -141,8 +157,13 @@ async def handle_turn(req: TurnRequest) -> TurnResponse:
     text = (req.input.text or "").strip()
     if not text:
         return await _nothing_heard(req, ctx)
-    english = await language.translate(text, user_lang, "en") or text
-    said = redact(english).text
+    raw_text = text  # recordings are keyed by what the user said, not by later processing
+    brands = _brands(req)
+    # "पंद्रह से बीस हज़ार" -> "15000 से 20000", "dedh lakh" -> "150000" (Track A's normaliser),
+    # before and after translation, so budgets and quantities reach the model as digits.
+    text = numbers.normalise_numbers(text, user_lang)
+    english = await language.translate(text, user_lang, "en", keep=brands) or text
+    said = redact(numbers.normalise_numbers(english, "en")).text
     alternatives = [
         redact(a).text for a in (req.input.asr_meta.alternatives if req.input.asr_meta else [])
     ]
@@ -162,7 +183,10 @@ async def handle_turn(req: TurnRequest) -> TurnResponse:
     cfg = LLMSettings.load()
     try:
         name, args = await complete_tool_call(
-            f"turn/{_slug(said)}", [cfg.model, cfg.fast_model], messages, tools.TOOL_SPECS
+            f"turn/{_slug(redact(raw_text).text)}",
+            [cfg.model, cfg.fast_model],
+            messages,
+            tools.TOOL_SPECS,
         )
     except LLMError as exc:
         if get_settings().mock:
@@ -289,7 +313,7 @@ async def _ask(
     else:
         labels = [o["label"] for o in options]
         output = plain_output(f"Did you mean {labels[0]}, or {labels[1]}?", followups=labels)
-    output = await _translate_output(output, req.input.lang.value)
+    output = await _translate_output(output, req.input.lang.value, _brands(req))
     return TurnResponse.model_validate(
         {
             "schema_version": SCHEMA_VERSION,
@@ -311,7 +335,7 @@ async def _respond(
     result: tools.ToolResult,
 ) -> TurnResponse:
     lang = req.input.lang.value
-    output = await _translate_output(result.output, lang)
+    output = await _translate_output(result.output, lang, _brands(req))
     confirmation = result.confirmation
     if confirmation is not None:
         confirmation = {**confirmation, "prompt": output.summary}
@@ -323,13 +347,19 @@ async def _respond(
             # Consequential actions are only ever inside the confirmation (rule 3).
             "actions": [] if confirmation else result.actions,
             "confirmation": confirmation,
-            "workflow": None,
+            "workflow": result.workflow,
             "output": output,
         }
     )
 
 
-async def _translate_output(output: AccessibleOutput, lang: str) -> AccessibleOutput:
+def _brands(req: TurnRequest) -> list[str]:
+    return sorted({p.brand for p in req.page.products if p.brand})
+
+
+async def _translate_output(
+    output: AccessibleOutput, lang: str, keep: list[str] | None = None
+) -> AccessibleOutput:
     """Translate what the user hears/reads; keep English (lang en) if translation fails."""
     if lang == "en":
         return output
@@ -350,7 +380,7 @@ async def _translate_output(output: AccessibleOutput, lang: str) -> AccessibleOu
             texts.append((section["table"], "spoken"))
     translated = []
     for container, key in texts:
-        out = await language.translate(container[key], "en", lang)
+        out = await language.translate(container[key], "en", lang, keep=keep or [])
         if out is None:
             return output  # all or nothing: never a half-translated answer
         translated.append((container, key, out))
