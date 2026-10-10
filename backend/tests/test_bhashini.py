@@ -2,6 +2,7 @@ import asyncio
 import base64
 import io
 import json
+import re
 import wave
 
 import httpx
@@ -803,3 +804,137 @@ async def test_translate_fails_rather_than_drop_a_masked_name_or_price(monkeypat
     # and the bad result was not cached
     _live(monkeypatch, lambda req: httpx.Response(200, json=ok({"output_text": "ZQX0 ZQX1"})))
     assert await bhashini.translate("ZQX0 costs ZQX1", "en", "hi") == "ZQX0 ZQX1"
+
+
+async def test_tts_speaks_numbers_and_prices_in_the_listeners_language(monkeypatch):
+    """Live, the Hindi voice read "17,999" in English and dropped ₹; it must get words."""
+    sent = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        if req.url.host == "up.example":
+            sent.append(json.loads(req.content)["text"])
+            return httpx.Response(200, json=ok({"s3_url": "https://s3.example/x.wav"}))
+        return httpx.Response(200, content=wav_bytes())
+
+    _live(monkeypatch, handler)
+    await bhashini.tts("कीमत ₹1,299 है, रेटिंग 4.3", "hi")
+    assert sent == ["कीमत एक हज़ार दो सौ निन्यानवे रुपये है, रेटिंग चार दशमलव तीन"]
+
+
+# --- translate_many: many short lines in few calls (for Track C's /turn answers) ----------
+# Live (2026-10-11): newline and "||" separators were merged or mangled by the MT model, and a
+# " ZQX900 " marker kept its count but moved into the middle of a sentence (silently corrupt
+# lines). A numbered list ("1. … 2. …") kept every item whole and in order in en→hi and en→te.
+# Every packed reply is still verified, and a bad batch is re-translated line by line.
+
+
+def _numbered_mt(transform=lambda items: items, *, joiner=" "):
+    """Fake MT that 'translates' a numbered list by tagging each item, like the live model."""
+    calls = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        text = json.loads(req.content)["input_text"]
+        calls.append(text)
+        items = re.split(r"(?:^|\n)\d+\. ", text)[1:] if re.match(r"1\. ", text) else None
+        if items is None:  # a single line
+            return httpx.Response(200, json=ok({"output_text": f"T:{text}"}))
+        items = transform([f"T:{i.strip()}" for i in items])
+        out = joiner.join(f"{n}. {item}" for n, item in enumerate(items, 1))
+        return httpx.Response(200, json=ok({"output_text": out}))
+
+    return handler, calls
+
+
+async def test_translate_many_packs_lines_into_one_call_in_order(monkeypatch):
+    handler, calls = _numbered_mt()
+    _live(monkeypatch, handler)
+    lines = ["Customers like the battery.", "Add ZQX0 to your cart?", "Price: ZQX0."]
+    out = await bhashini.translate_many(lines, "en", "hi")
+    assert out == ["T:Customers like the battery.", "T:Add ZQX0 to your cart?", "T:Price: ZQX0."]
+    assert len(calls) == 1
+
+
+async def test_translate_many_dedupes_caches_and_keeps_blanks(monkeypatch):
+    handler, calls = _numbered_mt()
+    _live(monkeypatch, handler)
+    out = await bhashini.translate_many(["Yes", "", "No", "Yes"], "en", "hi")
+    assert out == ["T:Yes", "", "T:No", "T:Yes"]  # the "." added for packing is removed
+    assert len(calls) == 1 and calls[0].count("Yes") == 1
+    await bhashini.translate_many(["No", "Yes"], "en", "hi")
+    assert len(calls) == 1  # both cached now
+
+
+async def test_translate_many_shares_the_cache_with_translate(monkeypatch):
+    handler, calls = _numbered_mt()
+    _live(monkeypatch, handler)
+    await bhashini.translate_many(["Delivery by Tuesday.", "Yes"], "en", "hi")
+    assert await bhashini.translate("Delivery by Tuesday.", "en", "hi") == "T:Delivery by Tuesday."
+    assert len(calls) == 1
+
+
+async def test_translate_many_falls_back_line_by_line_if_items_are_merged(monkeypatch):
+    """Like the live ZQX900 case: the reply has the wrong items, so nothing from it is used."""
+
+    def merge_last_two(items):
+        return [*items[:-2], items[-2] + " " + items[-1]]
+
+    handler, calls = _numbered_mt(merge_last_two)
+    _live(monkeypatch, handler)
+    lines = ["One.", "Two.", "Price: ZQX0.", "Delivery by Tuesday."]
+    out = await bhashini.translate_many(lines, "en", "hi")
+    assert out == [f"T:{line}" for line in lines]
+    assert len(calls) == 1 + 4  # the packed call, then one per line
+
+
+async def test_translate_many_falls_back_if_a_packed_item_loses_its_placeholder(monkeypatch):
+    def drop(items):
+        return [i.replace("ZQX0", "") for i in items]
+
+    handler, calls = _numbered_mt(drop)
+    _live(monkeypatch, handler)
+    out = await bhashini.translate_many(["Add ZQX0?", "Yes."], "en", "hi")
+    assert out == ["T:Add ZQX0?", "T:Yes."]
+
+
+async def test_translate_many_raises_if_a_line_cannot_be_translated_safely(monkeypatch):
+    """All or nothing, as Track C relies on: a line that loses its placeholder even on its own."""
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=ok({"output_text": "कुछ"}))
+
+    _live(monkeypatch, handler)
+    with pytest.raises(ApiError) as exc:
+        await bhashini.translate_many(["Add ZQX0?", "Yes."], "en", "hi")
+    assert exc.value.code == ErrorCode.upstream_unavailable
+
+
+async def test_translate_many_respects_the_50_word_limit(monkeypatch):
+    handler, calls = _numbered_mt()
+    _live(monkeypatch, handler)
+    lines = [f"Line {i} has exactly seven words here." for i in range(12)]
+    out = await bhashini.translate_many(lines, "en", "hi")
+    assert out == [f"T:{line}" for line in lines]
+    assert all(len(c.split()) <= bhashini.MT_MAX_WORDS for c in calls)
+    assert 2 <= len(calls) <= 4
+
+
+async def test_translate_many_translates_a_long_line_on_its_own(monkeypatch):
+    handler, calls = _numbered_mt()
+    _live(monkeypatch, handler)
+    long_line = " ".join(["word"] * 45) + "."
+    out = await bhashini.translate_many([long_line, "Yes."], "en", "hi")
+    assert out == [f"T:{long_line}", "T:Yes."]
+    assert calls[0] == long_line or calls[1] == long_line
+
+
+async def test_translate_many_accepts_native_digit_numbering(monkeypatch):
+    def handler(req: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=ok({"output_text": "१. हाँ। २. नहीं।"}))
+
+    _live(monkeypatch, handler)
+    assert await bhashini.translate_many(["Yes.", "No."], "en", "hi") == ["हाँ।", "नहीं।"]
+
+
+async def test_translate_many_same_language_and_empty_input():
+    assert await bhashini.translate_many(["a", "b"], "hi", "hi") == ["a", "b"]
+    assert await bhashini.translate_many([], "en", "hi") == []

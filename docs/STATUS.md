@@ -44,3 +44,7 @@
   the LLM (and before translating it), so budgets and quantities arrive as digits ("पंद्रह से बीस
   हज़ार" → "15000 से 20000", "dedh lakh" → "150000"). Lone एक/दो/one stay words on purpose. Also
   pass the product brand to masking: `masking.mask(text, keep=[brand])` in `brain/language.py`.
+- **A → Track D / integration lead**: UI strings are in `extension/src/i18n/{en,hi,te}.json` via
+  `t(key, lang)`, with pre-recorded audio from `phraseAudioUrl(key, lang)` (null → use live TTS).
+  New UI text: add the key to `en.json` and tell Track A to rebuild. The local matcher should accept
+  the spoken controls named in `player.controls_hint`: "रुको"/"दोबारा", "ఆపు"/"మళ్లీ".

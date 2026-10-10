@@ -262,3 +262,36 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   Older recorded LLM answers saying "Pros"/"Cons" are renamed in code.
 - Track A's `bhashini.translate_many` (track-a/tts-speech) is picked up automatically by
   `brain/language.py` once merged: ~2 MT calls per answer instead of ~14.
+
+## 2026-10-11 — Numbers are spoken as words (Track A; affects C, D)
+- Live, the Hindi and Telugu TTS voices read digits in English ("सेवेंटींथ…", "బైవ్ థౌసండ్") and
+  ₹ is rejected, so `bhashini.tts` first calls `numbers.speakable(text, lang)`: prices with the
+  currency word (and paise), numbers in the Indian system, decimals, units in the listener's
+  script; PIN codes, phone/order numbers and leading zeros digit by digit; names (S24, 5G) kept.
+- Verified by TTS → ASR: Hindi and Telugu now say "सत्रह हज़ार नौ सौ निन्यानवे रुपये" /
+  "పదిహేడు వేల … రూపాయలు". Telugu TTS took ~16 s for one long sentence: speak short sentences.
+- Text shown on screen keeps the digits; only the audio uses words. Telugu forms were written
+  by us, not a native speaker: please have one review `numbers.py`'s Telugu tables.
+
+## 2026-10-11 — UI strings and pre-recorded phrases (Track A; affects D, core)
+- UI strings live in `extension/src/i18n/{en,hi,te}.json`; `t(key, lang)` falls back to English.
+  `scripts/build_phrases.py` machine-translates missing keys and records each string as 16 kHz
+  audio. MT was wrong for several UI strings (e.g. "your colours look alike", "भाषण" for speech,
+  "they added" in Telugu), so hi/te strings are hand-reviewed and never overwritten by the script.
+- `phraseAudioUrl(key, lang)` (src/audio/phrases.ts) returns the recording only if it was made from
+  the current text; otherwise null and the caller uses live TTS. Add new UI strings to en.json
+  and ask Track A to rebuild (needs tokens). Only the phrases in `i18n/prerecord.json` are
+  recorded (13 short/onboarding phrases, 2.2 MB as 16 kHz WAV, ~32 KB/s); long messages are
+  spoken live, or by the device voice in lite mode.
+- The spoken control words in `player.controls_hint` are 'रुको'/'दोबारा' and 'ఆపు'/'మళ్లీ': the
+  local matcher (Track D) must accept them. Telugu strings still need a native speaker's review.
+
+## 2026-10-11 — translate_many: an answer's lines in few MT calls (Track A; affects Track C)
+- `bhashini.translate_many(lines, src, tgt)` returns the same length and order, or raises
+  ApiError (callers keep the whole answer in one language). Cached lines are free, duplicates
+  are translated once, the rest are packed as a numbered list of ≤ 50 words per request.
+- Chosen by a live test: newline and "||" separators were merged or mangled, and a marker word
+  kept its count but moved into the middle of a sentence (silently wrong lines); numbered items
+  stayed whole and in order (en→hi, en→te). Every packed reply is still verified (markers 1…n
+  in order, each item keeps its placeholders); a failed batch is re-translated line by line.
+- Live: a 14-line reviews answer took 2 calls per language (was 14), 0.4 s hi / 1.1 s te.
