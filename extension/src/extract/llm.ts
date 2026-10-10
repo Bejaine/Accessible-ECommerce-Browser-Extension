@@ -7,6 +7,7 @@ import type {
   ProductJSON,
   SourceMethod,
 } from '@shared/index';
+import { ORDER_NUMBER } from './orders';
 import { missingPaths } from './product';
 import { clean, HIDDEN_SELECTOR, isHidden, siteOf } from './util';
 
@@ -42,9 +43,10 @@ const DROP = [
   '#navFooter',
 ].join(', ');
 
-/** Card-like numbers, emails and phone numbers never go to an LLM. */
+/** Order numbers, card-like numbers, emails and phone numbers never go to an LLM. */
 export function redact(text: string): string {
   return text
+    .replace(ORDER_NUMBER, '[ORDER]') // before the card rule, which would also match it
     .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, '[EMAIL]')
     .replace(/\b(?:\d[ -]?){13,19}\b/g, '[NUMBER]')
     .replace(/(?:\+91[ -]?)?\b[6-9]\d{9}\b/g, '[PHONE]');

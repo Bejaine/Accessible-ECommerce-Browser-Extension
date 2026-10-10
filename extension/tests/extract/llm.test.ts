@@ -85,3 +85,11 @@ describe('/extract/fallback round trip', () => {
     expect(schemaErrors('ProductJSON', out)).toEqual([]);
   });
 });
+
+describe('order-number redaction', () => {
+  it('keeps Amazon and Flipkart order numbers away from the LLM', () => {
+    expect(redact('Order # 403-1234567-1234567 and OD123456789012345')).toBe(
+      'Order # [ORDER] and [ORDER]',
+    );
+  });
+});
