@@ -93,10 +93,13 @@ export function createTurnPipeline(deps: TurnDeps): TurnPipeline {
   let busy = false;
   let localIds = 0;
 
-  function setPending(confirmation: Confirmation | null): void {
+  /** `alreadySaid`: the answer's summary was just announced; don't say the same prompt twice. */
+  function setPending(confirmation: Confirmation | null, alreadySaid?: string): void {
     pending = confirmation;
     deps.showConfirmation(confirmation);
-    if (confirmation) deps.announce(confirmation.prompt);
+    if (confirmation && confirmation.prompt.trim() !== alreadySaid?.trim()) {
+      deps.announce(confirmation.prompt);
+    }
   }
 
   async function runActions(actions: ClientAction[], confirmed: boolean): Promise<boolean> {
@@ -145,7 +148,7 @@ export function createTurnPipeline(deps: TurnDeps): TurnPipeline {
         deps.showOutput(response.output);
 
         if (response.confirmation) {
-          setPending(response.confirmation);
+          setPending(response.confirmation, response.output.summary);
         } else if (response.actions.length > 0 && deps.confirmEveryAction()) {
           setPending({
             schema_version: '1.0',

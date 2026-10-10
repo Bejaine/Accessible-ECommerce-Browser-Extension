@@ -70,3 +70,17 @@ describe('two failures -> phrase board', () => {
     expect(fb.rung).toBe('switch');
   });
 });
+
+describe("phrase chips use Track C's chip keys", () => {
+  it('every mapped chip is one /turn answers without the LLM (backend/app/brain/tools.py CHIPS)', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { BACKEND_CHIPS } = await import('../src/ui/phrases');
+    const { join } = await import('node:path');
+    const tools = readFileSync(join(__dirname, '../../backend/app/brain/tools.py'), 'utf8');
+    const start = tools.indexOf('CHIPS:');
+    const chips = tools.slice(start, tools.indexOf('\n}', start));
+    for (const [ours, theirs] of Object.entries(BACKEND_CHIPS)) {
+      expect(chips, `${ours} -> "${theirs}"`).toContain(`"${theirs}":`);
+    }
+  });
+});

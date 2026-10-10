@@ -10,6 +10,12 @@ npm run -w extension test
 `VITE_BACKEND=mock` (default; see `.env.example`) serves `fixtures/mocks/` in-browser.
 Set `VITE_BACKEND=http://localhost:8000` in `extension/.env` to use the backend.
 
+`make ext` launches Chrome through `web-ext`. On Linux it goes through `dev/chrome-linux.sh`,
+which drops one of web-ext's default flags (`--disable-component-extensions-with-background-pages`):
+it removes Chrome's built-in speech voices, so the assistant could not speak. `--test-type` hides
+Chrome's "unsupported command-line flag" bar (web-ext's AutomationControlled flag stays, so shops
+don't treat the browser as a bot).
+
 If no browser opens, load `.output/chrome-mv3-dev` (Chrome: chrome://extensions → Load unpacked)
 or `.output/firefox-mv3-dev/manifest.json` (Firefox: about:debugging → Load Temporary Add-on).
 

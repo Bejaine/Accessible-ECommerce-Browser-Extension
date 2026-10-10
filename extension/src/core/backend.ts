@@ -58,12 +58,12 @@ type Section = 'overview' | 'specs' | 'reviews' | 'images';
 function mockSectionFor(req: TurnRequest): Section | 'add_to_cart' | null {
   const { phrase_id: phrase, target_id: target, text } = req.input;
   const said = (text ?? '').toLowerCase();
-  if (phrase === 'add_to_cart' || target === 't-add-to-cart' || said.includes('add to cart')) {
+  if (phrase === 'add to cart' || target === 't-add-to-cart' || said.includes('add to cart')) {
     return 'add_to_cart';
   }
   if (phrase === 'reviews' || said.includes('review')) return 'reviews';
   if (phrase === 'specs' || said.includes('spec')) return 'specs';
-  if (phrase === 'price' || phrase === 'read_page' || said.includes('price')) return 'overview';
+  if (phrase === 'price' || phrase === 'where am i?' || said.includes('price')) return 'overview';
   if (said.includes('box') || said.includes('image') || said.includes('photo')) return 'images';
   return null;
 }

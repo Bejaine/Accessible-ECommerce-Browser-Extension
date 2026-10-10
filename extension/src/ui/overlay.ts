@@ -14,6 +14,7 @@ import { ACTION_MENU_CSS } from './actionMenu';
 import { COLOUR_LABEL_CSS } from './colourLabels';
 import { SIMPLE_VIEW_CSS } from './simpleView';
 import { PLAYBACK_CSS } from './playbackBar';
+import { DWELL_CSS } from './dwell';
 import { CHECKOUT_CSS } from './checkoutWizard';
 import { initAnnouncer } from './announce';
 import { label } from './strings';
@@ -129,6 +130,7 @@ export function mountOverlay(container: HTMLElement, lang?: string): Overlay {
     COLOUR_LABEL_CSS +
     SIMPLE_VIEW_CSS +
     PLAYBACK_CSS +
+    DWELL_CSS +
     CHECKOUT_CSS;
 
   const root = el('div', { class: 'asl-root' });

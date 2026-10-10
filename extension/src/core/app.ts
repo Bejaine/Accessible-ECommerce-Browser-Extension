@@ -43,11 +43,13 @@ import {
   type PlaybackAction,
 } from '../ui/playbackBar';
 import { createScanner } from '../ui/scanner';
+import { attachDwell, type Dwell } from '../ui/dwell';
 import { createActionMenu } from '../ui/actionMenu';
 import { createColourLabels, type ColourLabels } from '../ui/colourLabels';
 import { renderSimpleView, simpleSummary } from '../ui/simpleView';
 import { createCheckoutWizard } from '../ui/checkoutWizard';
 import { createControls, type Controls } from '../ui/controls';
+import { BACKEND_CHIPS } from '../ui/phrases';
 import { mountOverlay, type Overlay } from '../ui/overlay';
 import { createSpeechSpeed, formatRate } from '../ui/speechSpeed';
 import { label, setUiLang } from '../ui/strings';
@@ -71,6 +73,7 @@ import {
 import { createInputFallback } from './fallback';
 import { createSession } from './session';
 import { createPlayerSpeaker, type Speaker } from './voice';
+import { createResumeStore } from './resume';
 import { createTurnPipeline, localOutput, type PerformFn, type TurnPipeline } from './turn';
 
 export const SUGGEST_CHECK_MS = 2000;
@@ -296,7 +299,30 @@ export function mountApp(
         void saveDevicePrefs(devicePrefs);
       },
     },
+    dwell: {
+      get: () => devicePrefs.dwellMs ?? null,
+      set: (ms) => {
+        devicePrefs.dwellMs = ms;
+        setDwell(ms);
+        void saveDevicePrefs(devicePrefs);
+      },
+    },
   });
+
+  // --- Dwell to click (opt-in; only the assistant's own controls) ---
+  let dwell: Dwell | null = null;
+  function setDwell(ms: number | null): void {
+    if (ms === null) {
+      dwell?.detach();
+      dwell = null;
+    } else if (dwell) {
+      dwell.setTime(ms);
+    } else {
+      dwell = attachDwell(overlay.content.getRootNode() as ShadowRoot | Document, ms);
+    }
+  }
+  setDwell(devicePrefs.dwellMs ?? null);
+  offs.push(() => setDwell(null));
   settings.render(profile, mode);
   // --- Page tools: simplified view, action menu, colour labels ---
   const pageTools = document.createElement('div');
@@ -367,7 +393,11 @@ export function mountApp(
       // Track C's /turn maps "place my order" to the place-order task: it reads the order back
       // and returns a high-risk confirmation. Nothing is pressed until the user says yes.
       onPlaceOrder: () =>
-        void turn.send({ kind: 'phrase', phrase_id: 'place_order', text: 'place my order' }),
+        void turn.send({
+          kind: 'phrase',
+          phrase_id: BACKEND_CHIPS.place_order,
+          text: BACKEND_CHIPS.place_order,
+        }),
       onTarget: (id) => {
         const target = page.targets.find((t) => t.id === id);
         if (target) bus.emit({ type: 'select-target', target });
@@ -480,6 +510,31 @@ export function mountApp(
   });
   overlay.floating.append(playbackBar.element);
   offs.push(speaker.onChange((_, state, sentence) => playbackBar.update(state, sentence)));
+
+  // Resume where it stopped after a page change: keep the answer's position on the device while
+  // it plays; on the next page of this site, hold it as a paused answer and say how to resume.
+  const resume = createResumeStore(location.hostname);
+  let savedAt = '';
+  offs.push(
+    speaker.onChange(() => {
+      if (speaker.state === 'idle') {
+        savedAt = '';
+        resume.clear();
+        return;
+      }
+      const snap = speaker.snapshot();
+      if (!snap) return;
+      const at = `${speaker.state}|${snap.sections.length}|${snap.section}|${snap.index}`;
+      if (at === savedAt) return;
+      savedAt = at;
+      resume.save(snap);
+    }),
+  );
+  void resume.take().then((snap) => {
+    if (!snap || speaker.state !== 'idle') return;
+    speaker.offerResume(snap);
+    announce(label('playback.resume_offer', lang()));
+  });
 
   // Single key: press while playing -> pause; press while paused -> resume; or wait 1.5 s and the
   // mini-menu is scanned aloud (same model as switch access), and the same key picks an item.
@@ -780,7 +835,8 @@ export function mountApp(
       }
       const cached = preparedSection(m.id);
       if (cached) showOutput(cached);
-      else void turn.send({ kind: 'phrase', phrase_id: m.id, text: m.text });
+      // Track C answers its chips without the LLM, keyed by its own chip names.
+      else void turn.send({ kind: 'phrase', phrase_id: BACKEND_CHIPS[m.id] ?? null, text: m.text });
     }),
     bus.on('followup', (m) => void say(m.text, 'text')),
     bus.on(

@@ -25,6 +25,8 @@ export function recordingSpeaker() {
     previousSection: () => (calls.push('previousSection'), set('playing')),
     stop: () => (calls.push('stop'), set('idle', null)),
     setRate: (r) => calls.push(`rate:${r}`),
+    snapshot: () => null,
+    offerResume: () => (calls.push('offerResume'), set('paused')),
     get state() {
       return state;
     },
