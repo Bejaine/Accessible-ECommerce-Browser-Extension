@@ -12,6 +12,12 @@ export default defineConfig({
     name: 'Accessible Shopping Layer',
     description: 'Voice-first, accessible shopping on Amazon.in, Flipkart and other stores.',
     permissions: ['storage'],
+    commands: {
+      'toggle-assistant': {
+        suggested_key: { default: 'Alt+Shift+A' },
+        description: 'Open or close the Shopping assistant',
+      },
+    },
     host_permissions: ['http://localhost:8000/*'],
     ...(browser === 'firefox' && {
       browser_specific_settings: {
@@ -20,6 +26,8 @@ export default defineConfig({
       },
     }),
   }),
+  // Linux Chrome only uses speech-dispatcher (the device voice) with this flag.
+  webExt: { chromiumArgs: ['--enable-speech-dispatcher'] },
   vite: () => ({
     // Mock mode reads ../fixtures/mocks; allow the dev server outside the package.
     server: { fs: { allow: ['..'] } },

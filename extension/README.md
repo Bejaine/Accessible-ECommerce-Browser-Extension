@@ -1,14 +1,17 @@
 # extension/ — WXT WebExtension (MV3, Chrome + Firefox for Android)
 
 ```
-make ext            # Chrome dev build with reload
-make ext-firefox    # Firefox dev build
+make ext            # opens Chrome with the extension loaded; reloads on save
+make ext-firefox    # same for Firefox
 make build          # production builds in .output/
 npm run -w extension test
 ```
 
 `VITE_BACKEND=mock` (default; see `.env.example`) serves `fixtures/mocks/` in-browser.
 Set `VITE_BACKEND=http://localhost:8000` in `extension/.env` to use the backend.
+
+If no browser opens, load `.output/chrome-mv3-dev` (Chrome: chrome://extensions → Load unpacked)
+or `.output/firefox-mv3-dev/manifest.json` (Firefox: about:debugging → Load Temporary Add-on).
 
 Firefox for Android: build with `make build`, then
 `npx web-ext run -t firefox-android -s .output/firefox-mv3 --adb-device <id>`.

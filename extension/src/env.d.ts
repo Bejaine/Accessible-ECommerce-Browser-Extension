@@ -1,6 +1,7 @@
 interface ImportMetaEnv {
   /** "mock" (default) serves fixtures/mocks in-browser; anything else is the backend base URL. */
   readonly VITE_BACKEND?: string;
+  readonly DEV: boolean;
 }
 
 interface ImportMeta {

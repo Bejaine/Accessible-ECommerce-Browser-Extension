@@ -1,15 +1,57 @@
-import { mountOverlay } from '@/src/ui/overlay';
+import { mountApp, type App } from '@/src/core/app';
+import { createRuntimeBackend, type BackendReply } from '@/src/core/backend';
+import { bus } from '@/src/core/bus';
+import { createProfileStore, loadDevicePrefs, TOGGLE_ASSISTANT } from '@/src/core/profile';
 
 export default defineContentScript({
   matches: ['<all_urls>'],
   cssInjectionMode: 'manual',
   async main(ctx) {
+    const store = await createProfileStore();
+    const devicePrefs = await loadDevicePrefs().catch(() => undefined);
+    const backend = createRuntimeBackend(
+      (message) => browser.runtime.sendMessage(message) as Promise<BackendReply>,
+    );
+    // The in-browser mock can't recognise speech or provide voices; the app says so honestly.
+    const demo = (import.meta.env.VITE_BACKEND ?? 'mock') === 'mock';
+
+    let app: App | null = null;
     const ui = await createShadowRootUi(ctx, {
       name: 'asl-overlay',
       position: 'inline',
       anchor: 'body',
-      onMount: (container) => mountOverlay(container),
+      append: 'last',
+      onMount: (container) => {
+        const mount = () => mountApp(container, store, bus, backend, { devicePrefs, demo });
+        app = mount();
+        // The whole interface follows the chosen language: remount when it changes.
+        let lang = store.get().prefs.lang;
+        const off = store.subscribe((next) => {
+          if (next.prefs.lang === lang || !app) return;
+          lang = next.prefs.lang;
+          const wasOpen = app.overlay.isOpen;
+          app.unmount();
+          app = mount();
+          if (wasOpen) app.overlay.open();
+        });
+        if (import.meta.env.DEV) {
+          // Dynamic so production drops the module and its fixture imports entirely.
+          void import('@/src/core/devtools').then((m) => m.installDevHooks(bus, () => app!, store));
+        }
+        return off;
+      },
+      onRemove: (off) => {
+        off?.();
+        app?.unmount();
+        app = null;
+      },
     });
     ui.mount();
+
+    // Keyboard shortcut (Alt+Shift+A, from the background script): open or close from anywhere.
+    browser.runtime.onMessage.addListener((msg: { type?: string }) => {
+      if (msg?.type === TOGGLE_ASSISTANT) app?.toggleAssistant();
+      return undefined;
+    });
   },
 });

@@ -1,8 +1,6 @@
 // Renderers turn AccessibleOutput into speech, large text, etc. (rule 4).
-// STUB: only the spoken-summary queue exists.
-import type { AccessibleOutput } from '@shared/index';
-
-/** Sentences to queue in the audio player: the summary is always spoken first. */
-export function toSpeechQueue(output: AccessibleOutput): string[] {
-  return [output.summary];
-}
+// No other module speaks or renders raw output text.
+export { canSimplify, flattenSpoken, toSpokenSections } from './speech';
+export type { SpeechOptions, SpokenSection } from './speech';
+export { RENDER_CSS, renderOutput } from './visual';
+export type { RenderOptions, RenderedOutput } from './visual';

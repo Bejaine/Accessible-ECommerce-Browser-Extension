@@ -2,6 +2,7 @@
 // Integration lead owns the message list; add new message types here, never ad-hoc strings.
 import type {
   AccessibleOutput,
+  ActionTarget,
   ProductPrepareRequest,
   ProductPrepareResponse,
   TurnRequest,
@@ -11,6 +12,9 @@ import type {
 export type BusMessage =
   | { type: 'announce'; text: string; assertive?: boolean }
   | { type: 'output'; output: AccessibleOutput }
+  | { type: 'followup'; text: string }
+  | { type: 'phrase'; id: string; text: string }
+  | { type: 'select-target'; target: ActionTarget }
   | { type: 'turn'; request: TurnRequest }
   | { type: 'turn-result'; response: TurnResponse }
   | { type: 'prepare'; request: ProductPrepareRequest }
