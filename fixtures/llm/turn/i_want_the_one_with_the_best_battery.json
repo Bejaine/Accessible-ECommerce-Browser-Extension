@@ -1,0 +1,48 @@
+{
+  "model": "openai/gpt-oss-20b",
+  "response": {
+    "id": "chatcmpl-6e76cec9-5a87-463f-bd67-d23f89b47044",
+    "object": "chat.completion",
+    "created": 1791660015,
+    "model": "openai/gpt-oss-20b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "id": "fc_1e8075e5-e9d5-4724-a778-5cee6bf3532f",
+              "type": "function",
+              "function": {
+                "name": "compare",
+                "arguments": "{\"alternatives\":[{\"arguments_json\":\"{}\",\"label\":\"Compare products\",\"tool\":\"compare\"}],\"confidence\":0.9,\"priorities\":[{\"feature\":\"battery\",\"importance\":\"must\"}],\"product_ids\":[\"amazon.in:B0NVXA15G5\",\"amazon.in:B0ZNTRA5G1\",\"amazon.in:B0ORBM35G3\"]}"
+              }
+            }
+          ]
+        },
+        "logprobs": null,
+        "finish_reason": "tool_calls"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.333416427,
+      "prompt_tokens": 3760,
+      "prompt_time": 0.269481411,
+      "completion_tokens": 123,
+      "completion_time": 0.13242079,
+      "total_tokens": 3883,
+      "total_time": 0.401902201,
+      "completion_tokens_details": {
+        "reasoning_tokens": 33
+      }
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_84bb35977d",
+    "x_groq": {
+      "id": "req_01m4km4fa7eh2ttgaresgw6w5t",
+      "seed": 1973997577
+    },
+    "service_tier": "on_demand"
+  }
+}

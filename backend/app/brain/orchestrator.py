@@ -16,20 +16,18 @@ import logging
 import re
 from typing import Any
 
-from app.brain import intent, language, tools
+from app.brain import intent, language, session, tools
 from app.brain.llm import LLMError, LLMSettings, complete_tool_call
 from app.brain.output import plain_output
 from app.brain.redact import redact
 from app.config import get_settings
 from app.errors import ApiError
 from app.models import SCHEMA_VERSION, AccessibleOutput, ErrorCode, TurnRequest, TurnResponse
-from app.services.cache import TTLCache
 
 log = logging.getLogger(__name__)
 
 MAX_TARGETS = 60
 LOW_ASR = 0.5
-_sessions = TTLCache(ttl_seconds=1800)  # session_id -> consecutive misses
 
 SYSTEM_PROMPT = """\
 You route ONE shopper utterance to exactly ONE tool. The shopper may be blind, elderly, have a \
@@ -47,6 +45,9 @@ Rules:
 - confidence = your probability that the tool and arguments are what the shopper meant: \
 0.8 or more only when it is clear; 0.5-0.8 when plausible but you are unsure; below 0.5 when \
 guessing. Give up to 2 alternatives (other plausible meanings), most likely first.
+- "Compare with the one I saw before" / "which of these is better for me" -> compare (use SEEN
+  ids). Pass priorities/budget the shopper states ("good camera, battery doesn't matter,
+  under 20000"); when they only state preferences, call set_preferences.
 - If nothing fits, call unclear.
 """
 
@@ -56,16 +57,17 @@ class NoRecording(Exception):
 
 
 def _misses(session_id: str) -> int:
-    return _sessions.get(session_id) or 0
+    return session.get(session_id).misses
 
 
 def _set_misses(session_id: str, n: int) -> None:
-    _sessions.set(session_id, n)
+    session.get(session_id).misses = n
 
 
 def page_brief(req: TurnRequest) -> dict[str, Any]:
     """What the model needs to choose a tool: ids, labels, a few facts. Not whole products."""
     page = req.page
+    mem = session.get(req.session_id)
     products = []
     for p in page.products[:20]:
         products.append(
@@ -94,6 +96,13 @@ def page_brief(req: TurnRequest) -> dict[str, Any]:
         "site": page.site,
         "products": products,
         "orders": [{"id": o.id, "status": o.status} for o in page.orders],
+        # Looked at earlier in this session (maybe on another site), for "compare with ...".
+        "SEEN": [
+            {"id": p.id, "title": (p.title or "")[:60], "site": p.site}
+            for p in mem.seen.values()
+            if p.id not in {q.id for q in page.products}
+        ],
+        "stated_preferences": {"priorities": mem.priorities, "max_price": mem.max_price},
         "targets": [
             {"id": t.id, "kind": t.kind.value, "label": t.label[:60], "zone": t.zone.value}
             for t in targets
@@ -114,6 +123,8 @@ async def handle_turn(req: TurnRequest) -> TurnResponse:
         )
     ctx = tools.Context(req)
     user_lang = req.input.lang.value
+    if req.page.page_type.value == "product" and req.page.products:
+        session.get(req.session_id).remember(req.page.products[0])
 
     # Direct paths: no LLM needed.
     if req.input.target_id:

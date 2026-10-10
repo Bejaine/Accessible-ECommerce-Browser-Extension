@@ -145,3 +145,15 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - One utterance per `listen()`: energy VAD, silence timeout 1.0 s (2.5 s in speech mode), 19 s
   cap, 300 ms pre-roll; output 16 kHz mono 16-bit WAV, confirmed accepted by live Hindi ASR.
 - The mic is open only while listening; `mute()` (secure zone) closes it and discards audio.
+
+## 2026-10-11 — Comparison by stated preferences (Track C; affects D, core)
+- Code ranks, words explain: specs are mapped to comparable features (camera MP, battery mAh,
+  RAM, storage, screen, weight…) across Amazon/Flipkart/SerpApi naming; weights come only from
+  what the shopper says ("camera matters, battery doesn't, under ₹20,000"), never from the
+  disability profile. Missing values are "not listed", never guessed; if no listing has an
+  asked-for feature the answer says so.
+- `/turn` remembers, per session_id only (30 min, in memory): products opened (any site) and stated
+  preferences. New tool `set_preferences`; `compare` also uses products seen earlier. No persona
+  database; saving preferences across sessions would be an on-device profile + schema change.
+- `/product/prepare` `comparison` section: Amazon only, from SerpApi `compare_with_similar` (other
+  models' prices flagged as Amazon's); always shows the product being viewed with its rank.
