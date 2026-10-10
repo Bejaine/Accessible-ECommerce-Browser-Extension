@@ -195,6 +195,8 @@ const ZONE_PRIORITY: Zone[] = [
 export interface PageMapOptions {
   pageType: PageType;
   url: string;
+  /** Elements that must survive the cap (e.g. the checkout's Place-order button). */
+  pinned?: Element[];
 }
 
 /**
@@ -204,6 +206,7 @@ export interface PageMapOptions {
 export function buildPageMap(doc: Document, opts: PageMapOptions): ActionTarget[] {
   const seen = new Set<string>();
   const found: ActionTarget[] = [];
+  const pinnedIds = new Set((opts.pinned ?? []).map((el) => targetIdFor(el)));
   for (const el of Array.from(doc.querySelectorAll(INTERACTIVE))) {
     if (isHidden(el)) continue;
     const href = el.getAttribute('href');
@@ -232,7 +235,8 @@ export function buildPageMap(doc: Document, opts: PageMapOptions): ActionTarget[
       colour_name: colourName(el, label),
     });
   }
-  const rank = (t: ActionTarget): number => ZONE_PRIORITY.indexOf(t.zone);
+  const rank = (t: ActionTarget): number =>
+    pinnedIds.has(t.id) ? -1 : ZONE_PRIORITY.indexOf(t.zone);
   return found
     .map((t, i) => ({ t, i }))
     .sort((a, b) => rank(a.t) - rank(b.t) || a.i - b.i)

@@ -415,17 +415,32 @@ function renderCheckout() {
       </div>
     </section>
     <section aria-labelledby="h-review"><h2 id="h-review">3. Review your order</h2>
-      <ul>${state.cart
+      <p id="deliver-to">Deliver to: <span class="address"></span>, PIN <span class="pin"></span></p>
+      <ul class="checkout-items">${state.cart
         .map(
           (l) =>
-            `<li>${esc(product(l.id).title)}${l.colour ? ` (${esc(l.colour)})` : ''} × ${l.qty} — ${rupees(product(l.id).price * l.qty)}</li>`,
+            `<li class="checkout-line"><span class="item-title">${esc(product(l.id).title)}${l.colour ? ` (${esc(l.colour)})` : ''}</span> × <span class="item-qty">${l.qty}</span> — <span class="item-price">${rupees(product(l.id).price * l.qty)}</span></li>`,
         )
         .join('')}</ul>
-      <p>Delivery: <span id="checkout-delivery">FREE, ${longDate(delivery)}</span></p>
+      <p>Items: <span id="checkout-subtotal">${rupees(cartTotal())}</span></p>
+      <p>Delivery charge: <span id="checkout-delivery-charge">FREE</span></p>
+      <p>Arriving: <span id="checkout-delivery">${longDate(delivery)}</span></p>
       <p>Order total: <strong id="order-total">${rupees(cartTotal())}</strong></p>
       <button type="button" id="place-order">Place your order</button>
       <p id="checkout-error" role="alert"></p>
     </section>`;
+  // The review line follows the address fields, as on real checkout pages.
+  const deliverTo = () => {
+    const v = (id) => document.getElementById(id).value.trim();
+    main.querySelector('#deliver-to .address').textContent = [v('fullname'), v('address')]
+      .filter(Boolean)
+      .join(', ');
+    main.querySelector('#deliver-to .pin').textContent = v('pincode');
+  };
+  deliverTo();
+  for (const id of ['fullname', 'address', 'pincode']) {
+    document.getElementById(id).addEventListener('input', deliverTo);
+  }
   const cardFields = document.getElementById('card-fields');
   for (const r of main.querySelectorAll('input[name="payment"]')) {
     r.addEventListener('change', () => {
