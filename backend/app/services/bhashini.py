@@ -280,7 +280,7 @@ async def call_model(
     object, or raise an ApiError."""
     entry = registry().get(task, key)
     if get_settings().mock:
-        return _unwrap(_mock_response(task, key))
+        return _unwrap(_mock_response(task, key, json_body))
     if not entry.configured:
         raise ApiError(
             ErrorCode.upstream_unavailable,
@@ -361,13 +361,25 @@ def _check_public_https(url: str) -> None:
         raise _invalid("Only public https links can be read.")
 
 
-def _mock_response(task: Task, key: str) -> dict[str, Any]:
+def _mock_response(task: Task, key: str, json_body: dict[str, Any] | None) -> dict[str, Any]:
     path = get_settings().fixtures_dir / "language-api" / f"{task}.{key}.json"
     if not path.exists():
         raise ApiError(
             ErrorCode.internal, f"No mock response for {task} {key}.", status=500, retryable=False
         )
-    return json.loads(path.read_text())
+    envelope = json.loads(path.read_text())
+    # An MT fixture translates only its recorded input: a canned sentence returned for any
+    # other text would pass off unrelated words as a translation. Unrecorded text behaves like
+    # an unavailable model, so callers keep English, as they would in real mode.
+    recorded = envelope.pop("_mock_input", None)
+    if recorded is not None and (json_body or {}).get("input_text") != recorded:
+        raise ApiError(
+            ErrorCode.upstream_unavailable,
+            "No mock translation is recorded for this text.",
+            status=503,
+            retryable=False,
+        )
+    return envelope
 
 
 # --- Task helpers (what routes and other services call) ---------------------------------

@@ -131,7 +131,7 @@ def test_tts_with_only_symbols_is_a_validation_error(client, assert_schema):
 
 
 def test_translate_en_to_hi(client, assert_schema):
-    req = {**V, "text": "Battery capacity is 5000 mAh", "source_lang": "en", "target_lang": "hi"}
+    req = {**V, "text": "Battery capacity: 5000 mAh", "source_lang": "en", "target_lang": "hi"}
     res = client.post("/translate", json=req)
     assert res.status_code == 200, res.text
     body = res.json()
@@ -150,7 +150,7 @@ def test_translate_same_language_echoes(client):
 
 
 def test_translate_hi_to_te_pivots(client):
-    req = {**V, "text": "namaste", "source_lang": "hi", "target_lang": "te"}
+    req = {**V, "text": "बैटरी क्षमता: 5000 mAh", "source_lang": "hi", "target_lang": "te"}
     body = client.post("/translate", json=req).json()
     assert body["text"] == fixture_text("mt.en-te.json", "output_text")
 
@@ -250,3 +250,8 @@ def test_app_startup_starts_the_language_warm_up(monkeypatch):
     with TestClient(app):
         pass
     assert started == [1]
+
+
+def test_mock_translate_of_unrecorded_text_is_unavailable(client, assert_schema):
+    req = {**V, "text": "something nobody recorded", "source_lang": "en", "target_lang": "hi"}
+    assert_error(client.post("/translate", json=req), assert_schema, 503, "upstream_unavailable")

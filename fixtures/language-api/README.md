@@ -16,3 +16,7 @@ Binary stand-ins served instead of downloads in mock mode:
 
 The texts are our own samples; the shapes are verbatim from the spec. Replace a file with a
 real response captured from "Try Model" when you have one.
+
+MT fixtures carry `_mock_input` (not part of the API): in mock mode they translate only that
+exact text; any other text fails as `upstream_unavailable`, so callers keep English instead of
+showing a canned sentence as a translation.

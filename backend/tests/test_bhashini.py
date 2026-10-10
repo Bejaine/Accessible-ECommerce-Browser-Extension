@@ -498,7 +498,7 @@ async def test_translate_pivots_hi_to_te_through_english(monkeypatch):
         return await real(task, key, json_body, **kw)
 
     monkeypatch.setattr(bhashini, "call_model", spy)
-    assert await bhashini.translate("namaste", "hi", "te")
+    assert await bhashini.translate("बैटरी क्षमता: 5000 mAh", "hi", "te")
     assert calls == ["hi-en", "en-te"]
 
 
@@ -770,3 +770,14 @@ async def test_warm_up_runs_at_most_two_calls_at_once(monkeypatch):
     result = await bhashini.warm_up()
     assert len(result) == 5 and set(result.values()) == {"ok"}
     assert peak == 2
+
+
+async def test_mock_mt_translates_only_its_recorded_input():
+    """MOCK must never pass off a canned sentence as the translation of other text: consumers
+    (Track C's /turn) then keep English and say so, exactly as in real mode on a failure."""
+    assert (
+        await bhashini.translate("Battery capacity: 5000 mAh", "en", "hi") == "बैटरी क्षमता: 5000 mAh"
+    )
+    with pytest.raises(ApiError) as exc:
+        await bhashini.translate("isse cart mein daal do", "hi", "en")
+    assert exc.value.code == ErrorCode.upstream_unavailable and not exc.value.retryable
