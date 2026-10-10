@@ -53,3 +53,15 @@ request options (TTSRequest.voice, ASRRequest.sample_rate/mic_level,
 VisionDescribeRequest.product_id) are optional and non-null. Generated Pydantic/TS do not enforce
 OCRRequest's oneOf; JSON Schema validation does.
 Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
+
+## 2026-10-10 — Extraction tiers and field precedence (Track B, affects C and D)
+- Tiers run fastest-first: JSON-LD/meta → site adapter; a later tier overrides a field it found
+  (adapters read what the user sees: price, stock, delivery, seller). `source.fields` records
+  the tier per field. Anything not found is null and listed in `missing`, never guessed.
+- Amazon shows the rating histogram as percentages; `reviews.histogram` counts are
+  round(percent × rating.count / 100), so they carry Amazon's ±1% rounding. Say "about".
+- Flipkart's CSS classes are generated, so its adapter reads structure and wording, never class
+  names. Image-only colour options without a name on the page are left out of `variants`.
+- `reviews.basis_count` = review items actually read from the page (not the site's total).
+- Page map: ids are `t1, t2, …`, stable for the document's lifetime; max 200 targets, search and
+  cart zones first; labels only, input values are never read.
