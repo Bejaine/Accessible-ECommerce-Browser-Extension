@@ -150,3 +150,22 @@ def test_turn_response_carries_the_workflow(mock_body, monkeypatch):
     r = run(orchestrator.handle_turn(TurnRequest.model_validate(data)))
     assert r.workflow.name.value == "track_order"
     assert r.workflow.step == 2
+
+
+def test_continue_chip_moves_the_task_on_without_an_llm(mock_body, monkeypatch):
+    from app.brain import orchestrator
+
+    async def no_llm(*_a, **_k):
+        raise AssertionError("chips never call the LLM")
+
+    monkeypatch.setattr(orchestrator, "complete_tool_call", no_llm)
+    page = mock_body("PageContext.orders")
+    data = mock_body("TurnRequest")
+    data["page"] = page
+    data["input"].update(kind="phrase", text="Cancel an order", phrase_id=None, lang="en")
+    first = run(orchestrator.handle_turn(TurnRequest.model_validate(data)))
+    assert first.confirmation is not None
+    page["orders"][0]["status"] = "cancelled"
+    data["input"].update(text="Continue")
+    done = run(orchestrator.handle_turn(TurnRequest.model_validate(data)))
+    assert done.output.summary == "Done: the page now shows this order as cancelled."
