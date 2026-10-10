@@ -39,9 +39,9 @@ def test_reviews_keep_mention_counts(product):
     # Insights exist, so no "based on N reviews"; counts are kept and topics grouped by sentiment.
     assert "690" not in out.summary and "189 positive" in out.summary
     groups = {s.heading: [i.text for i in s.items] for s in out.sections}
-    assert groups["Pros"][0] == "Battery life: 189 positive and 23 negative mentions"
+    assert groups["Good points"][0] == "Battery life: 189 positive and 23 negative mentions"
     assert groups["Mixed opinions"] == ["Heating: 25 positive and 29 negative mentions"]
-    assert groups["Cons"] == ["Low-light camera: 28 positive and 68 negative mentions"]
+    assert groups["Drawbacks"] == ["Low-light camera: 28 positive and 68 negative mentions"]
 
 
 def test_invented_specs_are_rejected(product):
@@ -51,7 +51,7 @@ def test_invented_specs_are_rejected(product):
 
 def test_wrong_sentiment_and_opinions_are_dropped(product):
     result = run(llm_section("reviews", product, key="summary/test.reviews_wrong_sentiment"))
-    pros = [i.text for s in result.output.sections if s.heading == "Pros" for i in s.items]
+    pros = [i.text for s in result.output.sections if s.heading == "Good points" for i in s.items]
     assert "Low-light camera: 68 of 96 mentions" not in pros
     assert "Feels premium in the hand" not in pros
     assert len(result.dropped) == 2
