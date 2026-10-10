@@ -28,6 +28,23 @@ export const PHRASES: readonly Phrase[] = [
   { id: 'help', contexts: ['any'] },
 ];
 
+/**
+ * Track C's /turn answers these phrase chips directly, without the LLM, keyed by TurnInput.phrase_id
+ * (backend/app/brain/tools.py CHIPS). Our ids map to their keys; phrases not listed here are sent
+ * as text and go through intent detection.
+ */
+export const BACKEND_CHIPS: Record<string, string> = {
+  price: 'price',
+  reviews: 'reviews',
+  specs: 'specs',
+  add_to_cart: 'add to cart',
+  read_results: 'read the results',
+  read_page: 'where am i?',
+  go_to_cart: 'read my cart',
+  track_order: 'track my order',
+  place_order: 'place my order',
+};
+
 export const phraseLabel = (id: string, lang?: string) => label(`phrase.${id}` as UiKey, lang);
 
 /** Phrases for this context: page-specific first, then the general ones. */

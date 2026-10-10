@@ -31,7 +31,7 @@ describe('mock backend', () => {
   });
 
   it('add to cart comes back as a confirmation with read-back, never as an action to run now', async () => {
-    const res = await backend.turn(request({ phrase_id: 'add_to_cart' }));
+    const res = await backend.turn(request({ phrase_id: 'add to cart' }));
     expect(res.actions).toEqual([]);
     expect(res.confirmation?.pending_actions[0]?.target_id).toBe('t-add-to-cart');
     expect(res.confirmation?.read_back?.total).toEqual({ amount: 17999, currency: 'INR' });

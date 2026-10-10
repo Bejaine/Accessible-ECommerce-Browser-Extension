@@ -48,6 +48,7 @@ import { createColourLabels, type ColourLabels } from '../ui/colourLabels';
 import { renderSimpleView, simpleSummary } from '../ui/simpleView';
 import { createCheckoutWizard } from '../ui/checkoutWizard';
 import { createControls, type Controls } from '../ui/controls';
+import { BACKEND_CHIPS } from '../ui/phrases';
 import { mountOverlay, type Overlay } from '../ui/overlay';
 import { createSpeechSpeed, formatRate } from '../ui/speechSpeed';
 import { label, setUiLang } from '../ui/strings';
@@ -367,7 +368,11 @@ export function mountApp(
       // Track C's /turn maps "place my order" to the place-order task: it reads the order back
       // and returns a high-risk confirmation. Nothing is pressed until the user says yes.
       onPlaceOrder: () =>
-        void turn.send({ kind: 'phrase', phrase_id: 'place_order', text: 'place my order' }),
+        void turn.send({
+          kind: 'phrase',
+          phrase_id: BACKEND_CHIPS.place_order,
+          text: BACKEND_CHIPS.place_order,
+        }),
       onTarget: (id) => {
         const target = page.targets.find((t) => t.id === id);
         if (target) bus.emit({ type: 'select-target', target });
@@ -780,7 +785,8 @@ export function mountApp(
       }
       const cached = preparedSection(m.id);
       if (cached) showOutput(cached);
-      else void turn.send({ kind: 'phrase', phrase_id: m.id, text: m.text });
+      // Track C answers its chips without the LLM, keyed by its own chip names.
+      else void turn.send({ kind: 'phrase', phrase_id: BACKEND_CHIPS[m.id] ?? null, text: m.text });
     }),
     bus.on('followup', (m) => void say(m.text, 'text')),
     bus.on(
