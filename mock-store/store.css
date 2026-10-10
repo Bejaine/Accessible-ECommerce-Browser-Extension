@@ -1,0 +1,156 @@
+:root {
+  --fg: #1b1b1b;
+  --muted: #555;
+  --bg: #fff;
+  --line: #d0d0d0;
+  --accent: #0b57d0;
+  --ok: #146c2e;
+  --warn: #9a3412;
+  font:
+    18px/1.5 system-ui,
+    sans-serif;
+  color: var(--fg);
+  background: var(--bg);
+}
+body {
+  margin: 0;
+}
+a {
+  color: var(--accent);
+}
+header.site {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+header.site .logo {
+  font-weight: 700;
+  font-size: 1.2rem;
+  text-decoration: none;
+  color: var(--fg);
+}
+header.site form {
+  display: flex;
+  flex: 1;
+  gap: 8px;
+  min-width: 240px;
+}
+header.site input[type='search'] {
+  flex: 1;
+}
+main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 16px;
+}
+button,
+.button,
+input,
+select {
+  font: inherit;
+  min-height: 44px;
+  padding: 6px 14px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+}
+button,
+.button {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+}
+button.secondary {
+  background: #fff;
+  color: var(--accent);
+}
+button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid #e8a000;
+  outline-offset: 2px;
+}
+.results {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 16px;
+}
+.card,
+.order {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px 16px;
+}
+.price {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+.mrp {
+  color: var(--muted);
+  text-decoration: line-through;
+  margin-left: 8px;
+}
+.in-stock {
+  color: var(--ok);
+}
+.low-stock,
+.out-of-stock {
+  color: var(--warn);
+}
+.swatches {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 0;
+  border: 0;
+}
+.swatch[aria-pressed='true'] {
+  outline: 3px solid var(--fg);
+}
+table.specs {
+  border-collapse: collapse;
+}
+table.specs th,
+table.specs td {
+  text-align: left;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.notice {
+  padding: 12px;
+  border-radius: 6px;
+  background: #e8f5e9;
+  margin: 12px 0;
+}
+.secure {
+  border: 2px dashed var(--warn);
+  padding: 12px;
+  border-radius: 8px;
+}
+.row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+label {
+  display: block;
+  margin: 8px 0;
+}
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+  }
+}
