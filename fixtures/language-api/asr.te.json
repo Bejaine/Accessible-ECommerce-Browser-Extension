@@ -1,0 +1,9 @@
+{
+  "status": "success",
+  "message": "Inference performed successfully",
+  "data": {
+    "recognized_text": "దీన్ని కార్ట్‌లో వేయండి"
+  },
+  "error": null,
+  "code": 200
+}

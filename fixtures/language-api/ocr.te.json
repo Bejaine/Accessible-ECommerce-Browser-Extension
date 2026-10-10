@@ -1,0 +1,9 @@
+{
+  "status": "success",
+  "message": "OCR Inference performed successfully",
+  "data": {
+    "decoded_text": "బ్యాటరీ 5000 mAh\nపెట్టెలో: ఫోన్, USB-C కేబుల్"
+  },
+  "error": null,
+  "code": 200
+}
