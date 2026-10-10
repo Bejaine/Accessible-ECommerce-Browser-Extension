@@ -47,7 +47,7 @@ class Grounding(BaseModel):
         extra="forbid",
     )
     claim: str
-    subject_id: str = Field(..., description="A ProductJSON or OrderJSON id.")
+    subject_id: str = Field(..., description="A ProductJSON, OrderJSON or CheckoutSummary id.")
     field_path: str = Field(
         ...,
         description="Dot path into that subject, e.g. specs.battery.value, reviews.items[3].text.",
