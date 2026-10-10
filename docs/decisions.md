@@ -155,3 +155,12 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   words ("Noise", "Apple") at the start of a sentence are otherwise translated.
 - `bhashini.translate` fails with `upstream_unavailable` if the MT drops a placeholder, so callers
   keep English rather than speak a sentence with a name or price missing.
+
+## 2026-10-11 — Spoken-number normaliser (Track A; affects Track C, and D's local matcher)
+- `numbers.normalise_numbers(text, lang)` turns number words into digits for en, hi (Devanagari
+  and, when lang is hi, romanised), te: lakh/crore, डेढ़/ढाई/साढ़े/सवा/पौने, ఒకటిన్నర, 15k,
+  native digits, 1,50,000. `parse_number(text, lang)` returns the value of a lone number.
+- A wrong number is worse than a word left alone: lone एक/दो/ek/do/one/ఒక stay words ("डाल दो" is
+  "put it", "the cheaper one"), lone multipliers stay ("lakhs of reviews"), side-by-side numbers
+  are not added ("two three days"), and digits are never reformatted.
+- Ranges share the multiplier: "पंद्रह से बीस हज़ार" → "15000 से 20000", never backwards.
