@@ -1,0 +1,7 @@
+{
+  "asr": { "en": {"url": "", "token": "", "model": ""}, "hi": {"url": "", "token": "", "model": ""}, "te": {"url": "", "token": "", "model": ""} },
+  "mt":  { "en-hi": {"url": "", "token": "", "model": ""}, "hi-en": {"url": "", "token": "", "model": ""}, "en-te": {"url": "", "token": "", "model": ""}, "te-en": {"url": "", "token": "", "model": ""} },
+  "tts": { "en": {"url": "", "token": "", "model": ""}, "hi": {"url": "", "token": "", "model": ""}, "te": {"url": "", "token": "", "model": ""} },
+  "ocr": { "default": {"url": "", "token": "", "model": ""} },
+  "rpm": { "asr": 30, "mt": 60, "tts": 60, "ocr": 10 }
+}

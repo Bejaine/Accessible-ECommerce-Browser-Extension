@@ -1,0 +1,10 @@
+.env
+.env.local
+CLAUDE.local.md
+.claude/settings.local.json
+node_modules/
+.output/
+__pycache__/
+.venv/
+backend/config/models.local.json
+docs/vendor/
