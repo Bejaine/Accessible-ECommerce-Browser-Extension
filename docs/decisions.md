@@ -65,3 +65,16 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - `reviews.basis_count` = review items actually read from the page (not the site's total).
 - Page map: ids are `t1, t2, …`, stable for the document's lifetime; max 200 targets, search and
   cart zones first; labels only, input values are never read.
+
+## 2026-10-10 — Section summaries via Groq, verified (Track C; affects demo, B/core, slides)
+- `/product/prepare` writes overview/specs/reviews with Groq (`gpt-oss-120b` for reviews,
+  `gpt-oss-20b` for the others, strict JSON). The model must cite a ProductJSON field for every
+  claim; code verifies each one and falls back to deterministic templates on any failure. Response
+  shape is unchanged, but the call now takes ~2–4 s: call it at page load and don't block on it.
+- Free tier ≈ 6k tokens per product and ~8k tokens/min per model, so about 2 *new* products per
+  minute; beyond that the template answers until the limit resets. Results are cached per product.
+- Demo machine needs `GROQ_API_KEY` in `.env` (see `.env.example`). Groq's free tier may use what we
+  send; we send only public product data, never user data (note for the Responsible AI slide).
+- SerpApi converter (`services/serpapi.py`): star "counts" are percentages (not used as a
+  histogram); review counts use a lower bound so we never claim more reviews than were read;
+  listing errors (e.g. RAM = storage) are read as written with a warning, never corrected.

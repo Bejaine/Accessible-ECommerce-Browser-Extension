@@ -1,0 +1,39 @@
+{
+  "model": "openai/gpt-oss-20b",
+  "response": {
+    "id": "chatcmpl-6ef1528d-0bb9-45db-8cfa-3b9d9c7c98f4",
+    "object": "chat.completion",
+    "created": 1791654489,
+    "model": "openai/gpt-oss-20b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\"facts\":[{\"claim\":\"₹76,999\",\"field_path\":\"price.amount\"},{\"claim\":\"₹89,900\",\"field_path\":\"price.mrp\"},{\"claim\":\"3.2\",\"field_path\":\"rating.value\"},{\"claim\":\"2764\",\"field_path\":\"rating.count\"},{\"claim\":\"In stock\",\"field_path\":\"availability.text\"},{\"claim\":\"FREE delivery Monday, 12 October\",\"field_path\":\"delivery.text\"},{\"claim\":\"Clicktech Retail Private Ltd\",\"field_path\":\"seller\"},{\"claim\":\"Black\",\"field_path\":\"variants[0].value\"},{\"claim\":\"Pink\",\"field_path\":\"variants[1].value\"},{\"claim\":\"Teal\",\"field_path\":\"variants[2].value\"},{\"claim\":\"Ultramarine\",\"field_path\":\"variants[3].value\"},{\"claim\":\"White\",\"field_path\":\"variants[4].value\"},{\"claim\":\"Without Apple Care\",\"field_path\":\"variants[5].value\"},{\"claim\":\"With Apple Care\",\"field_path\":\"variants[6].value\"}],\"summary\":[{\"text\":\"Apple iPhone 16 128 GB: ₹76,999 (MRP ₹89,900).\",\"fact_refs\":[0,1]},{\"text\":\"Rating 3.2 out of 5 from 2764 ratings.\",\"fact_refs\":[2,3]}],\"simpler\":{\"text\":\"Apple iPhone 16 128 GB costs ₹76,999 (MRP ₹89,900) and has a 3.2 rating from 2764 reviews.\",\"fact_refs\":[0,1,2,3]},\"sections\":[{\"heading\":\"At a glance\",\"items\":[{\"fact_ref\":4,\"kind\":\"text\",\"text\":\"In stock\"},{\"fact_ref\":5,\"kind\":\"text\",\"text\":\"FREE delivery Monday, 12 October\"},{\"fact_ref\":6,\"kind\":\"text\",\"text\":\"Sold by Clicktech Retail Private Ltd\"},{\"fact_ref\":7,\"kind\":\"text\",\"text\":\"Colours: Black (selected), Pink, Teal, Ultramarine, White\"},{\"fact_ref\":12,\"kind\":\"text\",\"text\":\"Configuration: Without Apple Care (selected), With Apple Care\"}]}]}"
+        },
+        "logprobs": null,
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.044454929,
+      "prompt_tokens": 1424,
+      "prompt_time": 0.07121102,
+      "completion_tokens": 861,
+      "completion_time": 0.904168001,
+      "total_tokens": 2285,
+      "total_time": 0.975379021,
+      "completion_tokens_details": {
+        "reasoning_tokens": 429
+      }
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_c5a89987dc",
+    "x_groq": {
+      "id": "req_01m4kevt7xes5ts642bkac7f01",
+      "seed": 2071967108
+    },
+    "service_tier": "on_demand"
+  }
+}

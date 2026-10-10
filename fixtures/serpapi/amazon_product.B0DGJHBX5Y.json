@@ -1,0 +1,435 @@
+{
+  "_note": "Real SerpApi amazon_product response for amazon.in B0DGJHBX5Y, recorded 2026-10-10, trimmed: reviewer names/profile links/avatars removed (personal data); serpapi links, protection plans, marketing images, variant combinations and foreign reviews dropped (unused).",
+  "search_metadata": {
+    "id": "6aca789b998aad33dc8d85eb",
+    "status": "Success",
+    "created_at": "2026-10-10 17:40:43 UTC",
+    "processed_at": "2026-10-10 17:40:43 UTC",
+    "amazon_product_url": "https://www.amazon.in/dp/B0DGJHBX5Y/?",
+    "total_time_taken": 2.72
+  },
+  "search_parameters": {
+    "engine": "amazon_product",
+    "asin": "B0DGJHBX5Y",
+    "amazon_domain": "amazon.in",
+    "device": "desktop"
+  },
+  "product_results": {
+    "asin": "B0DGJHBX5Y",
+    "title": "Apple iPhone 16 128 GB: 5G Mobile Phone with Camera Control, A18 Chip and a Big Boost in Battery Life. Works with AirPods; Black",
+    "link": "https://www.amazon.in/iPhone-16-128-GB-Control/dp/B0DGJHBX5Y/",
+    "link_clean": "https://www.amazon.in/dp/B0DGJHBX5Y/",
+    "badges": ["Amazon's Choice", "Mega Festival Deal"],
+    "variants": [
+      {
+        "title": "Colour",
+        "items": [
+          {
+            "position": 1,
+            "asin": "B0DGJHBX5Y",
+            "name": "Black",
+            "image": "https://m.media-amazon.com/images/I/31A-AWx8PLL._SS64_.jpg",
+            "selected": true
+          },
+          {
+            "position": 2,
+            "asin": "B0DGJ8YZDF",
+            "name": "Pink",
+            "image": "https://m.media-amazon.com/images/I/317+g58BelL._SS64_.jpg"
+          },
+          {
+            "position": 3,
+            "asin": "B0DGJH8RYG",
+            "name": "Teal",
+            "image": "https://m.media-amazon.com/images/I/31eApLPASUL._SS64_.jpg"
+          },
+          {
+            "position": 4,
+            "asin": "B0DGJ7TGDR",
+            "name": "Ultramarine",
+            "image": "https://m.media-amazon.com/images/I/3186KxBIR3L._SS64_.jpg"
+          },
+          {
+            "position": 5,
+            "asin": "B0DGHZWBYB",
+            "name": "White",
+            "image": "https://m.media-amazon.com/images/I/31ckM6N8EyL._SS64_.jpg"
+          }
+        ]
+      },
+      {
+        "title": "Configuration",
+        "items": [
+          {
+            "position": 1,
+            "asin": "B0DGJHBX5Y",
+            "name": "Without Apple Care",
+            "selected": true
+          },
+          {
+            "position": 2,
+            "asin": "B0HLX4GZPG",
+            "name": "With Apple Care"
+          }
+        ]
+      }
+    ],
+    "brand": "Visit the Apple Store",
+    "thumbnail": "https://m.media-amazon.com/images/I/31A-AWx8PLL._SX342_SY445_QL70_FMwebp_.jpg",
+    "thumbnails": [
+      "https://m.media-amazon.com/images/I/61135j8fPJL._SL1500_.jpg",
+      "https://m.media-amazon.com/images/I/51UIlT-iiML._SL1500_.jpg",
+      "https://m.media-amazon.com/images/I/81MWQ-fpz8L._SL1500_.jpg",
+      "https://m.media-amazon.com/images/I/71kahbX9OlL._SL1500_.jpg",
+      "https://m.media-amazon.com/images/I/81YnXfZ-NwL._SL1500_.jpg",
+      "https://m.media-amazon.com/images/I/61mbw8GYY2L._SL1500_.jpg"
+    ],
+    "rating": 3.2,
+    "reviews": 2764,
+    "bought_last_month": "3K+ bought in past month",
+    "discount": "-14%",
+    "price": "₹76,999",
+    "extracted_price": 76999,
+    "old_price": "₹89,900",
+    "extracted_old_price": 89900,
+    "delivery": [
+      "FREE delivery Monday, 12 October. Details",
+      "Or fastest delivery Tomorrow, 11 October. Order within 9 hrs 4 mins. Details"
+    ],
+    "purchase_policies": [
+      {
+        "title": "10 days Service Centre Replacement",
+        "table": [
+          {
+            "heading": "Replacement Reason",
+            "content": ["Defective Item", "Physical Damage, Wrong and Missing Item"]
+          },
+          {
+            "heading": "Replacement Period",
+            "content": ["10 days from delivery", "10 days from delivery"]
+          },
+          {
+            "heading": "Replacement Policy",
+            "content": ["Apple warranty policy (at Service Centre)", "Replacement"]
+          }
+        ]
+      },
+      {
+        "title": "Free Delivery",
+        "description": "The product is eligible for Free delivery. Learn more"
+      },
+      {
+        "title": "Warranty Policy",
+        "description": "Apple One (1) Year Limited Warranty"
+      },
+      {
+        "title": "Amazon Delivered",
+        "description": "Order processed by Amazon; delivered through our courier partners"
+      }
+    ],
+    "stock": "In stock",
+    "bank_offers": [
+      {
+        "title": "No Cost EMI",
+        "content": "Upto ₹2,161.81 EMI interest savings on select Credit Cards",
+        "savings": "₹2,161.81",
+        "extracted_savings": 2161.81,
+        "offers_count": 1
+      },
+      {
+        "title": "Cashback",
+        "content": "Upto ₹2,309.00 cashback as Amazon Pay Balance when you pay with Amazon Pay ICICI Bank Credit Cards",
+        "savings": "₹2,309.00",
+        "extracted_savings": 2309,
+        "offers_count": 1
+      },
+      {
+        "title": "Bank Offer",
+        "content": "Upto ₹1,250.00 discount on SBI Credit Cards, SBI Debit Cards",
+        "savings": "₹1,250.00",
+        "extracted_savings": 1250,
+        "offers_count": 13
+      }
+    ]
+  },
+  "purchase_options": {
+    "single_offer": {
+      "price": "₹76,999.00",
+      "extracted_price": 76999,
+      "stock": "In stock",
+      "features": {
+        "ships_from": {
+          "text": "Amazon"
+        },
+        "sold_by": {
+          "text": "Clicktech Retail Private Ltd"
+        }
+      }
+    }
+  },
+  "item_specifications": {
+    "brand": "Apple",
+    "operating_system": "iOS",
+    "ram_memory_installed_size": "128 GB",
+    "memory_storage_capacity": "128 GB",
+    "screen_size": "6.1 Inches"
+  },
+  "about_item": [
+    "BUILT FOR APPLE INTELLIGENCE — Apple Intelligence is the personal intelligence system that helps you write, express yourself and get things done effortlessly. With groundbreaking privacy protections, it gives you peace of mind that no one else can access your data — not even Apple.",
+    "TAKE TOTAL CAMERA CONTROL — Camera Control gives you an easier way to quickly access camera tools, like zoom or depth of field, so you can take the perfect shot in record time.",
+    "GET FURTHER AND CLOSER — The improved Ultra Wide camera with autofocus lets you take incredibly detailed macro photos and videos. Use the 48MP Fusion camera for stunning high-resolution images, and zoom in with the 2x optical-quality Telephoto.",
+    "PHOTOGRAPHIC STYLES — The latest-generation Photographic Styles give you greater creative flexibility, so you can make every photo even more you. And you can reverse any of those styles anytime you want.",
+    "SUPER-SMART A18 CHIP — A18 jumps two generations ahead of the A16 Bionic chip in iPhone 15. It enables Apple Intelligence, powers advanced photo and video features, and supports console-level gaming, with exceptional power efficiency."
+  ],
+  "compare_with_similar": [
+    {
+      "position": 1,
+      "asin": "B0DGJHBX5Y",
+      "title": "iPhone 16",
+      "extracted_price": 76999,
+      "rating": 4.5,
+      "reviews": 2764,
+      "display": "6.1 in",
+      "chip": "A18",
+      "camera": "Advanced dual-camera system: 48MP Fusion, 12MP Ultra Wide",
+      "battery": "Up to 22 hours video playback",
+      "capacity": "128GB, 256GB, 512GB"
+    },
+    {
+      "position": 2,
+      "asin": "B0DGJ8DP1M",
+      "title": "iPhone 16 Plus",
+      "rating": 4.6,
+      "reviews": 837,
+      "display": "6.7 in",
+      "chip": "A18",
+      "camera": "Advanced dual-camera system: 48MP Fusion, 12MP Ultra Wide",
+      "battery": "Up to 27 hours video playback",
+      "capacity": "128GB, 256GB, 512GB"
+    },
+    {
+      "position": 3,
+      "asin": "B0DGJ8F36W",
+      "title": "iPhone 16 Pro",
+      "rating": 4.5,
+      "reviews": 745,
+      "display": "6.3 in",
+      "chip": "A18 Pro",
+      "camera": "Pro camera system: 48MP Fusion, 48MP Ultra Wide, Telephoto",
+      "battery": "Up to 27 hours video playback",
+      "capacity": "128GB, 256GB, 512GB, 1TB"
+    },
+    {
+      "position": 4,
+      "asin": "B0DGJD75G2",
+      "title": "iPhone 16 Pro Max",
+      "rating": 4.5,
+      "reviews": 479,
+      "display": "6.9 in",
+      "chip": "A18 Pro",
+      "camera": "Pro camera system: 48MP Fusion, 48MP Ultra Wide, Telephoto",
+      "battery": "Up to 33 hours video playback",
+      "capacity": "256GB, 512GB, 1TB"
+    }
+  ],
+  "product_details": {
+    "display": [
+      "Super Retina XDR display, 15.54 cm / 6.1″ (diagonal), all‑screen OLED display, 2556x1179-pixel resolution at 460 ppi"
+    ],
+    "capacity": ["128GB, 256 GB, 512 GB"],
+    "splash_water_and_dust_resistant": [
+      "Rated IP68 (maximum depth of 6 metres up to 30 minutes) under IEC standard 60529"
+    ],
+    "camera_and_video": [
+      "Advanced dual-camera system: 48MP Fusion: 26 mm, ƒ/1.6 aperture, sensor‑shift optical image stabilisation, 100% Focus Pixels, support for super-high-resolution photos (24MP and 48MP) Also enables 12MP 2x Telephoto: 52 mm, ƒ/1.6 aperture, sensor-shift optical image stabilisation, 100% Focus Pixels 12MP Ultra Wide: 13 mm, ƒ/2.2 aperture and 120° field of view, 100% Focus Pixels 2x optical zoom in, 2x optical zoom out; 4x optical zoom range Digital zoom up to 10x Camera Control Sapphire crystal lens cover True Tone flash Photonic Engine Deep Fusion Smart HDR 5 Next-generation portraits with Focus and Depth Control Portrait Lighting with six effects Night mode Panorama (up to 63MP) Latest-generation Photographic Styles Spatial photos Macro photography Wide colour capture for photos and Live Photos Lens correction (Ultra Wide) Advanced red‑eye correction Auto image stabilisation Burst mode Photo geotagging Image formats captured: HEIF and JPEG"
+    ],
+    "front_camera": [
+      "12MP camera, ƒ/1.9 aperture, Autofocus with Focus Pixels, Retina Flash, Photonic Engine, Deep Fusion, Smart HDR 5"
+    ],
+    "power_and_battery": [
+      "Video playback: Up to 22 hours Video playback (streamed): Up to 18 hours Audio playback: Up to 80 hours Built-in rechargeable lithium-ion battery MagSafe wireless charging up to 25W with 30W adapter or higher13 Qi2 wireless charging up to 15W13 Qi wireless charging up to 7.5W13 Fast-charge capable: Up to 50% charge in around 30 minutes13 with 20W adapter or higher paired with USB‑C charging cable, or 30W adapter or higher paired with MagSafe Charger (all are available separately)"
+    ],
+    "in_the_box": ["iPhone with iOS 18, USB-C Charge Cable (1 m), Documentation"],
+    "warranty": [
+      "Apple-branded hardware product and accessories contained in the original packaging (“Apple Product”) come with a One-Year Limited Warranty. See apple.com/in/legal/warranty for more information."
+    ],
+    "height": ["147.6 mm (5.81 in)"],
+    "width": ["71.7 mm (2.82 in)"],
+    "depth": ["7.80 mm (0.31 in)"],
+    "weight": ["170 g (6.00 ounces)"],
+    "manufacturer": "Apple, Apple",
+    "country_of_origin": "China",
+    "item_model_number": "MYE73HN/A",
+    "product_dimensions": "0.78 x 7.16 x 14.76 cm; 170 g",
+    "asin": "B0DGJHBX5Y",
+    "packer": "Not Applicable for Apple (Always)",
+    "importer": "(If applicable) Apple India Private Limited No.24, 19th floor, Concorde Tower C, UB City, Vittal Mallya Road, Bangalore - 560 001",
+    "item_weight": "170 g",
+    "item_dimensions_lx_wx_h": "8 x 72 x 148 Millimeters",
+    "net_quantity": "1 Count",
+    "included_components": "USB Cable",
+    "generic_name": "iPhone 16"
+  },
+  "reviews_information": {
+    "summary": {
+      "text": "Customers find the iPhone's appearance premium and appreciate its faster performance with apps opening quickly. The display quality receives mixed feedback, with some praising the bright screen while others note outdated 60 Hz display technology. The battery life and camera quality also get mixed reviews, with some praising the big battery boost while others report it doesn't last more than 4 hours and the camera isn't as good as expected. Additionally, customers report issues with the phone not working properly after updates and experiencing heating problems.",
+      "insights": [
+        {
+          "title": "Appearance",
+          "sentiment": "positive",
+          "mentions": {
+            "total": 32,
+            "positive": 28,
+            "negative": 4
+          },
+          "summary": "Customers appreciate the phone's appearance, noting its beautiful color, sleek design, and premium look."
+        },
+        {
+          "title": "Speed",
+          "sentiment": "positive",
+          "mentions": {
+            "total": 14,
+            "positive": 11,
+            "negative": 3
+          },
+          "summary": "Customers appreciate the phone's speed, noting that apps open quickly, and one customer mentions efficient data transfer from old to new phone."
+        },
+        {
+          "title": "User experience",
+          "sentiment": "positive",
+          "mentions": {
+            "total": 12,
+            "positive": 9,
+            "negative": 3
+          },
+          "summary": "Customers have a good experience with the iPhone, with one mentioning it's a great first iPhone experience."
+        },
+        {
+          "title": "Performance",
+          "sentiment": "mixed",
+          "mentions": {
+            "total": 44,
+            "positive": 29,
+            "negative": 15
+          },
+          "summary": "Customers report mixed experiences with the phone's performance, with some finding it excellent while others mention issues with updates, front camera failure, and malfunctioning calling sensor."
+        },
+        {
+          "title": "Battery life",
+          "sentiment": "mixed",
+          "mentions": {
+            "total": 37,
+            "positive": 18,
+            "negative": 19
+          },
+          "summary": "Customers have mixed opinions about the phone's battery life, with some praising its big boost and amazing backup, while others report it drains quickly even when idle and doesn't last more than 4 hours."
+        },
+        {
+          "title": "Camera quality",
+          "sentiment": "mixed",
+          "mentions": {
+            "total": 33,
+            "positive": 21,
+            "negative": 12
+          },
+          "summary": "Customers have mixed opinions about the phone's camera, with some finding it superb while others report it is not as good as expected."
+        },
+        {
+          "title": "Display quality",
+          "sentiment": "mixed",
+          "mentions": {
+            "total": 18,
+            "positive": 11,
+            "negative": 7
+          },
+          "summary": "Customers have mixed opinions about the phone's display quality, with some praising its picture and brightness, while others find it outdated with a 60 Hz refresh rate."
+        },
+        {
+          "title": "Heat",
+          "sentiment": "negative",
+          "mentions": {
+            "total": 12,
+            "positive": 1,
+            "negative": 11
+          },
+          "summary": "Customers report issues with the phone overheating."
+        }
+      ],
+      "customer_reviews": {
+        "5 star": 76,
+        "4 star": 15,
+        "3 star": 4,
+        "2 star": 1,
+        "1 star": 4
+      }
+    },
+    "authors_reviews": [
+      {
+        "position": 1,
+        "title": "All rounder hero phone",
+        "text": "Something new cannot be written in a review for a device that has been reviewed thousands of times over the Internet. I'll put in the perspective of how a device for an its festive price of ~70k has exceeded expectations from all counts. Being an all rounder & being a hero phone seems easy these days (plethora of choices & awards showcases it). But being both, with supreme ability, in its budget segment is nothing short of an accomplishment. Summarising it in pros & cons for easy reference:Pros+ iOS is the main STAR! Fluidic, snappy and so easy to use that it feels natural+ There are better cameras but there aren't good point-shoot-auto correct cameras that handle all the work for you & produce spectacular photos/videos with 0 adjustments at this price+ Build Quality & Brand Recognition is off the charts+ Battery Backup is superb with easy 7-8 hours with no gaming & 3-4 hours of social media usage+ It'll last easy for 5-6 years with Apple's long term software support & resale value is very strongCons- A very good quality case (Spigen/Raeger) is highly recommended to protect investment. Repairs/Damages are costly- Display should & could have been better. Well something had to be kept for the 17- Gets really warm when on wireless charging- 20W wired charging. LoL!- Dedicated camera control is useless. It needs to be programmable",
+        "rating": 5,
+        "date": "15 April 2026",
+        "helpful_votes": "67 people found this helpful",
+        "verified_purchase": true
+      },
+      {
+        "position": 2,
+        "title": "Satisfaction",
+        "text": "Excellent service",
+        "rating": 5,
+        "date": "30 September 2026",
+        "verified_purchase": true
+      },
+      {
+        "position": 3,
+        "title": "Very good product",
+        "text": "Verry good product and the experience with Amazon is amezing",
+        "rating": 5,
+        "date": "28 September 2026",
+        "verified_purchase": true
+      },
+      {
+        "position": 4,
+        "title": "Stable and Stylish Smartphone",
+        "text": "I've been using the iPhone 16 as my primary phone for daily use, and it's been a good experience overall.The battery comfortably lasts me a full day with normal use like calls, messaging, browsing, YouTube, and some camera use. Charging is decent, though I wish it was a bit faster.Performance is excellent. Apps open quickly, switching between apps is smooth, and I haven't noticed any lag during regular use. The phone also doesn't get noticeably warm unless I'm doing something heavy.The camera is reliable. Photos come out sharp with good colors, and video quality is really good. Night photos are decent too, although they're not perfect in every situation.The phone looks premium and feels comfortable to hold. The display is bright, touch response is smooth, and network connectivity has been stable with both 5G and Wi-Fi.If you're already using an older iPhone (12 or earlier), this feels like a worthwhile upgrade. If you have a recent model like the 15, the differences aren't huge. Overall, it's a dependable phone that does everyday tasks really well without any major complaints.",
+        "rating": 4,
+        "date": "7 July 2026",
+        "helpful_votes": "19 people found this helpful",
+        "verified_purchase": true
+      },
+      {
+        "position": 5,
+        "title": "Thank",
+        "text": "Thnx",
+        "rating": 5,
+        "date": "30 September 2026",
+        "verified_purchase": true
+      },
+      {
+        "position": 6,
+        "title": "Best",
+        "text": "Love it",
+        "rating": 5,
+        "date": "19 September 2026",
+        "verified_purchase": true
+      },
+      {
+        "position": 7,
+        "title": "👌👌👌👌",
+        "text": "Excellent device",
+        "rating": 5,
+        "date": "23 September 2026",
+        "verified_purchase": true
+      },
+      {
+        "position": 8,
+        "title": "Gud",
+        "text": "Good",
+        "rating": 5,
+        "date": "21 September 2026",
+        "verified_purchase": true
+      }
+    ]
+  }
+}

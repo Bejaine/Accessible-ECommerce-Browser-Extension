@@ -1,0 +1,39 @@
+{
+  "model": "openai/gpt-oss-20b",
+  "response": {
+    "id": "chatcmpl-83b09849-77b0-43d2-9f6d-9b8038dcca3e",
+    "object": "chat.completion",
+    "created": 1791654490,
+    "model": "openai/gpt-oss-20b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\"facts\":[{\"claim\":\"iOS\",\"field_path\":\"specs.operating_system\"},{\"claim\":\"128 GB\",\"field_path\":\"specs.ram_memory_installed_size\"},{\"claim\":\"128 GB\",\"field_path\":\"specs.memory_storage_capacity\"},{\"claim\":\"6.1\",\"field_path\":\"specs.screen_size\"},{\"claim\":\"Super Retina XDR display, 15.54 cm / 6.1″ (diagonal), all‑screen OLED display, 2556x1179-pixel resolution at 460 ppi\",\"field_path\":\"specs.display\"},{\"claim\":\"IP68 (maximum depth of 6 metres up to 30 minutes) under IEC standard 60529\",\"field_path\":\"specs.splash_water_and_dust_resistant\"},{\"claim\":\"48MP Fusion: 26 mm, ƒ/1.6 aperture, sensor‑shift optical image stabilisation, 100% Focus Pixels, support for super-high-resolution photos (24MP and 48MP) Also enables 12MP 2x Telephoto: 52 mm, ƒ/1.6 aperture, sensor-shift optical image stabilisation, 100% Focus Pixels 12MP Ultra Wide: 13 mm, ƒ/2.2 aperture and 120° field of view, 100% Focus Pixels 2x optical zoom in, 2x optical zoom out; 4x optical zoom range Digital zoom up to 10x Camera Control Sapphire crystal lens cover True Tone flash Photonic Engine Deep Fusion Smart HDR 5 Next-generation portraits with Focus and Depth Control Portrait Lighting with six effects Night mode Panorama (up to 63MP) Latest-generation Photographic Styles Spatial photos Macro photography Wide colour capture for photos and Live Photos Lens correction (Ultra Wide) Advanced red‑eye correction Auto image stabilisation Burst mode Photo geotagging Image formats captured: HEIF and JPEG\",\"field_path\":\"specs.camera_and_video\"},{\"claim\":\"12MP camera, ƒ/1.9 aperture, Autofocus with Focus Pixels, Retina Flash, Photonic Engine, Deep Fusion, Smart HDR 5\",\"field_path\":\"specs.front_camera\"},{\"claim\":\"Video playback: Up to 22 hours Video playback (streamed): Up to 18 hours Audio playback: Up to 80 hours Built-in rechargeable lithium-ion battery MagSafe wireless charging up to 25W with 30W adapter or higher13 Qi2 wireless charging up to 15W13 Qi wireless charging up to 7.5W13 Fast-charge capable: Up to 50% charge in around 30 minutes13 with 20W adapter or higher paired with USB‑C charging cable, or 30W adapter or higher paired with MagSafe Charger (all are available separately)\",\"field_path\":\"specs.power_and_battery\"},{\"claim\":\"iPhone with iOS 18, USB-C Charge Cable (1 m), Documentation\",\"field_path\":\"specs.in_the_box\"},{\"claim\":\"Apple-branded hardware product and accessories contained in the original packaging (“Apple Product”) come with a One-Year Limited Warranty. See apple.com/in/legal/warranty for more information.\",\"field_path\":\"specs.warranty\"},{\"claim\":\"147.6 mm (5.81 in)\",\"field_path\":\"specs.height\"},{\"claim\":\"71.7 mm (2.82 in)\",\"field_path\":\"specs.width\"},{\"claim\":\"7.80 mm (0.31 in)\",\"field_path\":\"specs.depth\"},{\"claim\":\"170 g (6.00 ounces)\",\"field_path\":\"specs.weight\"},{\"claim\":\"China\",\"field_path\":\"specs.country_of_origin\"},{\"claim\":\"MYE73HN/A\",\"field_path\":\"specs.item_model_number\"},{\"claim\":\"USB Cable\",\"field_path\":\"specs.included_components\"},{\"claim\":\"iPhone 16\",\"field_path\":\"specs.generic_name\"}],\"summary\":[{\"text\":\"It has a 6.1‑inch Super Retina XDR OLED display, 128 GB of RAM and 128 GB of storage.\",\"fact_refs\":[0,1,2,3,4]}],\"simpler\":null,\"sections\":[{\"heading\":\"Specs\",\"items\":[{\"kind\":\"spec\",\"text\":\"Operating system: iOS\",\"fact_ref\":0},{\"kind\":\"spec\",\"text\":\"Ram memory installed size: 128 GB\",\"fact_ref\":1},{\"kind\":\"spec\",\"text\":\"Memory storage capacity: 128 GB\",\"fact_ref\":2},{\"kind\":\"spec\",\"text\":\"Screen size: 6.1 Inches\",\"fact_ref\":3},{\"kind\":\"spec\",\"text\":\"Display: Super Retina XDR display, 15.54 cm / 6.1″ (diagonal), all‑screen OLED display, 2556x1179-pixel resolution at 460 ppi\",\"fact_ref\":4},{\"kind\":\"spec\",\"text\":\"Splash water and dust resistant: IP68 (maximum depth of 6 metres up to 30 minutes) under IEC standard 60529\",\"fact_ref\":5},{\"kind\":\"spec\",\"text\":\"Camera and video: Advanced dual‑camera system: 48MP Fusion: 26 mm, ƒ/1.6 aperture, sensor‑shift optical image stabilisation, 100% Focus Pixels, support for super‑high‑resolution photos (24MP and 48MP) Also enables 12MP 2x Telephoto: 52 mm, ƒ/1.6 aperture, sensor‑shift optical image stabilisation, 100% Focus Pixels 12MP Ultra Wide: 13 mm, ƒ/2.2 aperture and 120° field of view, 100% Focus Pixels 2x optical zoom in, 2x optical zoom out; 4x optical zoom range Digital zoom up to 10x Camera Control Sapphire crystal lens cover True Tone flash Photonic Engine Deep Fusion Smart HDR 5 Next‑generation portraits with Focus and Depth Control Portrait Lighting with six effects Night mode Panorama (up to 63MP) Latest‑generation Photographic Styles Spatial photos Macro photography Wide colour capture for photos and Live Photos Lens correction (Ultra Wide) Advanced red‑eye correction Auto image stabilisation Burst mode Photo geotagging Image formats captured: HEIF and JPEG\",\"fact_ref\":6},{\"kind\":\"spec\",\"text\":\"Front camera: 12MP camera, ƒ/1.9 aperture, Autofocus with Focus Pixels, Retina Flash, Photonic Engine, Deep Fusion, Smart HDR 5\",\"fact_ref\":7},{\"kind\":\"spec\",\"text\":\"Power and battery: Video playback: Up to 22 hours Video playback (streamed): Up to 18 hours Audio playback: Up to 80 hours Built-in rechargeable lithium‑ion battery MagSafe wireless charging up to 25W with 30W adapter or higher13 Qi2 wireless charging up to 15W13 Qi wireless charging up to 7.5W13 Fast‑charge capable: Up to 50% charge in around 30 minutes13 with 20W adapter or higher paired with USB‑C charging cable, or 30W adapter or higher paired with MagSafe Charger (all are available separately)\",\"fact_ref\":8},{\"kind\":\"spec\",\"text\":\"In the box: iPhone with iOS 18, USB‑C Charge Cable (1 m), Documentation\",\"fact_ref\":9},{\"kind\":\"spec\",\"text\":\"Warranty: Apple‑branded hardware product and accessories contained in the original packaging (“Apple Product”) come with a One‑Year Limited Warranty. See apple.com/in/legal/warranty for more information.\",\"fact_ref\":10},{\"kind\":\"spec\",\"text\":\"Height: 147.6 mm (5.81 in)\",\"fact_ref\":11},{\"kind\":\"spec\",\"text\":\"Width: 71.7 mm (2.82 in)\",\"fact_ref\":12},{\"kind\":\"spec\",\"text\":\"Depth: 7.80 mm (0.31 in)\",\"fact_ref\":13},{\"kind\":\"spec\",\"text\":\"Weight: 170 g (6.00 ounces)\",\"fact_ref\":14},{\"kind\":\"spec\",\"text\":\"Country of origin: China\",\"fact_ref\":15},{\"kind\":\"spec\",\"text\":\"Item model number: MYE73HN/A\",\"fact_ref\":16},{\"kind\":\"spec\",\"text\":\"Included components: USB Cable\",\"fact_ref\":17},{\"kind\":\"spec\",\"text\":\"Generic name: iPhone 16\",\"fact_ref\":18}]}]}"
+        },
+        "logprobs": null,
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.383267235,
+      "prompt_tokens": 2098,
+      "prompt_time": 0.112781361,
+      "completion_tokens": 1762,
+      "completion_time": 1.829780494,
+      "total_tokens": 3860,
+      "total_time": 1.9425618550000001,
+      "completion_tokens_details": {
+        "reasoning_tokens": 43
+      }
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_d23c14756c",
+    "x_groq": {
+      "id": "req_01m4kevt3jef5r3ntpy3kgckwd",
+      "seed": 969937377
+    },
+    "service_tier": "on_demand"
+  }
+}

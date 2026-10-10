@@ -9,9 +9,9 @@
     "title": "Zentra Pulse 5G (Midnight Black, 8GB RAM, 128GB Storage)",
     "brand": "Zentra",
     "price": {
-      "amount": 17999,
+      "amount": 17999.0,
       "currency": "INR",
-      "mrp": 24999
+      "mrp": 24999.0
     },
     "rating": {
       "value": 4.2,
@@ -25,17 +25,17 @@
     "specs": {
       "battery": {
         "label": "Battery Capacity",
-        "value": 5000,
+        "value": 5000.0,
         "unit": "mAh"
       },
       "ram": {
         "label": "RAM",
-        "value": 8,
+        "value": 8.0,
         "unit": "GB"
       },
       "storage": {
         "label": "Internal Storage",
-        "value": 128,
+        "value": 128.0,
         "unit": "GB"
       },
       "display_size": {
@@ -45,7 +45,7 @@
       },
       "refresh_rate": {
         "label": "Refresh Rate",
-        "value": 120,
+        "value": 120.0,
         "unit": "Hz"
       },
       "os": {
@@ -87,7 +87,7 @@
     "delivery": {
       "text": "FREE delivery Tuesday, 14 October",
       "cost": {
-        "amount": 0,
+        "amount": 0.0,
         "currency": "INR"
       },
       "date": "2026-10-14"
@@ -144,35 +144,35 @@
       },
       "items": [
         {
-          "rating": 5,
+          "rating": 5.0,
           "title": "Battery lasts two days",
           "text": "With normal use I charge it every second day. The screen is bright outdoors.",
           "date": "2026-09-21",
           "verified": true
         },
         {
-          "rating": 4,
+          "rating": 4.0,
           "title": "Good value",
           "text": "Smooth for daily apps and the 120Hz screen feels fast. Night photos are average.",
           "date": "2026-09-18",
           "verified": true
         },
         {
-          "rating": 2,
+          "rating": 2.0,
           "title": "Camera disappointing at night",
           "text": "Daylight photos are fine but indoor and night photos are noisy.",
           "date": "2026-09-12",
           "verified": true
         },
         {
-          "rating": 4,
+          "rating": 4.0,
           "title": null,
           "text": "Gets a little warm during long games, otherwise no complaints.",
           "date": "2026-09-05",
           "verified": false
         },
         {
-          "rating": 5,
+          "rating": 5.0,
           "title": "Easy for my father to use",
           "text": "Large text and loud speaker. He uses it for calls and UPI without help.",
           "date": "2026-08-30",
@@ -196,7 +196,7 @@
     "overview": {
       "schema_version": "1.0",
       "lang": "en",
-      "summary": "Zentra Pulse 5G costs ₹17,999, down from ₹24,999. It is rated 4.2 out of 5 from 3,418 ratings.",
+      "summary": "Zentra Pulse 5G is priced at ₹17,999, MRP ₹24,999. It has a rating of 4.2 out of 5 from 3418 ratings.",
       "sections": [
         {
           "heading": "At a glance",
@@ -204,21 +204,36 @@
             {
               "text": "In stock",
               "kind": "text",
-              "grounding_index": 2
+              "grounding_index": 5
             },
             {
               "text": "FREE delivery Tuesday, 14 October",
               "kind": "text",
-              "grounding_index": 3
+              "grounding_index": 6
+            },
+            {
+              "text": "Sold by Zentra Official Store",
+              "kind": "text",
+              "grounding_index": 7
+            },
+            {
+              "text": "Colour: Midnight Black (selected), Sage Green",
+              "kind": "text",
+              "grounding_index": 11
             }
           ],
           "table": null,
           "simpler": null
         }
       ],
-      "simpler": "This phone costs ₹17,999. People like it.",
-      "followups": ["Tell me the specs", "What do reviews say?", "Add to cart"],
+      "simpler": null,
+      "followups": [],
       "grounding": [
+        {
+          "claim": "Zentra Pulse 5G",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "title"
+        },
         {
           "claim": "₹17,999",
           "subject_id": "amazon.in:B0ZNTRA5G1",
@@ -230,24 +245,49 @@
           "field_path": "price.mrp"
         },
         {
-          "claim": "In stock",
-          "subject_id": "amazon.in:B0ZNTRA5G1",
-          "field_path": "availability.status"
-        },
-        {
-          "claim": "FREE delivery Tuesday",
-          "subject_id": "amazon.in:B0ZNTRA5G1",
-          "field_path": "delivery.text"
-        },
-        {
-          "claim": "rated 4.2 out of 5",
+          "claim": "4.2",
           "subject_id": "amazon.in:B0ZNTRA5G1",
           "field_path": "rating.value"
         },
         {
-          "claim": "3,418 ratings",
+          "claim": "3418",
           "subject_id": "amazon.in:B0ZNTRA5G1",
           "field_path": "rating.count"
+        },
+        {
+          "claim": "In stock",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "availability.text"
+        },
+        {
+          "claim": "FREE delivery Tuesday, 14 October",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "delivery.text"
+        },
+        {
+          "claim": "Zentra Official Store",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "seller"
+        },
+        {
+          "claim": "Midnight Black (selected), Sage Green",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "variants"
+        },
+        {
+          "claim": "Midnight Black",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "variants[0].value"
+        },
+        {
+          "claim": "Sage Green",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "variants[1].value"
+        },
+        {
+          "claim": "Midnight Black, Sage Green",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "variants"
         }
       ],
       "warnings": []
@@ -255,35 +295,40 @@
     "specs": {
       "schema_version": "1.0",
       "lang": "en",
-      "summary": "Key specs: 5000 mAh battery, 8 GB RAM and 128 GB storage, with a 6.67 inch 120 Hz screen.",
+      "summary": "It has a 5000 mAh battery, 8 GB RAM and 128 GB storage.",
       "sections": [
         {
           "heading": "Specs",
           "items": [
             {
-              "text": "Battery: 5000 mAh",
-              "kind": "spec",
-              "grounding_index": 0
-            },
-            {
-              "text": "RAM: 8 GB",
+              "text": "Battery Capacity: 5000 mAh",
               "kind": "spec",
               "grounding_index": 1
             },
             {
-              "text": "Storage: 128 GB",
+              "text": "RAM: 8 GB",
               "kind": "spec",
               "grounding_index": 2
             },
             {
-              "text": "Screen: 6.67 inches, 120 Hz",
+              "text": "Internal Storage: 128 GB",
               "kind": "spec",
               "grounding_index": 3
             },
             {
-              "text": "Operating system: Android 15",
+              "text": "Screen Size: 6.67 inches",
               "kind": "spec",
               "grounding_index": 4
+            },
+            {
+              "text": "Refresh Rate: 120 Hz",
+              "kind": "spec",
+              "grounding_index": 5
+            },
+            {
+              "text": "Operating System: Android 15",
+              "kind": "spec",
+              "grounding_index": 6
             }
           ],
           "table": null,
@@ -291,32 +336,42 @@
         }
       ],
       "simpler": null,
-      "followups": ["What do reviews say?", "What's in the box?"],
+      "followups": [],
       "grounding": [
+        {
+          "claim": "Zentra Pulse 5G",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "title"
+        },
         {
           "claim": "5000 mAh",
           "subject_id": "amazon.in:B0ZNTRA5G1",
-          "field_path": "specs.battery.value"
+          "field_path": "specs.battery"
         },
         {
           "claim": "8 GB",
           "subject_id": "amazon.in:B0ZNTRA5G1",
-          "field_path": "specs.ram.value"
+          "field_path": "specs.ram"
         },
         {
           "claim": "128 GB",
           "subject_id": "amazon.in:B0ZNTRA5G1",
-          "field_path": "specs.storage.value"
+          "field_path": "specs.storage"
         },
         {
           "claim": "6.67 inches",
           "subject_id": "amazon.in:B0ZNTRA5G1",
-          "field_path": "specs.display_size.value"
+          "field_path": "specs.display_size"
+        },
+        {
+          "claim": "120 Hz",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "specs.refresh_rate"
         },
         {
           "claim": "Android 15",
           "subject_id": "amazon.in:B0ZNTRA5G1",
-          "field_path": "specs.os.value"
+          "field_path": "specs.os"
         }
       ],
       "warnings": []
@@ -324,7 +379,7 @@
     "reviews": {
       "schema_version": "1.0",
       "lang": "en",
-      "summary": "Based on 690 reviews, people like the battery and display. The main complaint is low-light photos.",
+      "summary": "Based on 690 reviews, customers most praise the battery life and display. The main complaint is the low‑light camera performance.",
       "sections": [
         {
           "heading": "Pros",
@@ -332,12 +387,12 @@
             {
               "text": "Battery life: 189 of 212 mentions are positive",
               "kind": "pro",
-              "grounding_index": 0
+              "grounding_index": 2
             },
             {
               "text": "Display: 131 of 148 mentions are positive",
               "kind": "pro",
-              "grounding_index": 1
+              "grounding_index": 3
             }
           ],
           "table": null,
@@ -349,79 +404,50 @@
             {
               "text": "Low-light camera: 68 of 96 mentions are negative",
               "kind": "con",
-              "grounding_index": 2
+              "grounding_index": 4
             },
             {
-              "text": "Heating while gaming: opinions are mixed (54 mentions)",
+              "text": "Heating: opinions are mixed (54 mentions)",
               "kind": "con",
-              "grounding_index": 3
+              "grounding_index": 5
             }
           ],
           "table": null,
           "simpler": null
-        },
-        {
-          "heading": "Compared with Novix A15 5G",
-          "items": [],
-          "table": {
-            "columns": ["", "Zentra Pulse 5G", "Novix A15 5G"],
-            "rows": [
-              ["Price", "₹17,999", "₹15,499"],
-              ["Rating", "4.2 (3,418 ratings)", "4.0 (1,204 ratings)"],
-              ["RAM", "8 GB", "6 GB"]
-            ],
-            "spoken": "Zentra Pulse 5G costs ₹17,999 and is rated 4.2. Novix A15 5G costs ₹15,499 and is rated 4.0. Zentra has 8 GB RAM, Novix has 6 GB."
-          },
-          "simpler": "Zentra costs ₹2,500 more and has slightly better ratings."
         }
       ],
-      "simpler": "Most buyers like the battery and screen. Night photos are not great.",
-      "followups": ["Read a review", "Compare with Orbita M3", "Add to cart"],
+      "simpler": "Based on 690 reviews, battery life and display are liked, but low‑light camera is criticized.",
+      "followups": [],
       "grounding": [
         {
-          "claim": "battery mentions",
+          "claim": "Zentra Pulse 5G",
           "subject_id": "amazon.in:B0ZNTRA5G1",
-          "field_path": "reviews.insights[0].mentions"
+          "field_path": "title"
         },
         {
-          "claim": "display mentions",
+          "claim": "690",
           "subject_id": "amazon.in:B0ZNTRA5G1",
-          "field_path": "reviews.insights[1].mentions"
+          "field_path": "reviews.basis_count"
         },
         {
-          "claim": "low-light camera mentions",
+          "claim": "Battery life: 189 of 212 mentions are positive",
           "subject_id": "amazon.in:B0ZNTRA5G1",
-          "field_path": "reviews.insights[2].mentions"
+          "field_path": "reviews.insights[0]"
         },
         {
-          "claim": "heating mentions",
+          "claim": "Display: 131 of 148 mentions are positive",
           "subject_id": "amazon.in:B0ZNTRA5G1",
-          "field_path": "reviews.insights[3].mentions"
+          "field_path": "reviews.insights[1]"
         },
         {
-          "claim": "₹17,999",
+          "claim": "Low-light camera: 68 of 96 mentions are negative",
           "subject_id": "amazon.in:B0ZNTRA5G1",
-          "field_path": "price.amount"
+          "field_path": "reviews.insights[2]"
         },
         {
-          "claim": "₹15,499",
-          "subject_id": "amazon.in:B0NVXA15G5",
-          "field_path": "price.amount"
-        },
-        {
-          "claim": "rated 4.2",
+          "claim": "Heating: opinions are mixed (54 mentions)",
           "subject_id": "amazon.in:B0ZNTRA5G1",
-          "field_path": "rating.value"
-        },
-        {
-          "claim": "rated 4.0",
-          "subject_id": "amazon.in:B0NVXA15G5",
-          "field_path": "rating.value"
-        },
-        {
-          "claim": "8 GB RAM",
-          "subject_id": "amazon.in:B0ZNTRA5G1",
-          "field_path": "specs.ram.value"
+          "field_path": "reviews.insights[3]"
         }
       ],
       "warnings": []
@@ -429,35 +455,25 @@
     "images": {
       "schema_version": "1.0",
       "lang": "en",
-      "summary": "The box image lists the handset, a 33W charger, a USB-C cable, a SIM ejector and a protective case.",
+      "summary": "There are 2 product photos. The first shows Zentra Pulse 5G front and back, Midnight Black.",
       "sections": [
         {
-          "heading": "In the box",
+          "heading": "Photos",
           "items": [
             {
-              "text": "Handset",
+              "text": "Photo 1: Zentra Pulse 5G front and back, Midnight Black",
               "kind": "text",
               "grounding_index": 0
             },
             {
-              "text": "33W charger",
+              "text": "Photo 2: What's in the box",
               "kind": "text",
-              "grounding_index": 0
+              "grounding_index": 1
             },
             {
-              "text": "USB-C cable",
+              "text": "Text on photo 2: Handset, 33W charger, USB-C cable, SIM ejector, protective case",
               "kind": "text",
-              "grounding_index": 0
-            },
-            {
-              "text": "SIM ejector",
-              "kind": "text",
-              "grounding_index": 0
-            },
-            {
-              "text": "Protective case",
-              "kind": "text",
-              "grounding_index": 0
+              "grounding_index": 2
             }
           ],
           "table": null,
@@ -465,10 +481,20 @@
         }
       ],
       "simpler": null,
-      "followups": ["Describe the front image"],
+      "followups": ["Describe the next photo", "Tell me the specs"],
       "grounding": [
         {
-          "claim": "box contents",
+          "claim": "Zentra Pulse 5G front and back, Midnight Black",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "images[0].alt"
+        },
+        {
+          "claim": "What's in the box",
+          "subject_id": "amazon.in:B0ZNTRA5G1",
+          "field_path": "images[1].alt"
+        },
+        {
+          "claim": "Handset, 33W charger, USB-C cable, SIM ejector, protective case",
           "subject_id": "amazon.in:B0ZNTRA5G1",
           "field_path": "images[1].ocr_text"
         }
