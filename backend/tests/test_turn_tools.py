@@ -174,8 +174,14 @@ def test_phrase_chip_runs_without_llm(req, monkeypatch):
 def test_page_brief_is_small_and_has_no_page_text(req):
     brief = orchestrator.page_brief(req)
     assert set(brief) == {
-        "page_type", "site", "products", "orders", "targets", "SEEN", "stated_preferences",
-    }  # fmt: skip
+        "page_type",
+        "site",
+        "products",
+        "orders",
+        "targets",
+        "SEEN",
+        "stated_preferences",
+    }
     assert "reviews" not in json.dumps(brief)
 
 
@@ -221,3 +227,57 @@ def test_failed_translation_keeps_english_and_says_so(req, monkeypatch):
     )
     assert response.output.lang.value == "en"
     assert response.output.summary.startswith("Add Zentra Pulse 5G")
+
+
+# --- what Track A's ASR actually sends: no confidence, no alternatives, a mic level ---
+
+
+def test_silence_is_a_mic_problem_not_unclear_speech(req):
+    session.reset()
+    r = run(
+        orchestrator.handle_turn(
+            with_input(
+                req,
+                kind="voice",
+                text="",
+                asr_meta={"confidence": None, "mic_level": 0.01, "alternatives": []},
+            )
+        )
+    )
+    assert r.output.summary.startswith("I couldn't hear anything. Please check your microphone")
+    assert r.actions == [] and session.get(req.session_id).misses == 0
+
+
+def test_speech_with_no_words_is_a_miss_with_chips(req):
+    session.reset()
+    r = run(
+        orchestrator.handle_turn(
+            with_input(
+                req,
+                kind="voice",
+                text="",
+                asr_meta={"confidence": None, "mic_level": 0.6, "alternatives": []},
+            )
+        )
+    )
+    assert r.output.summary.startswith("I didn't catch that.")
+    assert r.output.followups == ["Price", "Specs", "Reviews", "Add to cart"]
+    assert session.get(req.session_id).misses == 1
+
+
+def test_null_asr_confidence_does_not_block(mock_body, monkeypatch):
+    """Track A's ASR gives confidence null: treated as unknown, so a clear intent still acts."""
+    session.reset()
+
+    async def tool_call(*_a, **_k):
+        return "press", {"target_id": "t-swatch-green", "confidence": 0.95, "alternatives": []}
+
+    monkeypatch.setattr(orchestrator, "complete_tool_call", tool_call)
+    data = mock_body("TurnRequest")
+    data["input"].update(
+        text="show me the green one",
+        lang="en",
+        asr_meta={"confidence": None, "mic_level": 0.5, "alternatives": []},
+    )
+    r = run(orchestrator.handle_turn(TurnRequest.model_validate(data)))
+    assert [a.target_id for a in r.actions] == ["t-swatch-green"]

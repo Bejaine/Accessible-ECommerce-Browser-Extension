@@ -2,8 +2,9 @@
 
 What a blind shopper needs from a photo: colour, shape, parts, what's in the box, visible text.
 The model may only describe what is visible. Its output is checked before use:
-- every number it states must appear in evidence from the page (OCR text, alt text, title);
-  OCR text grounds VLM claims (docs/language-api.md), so "48MP" is dropped unless the page says it;
+- every number it states must appear in page data: the title, the photo's alt text or a spec
+  value, so "48MP" read off a banner is dropped unless the page says it. OCR text is NOT used:
+  it misreads numbers and units ("5000 mAh" -> "500 mAb", Track A's live findings);
 - text it says it can read is kept only when the same text is in that evidence;
 - what it says is unclear is passed on ("The photo doesn't clearly show ...").
 Only images on the shops' own image hosts are downloaded (no fetching arbitrary URLs).
@@ -23,7 +24,7 @@ from urllib.parse import urlparse
 
 import httpx
 
-from app.brain.format import brief
+from app.brain.format import brief, spec_value
 from app.brain.grounding import numbers_in
 from app.brain.llm import LLMError, fixture_path
 from app.brain.output import OutputBuilder
@@ -233,9 +234,8 @@ def _evidence(p: ProductJSON | None, url: str) -> str:
     if p is None:
         return ""
     parts = [p.title or ""]
-    for img in p.images:
-        if img.url == url:
-            parts += [img.alt or "", img.ocr_text or ""]
+    parts += [img.alt or "" for img in p.images if img.url == url]
+    parts += [f"{spec.label} {spec_value(spec.value, spec.unit)}" for spec in p.specs.values()]
     return " ".join(parts)
 
 
