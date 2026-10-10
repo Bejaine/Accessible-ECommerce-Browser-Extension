@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ExtractFallbackRequest",
+  "description": "Tier 3 extraction (POST /extract/fallback): cleaned visible main-content text of a product page whose JSON-LD and site adapter left fields missing. Built by extension/src/extract/llm.ts; already redacted on the device.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "url", "site", "missing", "text", "truncated"],
+  "properties": {
+    "schema_version": {
+      "$ref": "../common.schema.json#/$defs/SchemaVersion"
+    },
+    "url": {
+      "type": "string",
+      "format": "uri"
+    },
+    "site": {
+      "type": "string"
+    },
+    "missing": {
+      "type": "array",
+      "description": "ProductJSON dot paths still missing after the faster tiers, e.g. price, specs, delivery.cost.",
+      "items": { "type": "string" }
+    },
+    "text": {
+      "type": "string",
+      "maxLength": 20000,
+      "description": "Cleaned visible text, title first, capped on the device (~4k tokens)."
+    },
+    "truncated": {
+      "type": "boolean"
+    }
+  }
+}

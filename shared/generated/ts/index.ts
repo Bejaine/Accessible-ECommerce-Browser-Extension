@@ -80,6 +80,8 @@ export interface Contracts {
   ASRRequest?: ASRRequest;
   ASRResponse?: ASRResponse;
   ErrorResponse?: ErrorResponse;
+  ExtractFallbackRequest?: ExtractFallbackRequest;
+  ExtractFallbackResponse?: ExtractFallbackResponse;
   HealthResponse?: HealthResponse;
   OCRRequest?: OCRRequest;
   OCRResponse?: OCRResponse;
@@ -692,6 +694,61 @@ export interface ErrorResponse {
   error: string;
   code: ErrorCode;
   retryable: boolean;
+}
+/**
+ * Tier 3 extraction (POST /extract/fallback): cleaned visible main-content text of a product page whose JSON-LD and site adapter left fields missing. Built by extension/src/extract/llm.ts; already redacted on the device.
+ */
+export interface ExtractFallbackRequest {
+  schema_version: SchemaVersion;
+  url: string;
+  site: string;
+  /**
+   * ProductJSON dot paths still missing after the faster tiers, e.g. price, specs, delivery.cost.
+   */
+  missing: string[];
+  /**
+   * Cleaned visible text, title first, capped on the device (~4k tokens).
+   */
+  text: string;
+  truncated: boolean;
+}
+/**
+ * Fields found in the page text, each backed by a snippet copied verbatim from the request text. The extension merges `found` into its ProductJSON (source method `llm`) and may learn an adapter from `evidence`. Anything not found stays null and is listed in `missing`.
+ */
+export interface ExtractFallbackResponse {
+  schema_version: SchemaVersion;
+  found: ExtractedFields;
+  /**
+   * Per found field, the text it came from (verbatim substring of the request text).
+   */
+  evidence: FieldEvidence[];
+  /**
+   * Requested paths still not found.
+   */
+  missing: string[];
+}
+export interface ExtractedFields {
+  title: string | null;
+  brand: string | null;
+  price: Price | null;
+  rating: Rating | null;
+  availability: Availability | null;
+  category: string | null;
+  /**
+   * Only specs found in the text; empty when none.
+   */
+  specs: {
+    [k: string]: SpecValue;
+  };
+  delivery: Delivery | null;
+  seller: string | null;
+}
+export interface FieldEvidence {
+  /**
+   * ProductJSON dot path, e.g. price.amount, specs.battery.
+   */
+  field_path: string;
+  snippet: string;
 }
 export interface HealthResponse {
   schema_version: SchemaVersion;
