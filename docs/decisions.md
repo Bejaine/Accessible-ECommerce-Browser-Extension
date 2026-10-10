@@ -230,3 +230,13 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   spoken live, or by the device voice in lite mode.
 - The spoken control words in `player.controls_hint` are 'रुको'/'दोबारा' and 'ఆపు'/'మళ్లీ': the
   local matcher (Track D) must accept them. Telugu strings still need a native speaker's review.
+
+## 2026-10-11 — translate_many: an answer's lines in few MT calls (Track A; affects Track C)
+- `bhashini.translate_many(lines, src, tgt)` returns the same length and order, or raises
+  ApiError (callers keep the whole answer in one language). Cached lines are free, duplicates
+  are translated once, the rest are packed as a numbered list of ≤ 50 words per request.
+- Chosen by a live test: newline and "||" separators were merged or mangled, and a marker word
+  kept its count but moved into the middle of a sentence (silently wrong lines); numbered items
+  stayed whole and in order (en→hi, en→te). Every packed reply is still verified (markers 1…n
+  in order, each item keeps its placeholders); a failed batch is re-translated line by line.
+- Live: a 14-line reviews answer took 2 calls per language (was 14), 0.4 s hi / 1.1 s te.

@@ -25,6 +25,7 @@ import re
 import time
 import unicodedata
 import wave
+from collections import Counter
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field, replace
 from pathlib import Path
@@ -490,24 +491,127 @@ async def translate(text: str, source: str, target: str) -> str:
     for entry in registry().mt_route(source, target):
         if not text.strip():
             break
-        parts = []
-        for chunk in chunk_words(text, MT_MAX_WORDS):
-            cache_key = f"{entry.key}\n{chunk}"
-            out = _mt_cache.get(cache_key)
-            if out is None:
-                data = await call_model("mt", entry.key, {"input_text": chunk})
-                out = _field(data, "output_text").strip()
-                if masking.missing(out, dict.fromkeys(masking.placeholders(chunk))):
-                    raise ApiError(
-                        ErrorCode.upstream_unavailable,
-                        "This couldn't be translated without losing a name or price.",
-                        status=503,
-                        retryable=False,
-                    )
-                _mt_cache.set(cache_key, out)
-            parts.append(out)
-        text = " ".join(parts)
+        text = await _translate_hop(entry, text)
     return text
+
+
+async def translate_many(lines: list[str], source: str, target: str) -> list[str]:
+    """Translate many short lines (an answer's summary, items, follow-ups) in few calls; returns
+    a list of the same length and order. Raises ApiError if any line can't be translated
+    safely, so callers can keep the whole answer in one language.
+
+    Lines already cached are free and duplicates are translated once. The rest are packed as a
+    numbered list ("1. … 2. …") of at most MT_MAX_WORDS words per request: live, newline and
+    "||" separators were merged or mangled, and a marker word moved into the middle of a
+    sentence, while numbered items stayed whole and in order. Every packed reply is verified
+    (numbers 1…n in order, each item keeps its line's placeholders); a batch that fails is
+    re-translated line by line, so packing can cost calls but never corrupt a line."""
+    out = list(lines)
+    for entry in registry().mt_route(source, target):
+        out = await _translate_lines(entry, out)
+    return out
+
+
+async def _translate_hop(entry: ModelEntry, text: str) -> str:
+    parts = []
+    for chunk in chunk_words(text, MT_MAX_WORDS):
+        cache_key = f"{entry.key}\n{chunk}"
+        out = _mt_cache.get(cache_key)
+        if out is None:
+            data = await call_model("mt", entry.key, {"input_text": chunk})
+            out = _field(data, "output_text").strip()
+            if masking.missing(out, dict.fromkeys(masking.placeholders(chunk))):
+                raise ApiError(
+                    ErrorCode.upstream_unavailable,
+                    "This couldn't be translated without losing a name or price.",
+                    status=503,
+                    retryable=False,
+                )
+            _mt_cache.set(cache_key, out)
+        parts.append(out)
+    return " ".join(parts)
+
+
+async def _translate_lines(entry: ModelEntry, lines: list[str]) -> list[str]:
+    result = list(lines)
+    todo: dict[str, list[int]] = {}  # normalised line -> its positions
+    for i, line in enumerate(lines):
+        norm = " ".join(line.split())
+        if not norm:
+            continue
+        hit = _mt_cache.get(f"{entry.key}\n{norm}")
+        if hit is not None:
+            result[i] = hit
+        else:
+            todo.setdefault(norm, []).append(i)
+
+    done: dict[str, str] = {}
+    packable = [line for line in todo if len(line.split()) <= PACK_MAX_LINE_WORDS]
+    for line in todo:
+        if line not in packable:
+            done[line] = await _translate_hop(entry, line)
+    for batch in _batches(packable):
+        packed = await _translate_packed(entry, batch) if len(batch) > 1 else None
+        if packed is None:
+            for line in batch:
+                done[line] = await _translate_hop(entry, line)
+            continue
+        for line, translated in zip(batch, packed, strict=True):
+            _mt_cache.set(f"{entry.key}\n{line}", translated)
+            done[line] = translated
+
+    for line, positions in todo.items():
+        for i in positions:
+            result[i] = done[line]
+    return result
+
+
+def _batches(lines: list[str]) -> list[list[str]]:
+    batches: list[list[str]] = []
+    words = 0
+    for line in lines:
+        size = len(line.split()) + 1  # + the "n." marker
+        if batches and words + size <= MT_MAX_WORDS:
+            batches[-1].append(line)
+            words += size
+        else:
+            batches.append([line])
+            words = size
+    return batches
+
+
+async def _translate_packed(entry: ModelEntry, batch: list[str]) -> list[str] | None:
+    """One call for the whole batch, or None if the reply can't be trusted."""
+    items = [line if line[-1] in _TERMINAL else f"{line}." for line in batch]
+    text = "\n".join(f"{n}. {item}" for n, item in enumerate(items, 1))
+    data = await call_model("mt", entry.key, {"input_text": text})
+    parts = _split_numbered(_field(data, "output_text"), len(batch))
+    if parts is None:
+        return None
+    result = []
+    for line, part in zip(batch, parts, strict=True):
+        if not part or Counter(masking.placeholders(part)) != Counter(masking.placeholders(line)):
+            return None
+        if line[-1] not in _TERMINAL:  # drop the full stop added for packing ("Yes" -> "हाँ")
+            part = re.sub(r"\s*[.।॥]$", "", part)
+        result.append(part)
+    return result
+
+
+def _split_numbered(text: str, n: int) -> list[str] | None:
+    """Items of "1. a 2. b …" (ASCII, Devanagari or Telugu digits), or None unless the markers
+    1…n appear in order with nothing before the first."""
+    bounds = []
+    pos = 0
+    for i in range(1, n + 1):
+        digits = "|".join(re.escape(str(i).translate(t)) for t in _DIGIT_SCRIPTS)
+        m = re.compile(rf"(?:^|\s)(?:{digits})\s*[.)]\s*").search(text, pos)
+        if m is None or (i == 1 and text[: m.start()].strip()):
+            return None
+        bounds.append((m.start(), m.end()))
+        pos = m.end()
+    ends = [start for start, _ in bounds[1:]] + [len(text)]
+    return [text[b[1] : end].strip() for b, end in zip(bounds, ends, strict=True)]
 
 
 async def tts(text: str, lang: str, voice: str | None = None) -> TtsResult:
@@ -564,6 +668,13 @@ async def ocr(lang: str, *, image_url: str | None = None, image_base64: str | No
 #   OCR  form file (JPG/PNG)              -> data.decoded_text     < 5 MB, white background
 
 MT_MAX_WORDS = 50
+PACK_MAX_LINE_WORDS = 40  # longer lines are translated on their own
+_TERMINAL = ".?!।॥"
+_DIGIT_SCRIPTS = (  # list markers may come back in any of these digits
+    str.maketrans("", ""),
+    str.maketrans("0123456789", "०१२३४५६७८९"),
+    str.maketrans("0123456789", "౦౧౨౩౪౫౬౭౮౯"),
+)
 TTS_MAX_WORDS = 30
 ASR_MAX_SECONDS = 20
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
