@@ -256,6 +256,13 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   would need a new endpoint, an event schema and a client rewrite for little gain. Revisit only if
   free-form LLM answers are added.
 
+## 2026-10-11 — Review headings "Good points" / "Drawbacks" (Track C; affects A, D)
+- Review sections are headed "Good points", "Mixed opinions" and "Drawbacks" (were "Pros"/"Cons",
+  which MT rendered as "प्रो"/"विपक्ष", "ప్రోస్"/"కాన్స్" out of context, Track A's live run).
+  Older recorded LLM answers saying "Pros"/"Cons" are renamed in code.
+- Track A's `bhashini.translate_many` (track-a/tts-speech) is picked up automatically by
+  `brain/language.py` once merged: ~2 MT calls per answer instead of ~14.
+
 ## 2026-10-11 — Numbers are spoken as words (Track A; affects C, D)
 - Live, the Hindi and Telugu TTS voices read digits in English ("सेवेंटींथ…", "బైవ్ థౌసండ్") and
   ₹ is rejected, so `bhashini.tts` first calls `numbers.speakable(text, lang)`: prices with the
