@@ -20,11 +20,23 @@ function openOnboarding() {
 // install, in its own tab (never on shop pages); Settings can open it again.
 export default defineBackground(() => {
   const backend = createBackend();
+  // The backend relay goes first: if an optional API below is missing on some browser, the
+  // relay must still be registered, or every backend call fails silently.
+  browser.runtime.onMessage.addListener(
+    (msg: Partial<BackendRequestMessage> | { type?: string }) => {
+      if (msg?.type === OPEN_ONBOARDING) return openOnboarding().then(() => true);
+      if (msg?.type === 'backend' && 'method' in msg && msg.method) {
+        return handleBackendMessage(backend, msg as BackendRequestMessage);
+      }
+      return undefined;
+    },
+  );
   browser.runtime.onInstalled.addListener(async ({ reason }) => {
     if (reason === 'install' && !(await isOnboarded())) await openOnboarding();
   });
-  // Keyboard shortcut: open or close the assistant in the active tab.
-  browser.commands.onCommand.addListener(async (command) => {
+  // Keyboard shortcut: open or close the assistant in the active tab. Firefox for Android has
+  // no commands API (no keyboard shortcuts), so `browser.commands` is undefined there.
+  browser.commands?.onCommand.addListener(async (command) => {
     const type =
       command === ASSISTANT_COMMAND
         ? TOGGLE_ASSISTANT
@@ -36,13 +48,4 @@ export default defineBackground(() => {
     if (tab?.id !== undefined)
       await browser.tabs.sendMessage(tab.id, { type }).catch(() => undefined);
   });
-  browser.runtime.onMessage.addListener(
-    (msg: Partial<BackendRequestMessage> | { type?: string }) => {
-      if (msg?.type === OPEN_ONBOARDING) return openOnboarding().then(() => true);
-      if (msg?.type === 'backend' && 'method' in msg && msg.method) {
-        return handleBackendMessage(backend, msg as BackendRequestMessage);
-      }
-      return undefined;
-    },
-  );
 });
