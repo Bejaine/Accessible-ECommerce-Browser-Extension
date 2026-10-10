@@ -35,7 +35,7 @@ import httpx
 from app.config import REPO_ROOT, get_settings
 from app.errors import ApiError
 from app.models import ErrorCode
-from app.services import masking
+from app.services import masking, numbers
 from app.services.cache import TTLCache
 
 Task = Literal["asr", "mt", "tts", "ocr"]
@@ -512,8 +512,9 @@ async def translate(text: str, source: str, target: str) -> str:
 
 async def tts(text: str, lang: str, voice: str | None = None) -> TtsResult:
     """Speak text in chunks of at most TTS_MAX_WORDS words, without characters the service
-    rejects. The service returns an S3 link per chunk; we fetch and join the WAVs."""
-    clean = tts_clean_text(text)
+    rejects. Numbers and prices are first written out in `lang` (the voices read digits in
+    English and ₹ is rejected). The service returns an S3 link per chunk; we join the WAVs."""
+    clean = tts_clean_text(numbers.speakable(text, lang))
     if not clean:
         raise _invalid("There is nothing to read aloud.")
     gender = voice if voice in ("male", "female") else "female"

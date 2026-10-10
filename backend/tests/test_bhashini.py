@@ -803,3 +803,18 @@ async def test_translate_fails_rather_than_drop_a_masked_name_or_price(monkeypat
     # and the bad result was not cached
     _live(monkeypatch, lambda req: httpx.Response(200, json=ok({"output_text": "ZQX0 ZQX1"})))
     assert await bhashini.translate("ZQX0 costs ZQX1", "en", "hi") == "ZQX0 ZQX1"
+
+
+async def test_tts_speaks_numbers_and_prices_in_the_listeners_language(monkeypatch):
+    """Live, the Hindi voice read "17,999" in English and dropped ₹; it must get words."""
+    sent = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        if req.url.host == "up.example":
+            sent.append(json.loads(req.content)["text"])
+            return httpx.Response(200, json=ok({"s3_url": "https://s3.example/x.wav"}))
+        return httpx.Response(200, content=wav_bytes())
+
+    _live(monkeypatch, handler)
+    await bhashini.tts("कीमत ₹1,299 है, रेटिंग 4.3", "hi")
+    assert sent == ["कीमत एक हज़ार दो सौ निन्यानवे रुपये है, रेटिंग चार दशमलव तीन"]

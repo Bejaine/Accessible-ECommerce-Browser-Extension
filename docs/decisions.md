@@ -184,3 +184,13 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   "put it", "the cheaper one"), lone multipliers stay ("lakhs of reviews"), side-by-side numbers
   are not added ("two three days"), and digits are never reformatted.
 - Ranges share the multiplier: "पंद्रह से बीस हज़ार" → "15000 से 20000", never backwards.
+
+## 2026-10-11 — Numbers are spoken as words (Track A; affects C, D)
+- Live, the Hindi and Telugu TTS voices read digits in English ("सेवेंटींथ…", "బైవ్ థౌసండ్") and
+  ₹ is rejected, so `bhashini.tts` first calls `numbers.speakable(text, lang)`: prices with the
+  currency word (and paise), numbers in the Indian system, decimals, units in the listener's
+  script; PIN codes, phone/order numbers and leading zeros digit by digit; names (S24, 5G) kept.
+- Verified by TTS → ASR: Hindi and Telugu now say "सत्रह हज़ार नौ सौ निन्यानवे रुपये" /
+  "పదిహేడు వేల … రూపాయలు". Telugu TTS took ~16 s for one long sentence: speak short sentences.
+- Text shown on screen keeps the digits; only the audio uses words. Telugu forms were written
+  by us, not a native speaker: please have one review `numbers.py`'s Telugu tables.
