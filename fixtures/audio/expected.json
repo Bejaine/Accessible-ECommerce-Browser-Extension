@@ -1,0 +1,41 @@
+{
+  "en_cart.wav": {
+    "lang": "en",
+    "text": "Add this to cart"
+  },
+  "en_budget.wav": {
+    "lang": "en",
+    "text": "Show me phones under twenty thousand",
+    "number": 20000
+  },
+  "en_reviews.wav": {
+    "lang": "en",
+    "text": "Read the reviews"
+  },
+  "hi_cart.wav": {
+    "lang": "hi",
+    "text": "इसे कार्ट में डालो"
+  },
+  "hi_budget.wav": {
+    "lang": "hi",
+    "text": "बीस हज़ार के अंदर फ़ोन दिखाओ",
+    "number": 20000
+  },
+  "hi_reviews.wav": {
+    "lang": "hi",
+    "text": "रिव्यू पढ़ो"
+  },
+  "te_cart.wav": {
+    "lang": "te",
+    "text": "దీన్ని కార్ట్‌లో వేయండి"
+  },
+  "te_budget.wav": {
+    "lang": "te",
+    "text": "ఇరవై వేల లోపు ఫోన్లు చూపించు",
+    "number": 20000
+  },
+  "te_reviews.wav": {
+    "lang": "te",
+    "text": "రివ్యూలు చదవండి"
+  }
+}
