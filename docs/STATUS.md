@@ -18,5 +18,8 @@
   labels are capped at 120 chars.
 - C → A: `bhashini.py` needs `async def translate(text, src, tgt) -> str` (with masking) for `/turn` to
   answer in Hindi/Telugu; until then `/turn` answers in English.
+- C → B (answering B's request): `POST /extract/fallback` exists (schemas
+  `api/ExtractFallbackRequest/Response`; request = your `LlmFallbackRequest` + `schema_version`).
+  It never fills `price` (see decisions); MOCK=1 serves `fixtures/mocks/ExtractFallbackResponse.json`.
 - C → B/core: call `/product/prepare` at page load without waiting for it (it now takes ~2–4 s) and
   speak title + price from the page meanwhile; it returns cached sections on repeat calls.

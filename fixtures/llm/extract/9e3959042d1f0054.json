@@ -1,0 +1,39 @@
+{
+  "model": "openai/gpt-oss-20b",
+  "response": {
+    "id": "chatcmpl-67dfadc7-804b-4164-896f-a1246f200918",
+    "object": "chat.completion",
+    "created": 1791658936,
+    "model": "openai/gpt-oss-20b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\"items\":[{\"field\":\"availability\",\"label\":null,\"value\":\"Not available at this Pincode\",\"snippet\":\"Not available at this Pincode\"},{\"field\":\"delivery\",\"label\":null,\"value\":\"Delivery by Wednesday, 14 Oct\",\"snippet\":\"Delivery by\\nWednesday, 14 Oct\"},{\"field\":\"delivery_cost\",\"label\":null,\"value\":\"Not specified\",\"snippet\":\"Not specified\"},{\"field\":\"rating\",\"label\":null,\"value\":\"4.2\",\"snippet\":\"4.2\"},{\"field\":\"rating_count\",\"label\":null,\"value\":\"7,285\",\"snippet\":\"7,285\"},{\"field\":\"seller\",\"label\":null,\"value\":\"IndiFlashMart\",\"snippet\":\"Seller: IndiFlashMart\"},{\"field\":\"spec\",\"label\":\"4 GB RAM | 64 GB ROM\",\"value\":\"4 GB RAM | 64 GB ROM\",\"snippet\":\"4 GB RAM | 64 GB ROM\"},{\"field\":\"spec\",\"label\":\"T8200 | Octa Core Processor | 2.3 GHz Clock Speed\",\"value\":\"T8200 | Octa Core Processor | 2.3 GHz Clock Speed\",\"snippet\":\"T8200 | Octa Core Processor | 2.3 GHz Clock Speed\"},{\"field\":\"spec\",\"label\":\"50MP Rear Camera\",\"value\":\"50MP Rear Camera\",\"snippet\":\"50MP Rear Camera\"},{\"field\":\"spec\",\"label\":\"8MP Front Camera\",\"value\":\"8MP Front Camera\",\"snippet\":\"8MP Front Camera\"},{\"field\":\"spec\",\"label\":\"6.745 inch\",\"value\":\"6.745 inch\",\"snippet\":\"6.745 inch\"},{\"field\":\"spec\",\"label\":\"6000 mAh Battery\",\"value\":\"6000 mAh Battery\",\"snippet\":\"6000 mAh Battery\"}]}"
+        },
+        "logprobs": null,
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.332391923,
+      "prompt_tokens": 1424,
+      "prompt_time": 0.081604386,
+      "completion_tokens": 463,
+      "completion_time": 0.492844275,
+      "total_tokens": 1887,
+      "total_time": 0.574448661,
+      "completion_tokens_details": {
+        "reasoning_tokens": 104
+      }
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_2b688e7cc3",
+    "x_groq": {
+      "id": "req_01m4kk3h2zetgahjy8k72k5839",
+      "seed": 795575349
+    },
+    "service_tier": "on_demand"
+  }
+}

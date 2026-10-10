@@ -9,6 +9,8 @@ from contracts.ActionTarget_schema import ActionTarget
 from contracts.api.ASRRequest_schema import ASRRequest
 from contracts.api.ASRResponse_schema import ASRResponse
 from contracts.api.ErrorResponse_schema import ErrorCode, ErrorResponse
+from contracts.api.ExtractFallbackRequest_schema import ExtractFallbackRequest
+from contracts.api.ExtractFallbackResponse_schema import ExtractFallbackResponse
 from contracts.api.HealthResponse_schema import HealthResponse
 from contracts.api.OCRRequest_schema import OCRRequest
 from contracts.api.OCRResponse_schema import OCRResponse
@@ -47,6 +49,8 @@ __all__ = [
     "ClientAction",
     "Confirmation",
     "ErrorResponse",
+    "ExtractFallbackRequest",
+    "ExtractFallbackResponse",
     "Grounding",
     "HealthResponse",
     "OCRRequest",

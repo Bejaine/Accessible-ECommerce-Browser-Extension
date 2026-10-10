@@ -1,0 +1,39 @@
+{
+  "model": "openai/gpt-oss-20b",
+  "response": {
+    "id": "chatcmpl-d5afcdaa-8961-4bc1-8795-8435718133bc",
+    "object": "chat.completion",
+    "created": 1791658797,
+    "model": "openai/gpt-oss-20b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\"items\":[{\"field\":\"availability\",\"label\":null,\"value\":\"In stock\",\"snippet\":\"In stock\"},{\"field\":\"delivery\",\"label\":null,\"value\":\"Enjoy Unlimited FREE Same day/1-day delivery, Prime offers everyday and more\",\"snippet\":\"Enjoy Unlimited FREE Same day/1-day delivery, Prime offers everyday and more\"},{\"field\":\"delivery_cost\",\"label\":null,\"value\":\"FREE delivery Monday, 12 October.\",\"snippet\":\"FREE delivery Monday, 12 October.\"},{\"field\":\"rating\",\"label\":null,\"value\":\"3.7 out of 5 stars\",\"snippet\":\"3.7 out of 5 stars\"},{\"field\":\"rating_count\",\"label\":null,\"value\":\"(11,058)\",\"snippet\":\"(11,058)\"},{\"field\":\"seller\",\"label\":null,\"value\":\"Sold by Clicktech Retail Private Ltd\",\"snippet\":\"Sold by Clicktech Retail Private Ltd\"},{\"field\":\"spec\",\"label\":\"Colour\",\"value\":\"Jet Black\",\"snippet\":\"Colour Jet Black\"},{\"field\":\"spec\",\"label\":\"Ear Placement\",\"value\":\"In Ear\",\"snippet\":\"Ear Placement In Ear\"},{\"field\":\"spec\",\"label\":\"Form Factor\",\"value\":\"In Ear\",\"snippet\":\"Form Factor In Ear\"},{\"field\":\"spec\",\"label\":\"Impedance\",\"value\":\"100 Ohms\",\"snippet\":\"Impedance 100 Ohms\"}]}"
+        },
+        "logprobs": null,
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.309111828,
+      "prompt_tokens": 2540,
+      "prompt_time": 0.15335266,
+      "completion_tokens": 383,
+      "completion_time": 0.423266695,
+      "total_tokens": 2923,
+      "total_time": 0.576619355,
+      "completion_tokens_details": {
+        "reasoning_tokens": 102
+      }
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_24bfb4a850",
+    "x_groq": {
+      "id": "req_01m4kjz9f8e749ngw272wfmffa",
+      "seed": 656170700
+    },
+    "service_tier": "on_demand"
+  }
+}
