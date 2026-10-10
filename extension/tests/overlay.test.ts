@@ -89,6 +89,7 @@ describe('overlay stylesheet', () => {
       '.asl-colour-label',
       '.asl-simple',
       '.asl-playback',
+      '.asl-wizard',
     ]) {
       expect(css, selector).toContain(selector);
     }

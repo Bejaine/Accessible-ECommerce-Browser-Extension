@@ -184,6 +184,33 @@ const FALLBACK = {
   'playback.more': 'More',
   'playback.hint': 'Press Alt+Shift+K to pause or resume. Say repeat to hear it again.',
   'playback.nothing': 'There is nothing to play yet.',
+  'checkout.open': 'Checkout step by step',
+  'checkout.counter': 'Step {n} of {total}',
+  'checkout.step.items': 'Your items',
+  'checkout.step.delivery': 'Delivery',
+  'checkout.step.payment': 'Payment',
+  'checkout.step.review': 'Check and place the order',
+  'checkout.subtotal': 'Items total',
+  'checkout.charge': 'Delivery charge',
+  'checkout.free': 'Free',
+  'checkout.change_address': 'Change delivery address',
+  'checkout.payment': 'Payment method',
+  'checkout.secure':
+    "You'll type any card number, UPI PIN or OTP yourself. I stop listening while you do.",
+  'checkout.not_preferred': 'This is not your usual payment method ({method}).',
+  'checkout.review':
+    'When you are ready, press Place order. I will read the order back and ask you to confirm.',
+  'checkout.cannot_place':
+    "The page doesn't show the total or the Place order button, so I can't place this order.",
+  'checkout.previous': 'Previous step',
+  'checkout.next': 'Next step',
+  'checkout.place': 'Place order',
+  'checkout.pay.upi': 'UPI',
+  'checkout.pay.saved_card': 'Saved card',
+  'checkout.pay.card': 'Card',
+  'checkout.pay.netbanking': 'Net banking',
+  'checkout.pay.cod': 'Cash on delivery',
+  'checkout.pay.other': 'Another method',
   'help.examples':
     "What's the price? | What do reviews say? | Add to cart | Slower or faster | Repeat that | Yes or no",
 } as const;

@@ -2,9 +2,16 @@
 // In DevTools, pick the extension's content-script context in the console's context dropdown,
 // then e.g. `__asl.show('reviews')`, `__asl.scan('product')`, `__asl.announce('Added to cart')`.
 // Everything comes from fixtures/mocks: nothing here invents data.
-import type { AccessibleOutput, ActionTarget, PageType, TurnRequest } from '@shared/index';
+import type {
+  AccessibleOutput,
+  ActionTarget,
+  CheckoutSummary,
+  PageType,
+  TurnRequest,
+} from '@shared/index';
 import searchPage from '@fixtures/mocks/PageContext.search.json';
 import turnRequest from '@fixtures/mocks/TurnRequest.json';
+import checkoutPage from '@fixtures/mocks/PageContext.checkout.json';
 import type { RecordedSession, SessionLabel } from '../infer/replay';
 import type { InferredCondition, SignalKind } from '../infer/scores';
 import { createDebugPanel, type DebugPanel } from '../ui/debugPanel';
@@ -95,6 +102,11 @@ export function installDevHooks(bus: Bus, getApp: () => App, store: ProfileStore
       getApp().overlay.open();
       return getApp().say(text);
     },
+    /** Step-by-step checkout with the fixture checkout summary (until B extracts real ones). */
+    checkout() {
+      getApp().showCheckout(checkoutPage.checkout as unknown as CheckoutSummary);
+      return 'showing the checkout steps for the fixture order';
+    },
     /** Start recording a calibration session (eval/inference/README.md). */
     recordSession(label: SessionLabel = 'normal') {
       recording = { label, start: performance.now() };
@@ -144,6 +156,6 @@ export function installDevHooks(bus: Bus, getApp: () => App, store: ProfileStore
   );
   (globalThis as { __asl?: typeof hooks }).__asl = hooks;
   console.info(
-    '[asl] dev hooks ready: __asl.show, scan, stopScan, phrases, announce, debug, simulate, say, signals, recordSession, saveSession, resetProfile',
+    '[asl] dev hooks ready: __asl.show, scan, stopScan, phrases, announce, debug, simulate, say, checkout, signals, recordSession, saveSession, resetProfile',
   );
 }

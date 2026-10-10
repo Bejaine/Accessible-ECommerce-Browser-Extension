@@ -5,7 +5,13 @@
 // - phrase chips, suggestion chips, scan selections, typed/spoken text (`say`)
 // - local commands first (yes / no / repeat / help / slower / faster / undo): no server call
 // - everything else becomes a turn (TurnRequest -> backend -> output, actions, confirmation)
-import type { AccessibleOutput, AsrMeta, PageContext, Profile } from '@shared/index';
+import type {
+  AccessibleOutput,
+  AsrMeta,
+  CheckoutSummary,
+  PageContext,
+  Profile,
+} from '@shared/index';
 import { browser } from 'wxt/browser';
 import { performAction } from '../actuate';
 import { createMic, MicError, toAsrRequest, type Mic } from '../audio/mic';
@@ -31,6 +37,7 @@ import { createScanner } from '../ui/scanner';
 import { createActionMenu } from '../ui/actionMenu';
 import { createColourLabels, type ColourLabels } from '../ui/colourLabels';
 import { renderSimpleView, simpleSummary } from '../ui/simpleView';
+import { createCheckoutWizard } from '../ui/checkoutWizard';
 import { createControls, type Controls } from '../ui/controls';
 import { mountOverlay, type Overlay } from '../ui/overlay';
 import { createSpeechSpeed, formatRate } from '../ui/speechSpeed';
@@ -92,6 +99,8 @@ export interface App {
   toggleAssistant(): void;
   /** The single playback key (Alt+Shift+K): pause / resume, or pick from the spoken mini-menu. */
   playbackKey(): void;
+  /** Step-by-step checkout for the page's summary (or a given one, e.g. a fixture in dev). */
+  showCheckout(summary?: CheckoutSummary): void;
   speaker: Speaker;
   unmount(): void;
 }
@@ -270,7 +279,12 @@ export function mountApp(
   simpleButton.textContent = label('simple.open');
   simpleButton.addEventListener('click', () => showSimpleView());
   const actionMenu = createActionMenu((target) => bus.emit({ type: 'select-target', target }));
-  pageTools.append(simpleButton);
+  const checkoutButton = document.createElement('button');
+  checkoutButton.type = 'button';
+  checkoutButton.className = 'asl-menu-toggle';
+  checkoutButton.textContent = label('checkout.open');
+  checkoutButton.addEventListener('click', () => showCheckout());
+  pageTools.append(simpleButton, checkoutButton);
   let colourLabels: ColourLabels | null = null;
 
   function updateColourLabels(): void {
@@ -287,6 +301,7 @@ export function mountApp(
     page = extractPageContext();
     actionMenu.render(page.targets);
     simpleButton.hidden = !(page.page_type === 'product' && page.products[0]);
+    checkoutButton.hidden = !page.checkout;
     updateColourLabels();
   }
 
@@ -308,11 +323,42 @@ export function mountApp(
     announce(simpleSummary(product));
   }
 
+  /** Step-by-step checkout from PageContext.checkout (simple mode opens it directly). */
+  function showCheckout(override?: CheckoutSummary): void {
+    const summary = override ?? page.checkout;
+    if (!summary) return;
+    speaker.stop();
+    view = null;
+    overlay.setWide(true);
+    const changeAddress = page.targets.find(
+      (t) => /address/i.test(t.label) && t.zone === 'checkout',
+    );
+    const wizard = createCheckoutWizard(summary, {
+      prefs: profile.prefs,
+      changeAddressTargetId: changeAddress?.id ?? null,
+      // Track C's /turn maps "place my order" to the place-order task: it reads the order back
+      // and returns a high-risk confirmation. Nothing is pressed until the user says yes.
+      onPlaceOrder: () =>
+        void turn.send({ kind: 'phrase', phrase_id: 'place_order', text: 'place my order' }),
+      onTarget: (id) => {
+        const target = page.targets.find((t) => t.id === id);
+        if (target) bus.emit({ type: 'select-target', target });
+      },
+      onBack: backToMenu,
+      announce: (text) => announce(text),
+    });
+    overlay.content.replaceChildren(wizard.element);
+    wizard.go('items'); // focus and announce the first step now that it's attached
+  }
+
   offs.push(
     overlay.onOpen(() => {
       refreshPageTools();
-      // Simple mode on a product page opens straight into the simplified view.
-      if (profile.conditions.ageing.active && !overlay.content.hasChildNodes()) showSimpleView();
+      // Simple mode opens straight into the simplified product view or the checkout steps.
+      if (profile.conditions.ageing.active && !overlay.content.hasChildNodes()) {
+        if (page.checkout) showCheckout();
+        else showSimpleView();
+      }
     }),
     () => colourLabels?.destroy(),
   );
@@ -696,6 +742,10 @@ export function mountApp(
     listen,
     speaker,
     playbackKey,
+    showCheckout: (summary) => {
+      overlay.open();
+      showCheckout(summary);
+    },
     toggleAssistant() {
       if (overlay.isOpen) {
         overlay.close();
