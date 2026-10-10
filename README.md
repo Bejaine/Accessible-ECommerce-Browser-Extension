@@ -51,6 +51,7 @@ Add to this list in the same PR that introduces a dependency (docs/product.md).
 - [Vitest](https://vitest.dev) + [happy-dom](https://github.com/capricorn86/happy-dom) — extension unit tests
 - [ESLint](https://eslint.org), [@eslint/js](https://www.npmjs.com/package/@eslint/js), [typescript-eslint](https://typescript-eslint.io), [globals](https://www.npmjs.com/package/globals) — linting
 - [Prettier](https://prettier.io) — formatting
+- [axe-core](https://github.com/dequelabs/axe-core) — automated accessibility checks of the overlay in tests
 - [web-ext](https://github.com/mozilla/web-ext) — launches Chrome/Firefox for `make ext`, and Firefox for Android
 - [json-schema-to-typescript](https://github.com/bcherny/json-schema-to-typescript) — TS types from schemas
 - [Ajv](https://ajv.js.org) + [ajv-formats](https://github.com/ajv-validator/ajv-formats) — validates extractor output against the JSON Schemas in extension tests (dev only)
