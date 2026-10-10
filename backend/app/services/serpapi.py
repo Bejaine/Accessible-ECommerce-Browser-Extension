@@ -148,11 +148,9 @@ def to_product(raw: dict[str, Any]) -> dict[str, Any]:
     reviews = None
     if items or insights or summary.get("text"):
         # customer_reviews holds star PERCENTAGES, not counts, so it is not a histogram.
-        # Amazon's summary covers more reviews than the few texts shown; the largest mention
-        # count is a lower bound for how many it read, so we never claim more than that.
-        most_mentions = max((i["mentions"]["total"] for i in insights), default=0)
+        # basis_count = review texts actually read (team decision, same as the page extractor).
         reviews = {
-            "basis_count": max(len(items), most_mentions),
+            "basis_count": len(items),
             "summary_text": summary.get("text"),
             "insights": insights,
             "histogram": None,

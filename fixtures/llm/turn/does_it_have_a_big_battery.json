@@ -1,0 +1,48 @@
+{
+  "model": "openai/gpt-oss-120b",
+  "response": {
+    "id": "chatcmpl-51238693-f443-414a-a5c5-e640a991d2c6",
+    "object": "chat.completion",
+    "created": 1791656590,
+    "model": "openai/gpt-oss-120b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "id": "fc_2b77e484-5ecd-4b37-98d5-f1d055a291f4",
+              "type": "function",
+              "function": {
+                "name": "answer_question",
+                "arguments": "{\"alternatives\":[],\"confidence\":0.9,\"field_paths\":[\"specs.battery\"],\"product_id\":\"amazon.in:B0ZNTRA5G1\",\"topic\":\"battery capacity\"}"
+              }
+            }
+          ]
+        },
+        "logprobs": null,
+        "finish_reason": "tool_calls"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.342260354,
+      "prompt_tokens": 2317,
+      "prompt_time": 0.108386113,
+      "completion_tokens": 83,
+      "completion_time": 0.174696933,
+      "total_tokens": 2400,
+      "total_time": 0.283083046,
+      "completion_tokens_details": {
+        "reasoning_tokens": 13
+      }
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_64b2f1c926",
+    "x_groq": {
+      "id": "req_01m4kgvy9zep1t9w3nwg0pgb0n",
+      "seed": 2105229662
+    },
+    "service_tier": "on_demand"
+  }
+}

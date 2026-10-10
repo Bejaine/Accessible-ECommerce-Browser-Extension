@@ -65,7 +65,9 @@ def test_reviews(product):
     result = run(review_summariser.summarise_product(product))
     assert_grounded(product, result)
     out = result.output
-    assert out.summary.startswith("Based on 690 reviews, people like the battery life")
+    # Insight counts come from the shop's own summary, so no "based on N reviews".
+    assert out.summary.startswith("In the shop's review summary, people like the battery life")
+    assert "690" not in out.summary
     headings = [s.heading for s in out.sections]
     assert headings[:2] == ["Pros", "Cons"]
     assert "Star ratings" in headings

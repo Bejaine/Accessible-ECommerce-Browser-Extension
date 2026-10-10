@@ -132,3 +132,29 @@ async def complete_json(
         return json.loads(content)
     except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
         raise LLMError(f"unusable LLM response for {key}") from exc
+
+
+async def complete_tool_call(
+    key: str,
+    models: list[str],
+    messages: list[dict[str, str]],
+    tools: list[dict[str, Any]],
+    *,
+    max_tokens: int = 1024,
+) -> tuple[str, dict[str, Any]]:
+    """Function calling: the model must call exactly one of `tools`. Returns (name, arguments)."""
+    body = {
+        "messages": messages,
+        "tools": tools,
+        "tool_choice": "required",
+        "temperature": 0,
+        "max_completion_tokens": max_tokens,
+        "reasoning_effort": "low",
+        "include_reasoning": False,
+    }
+    raw = await chat(key, models, body)
+    try:
+        call = raw["choices"][0]["message"]["tool_calls"][0]["function"]
+        return call["name"], json.loads(call["arguments"] or "{}")
+    except (KeyError, IndexError, TypeError, json.JSONDecodeError) as exc:
+        raise LLMError(f"no usable tool call for {key}") from exc

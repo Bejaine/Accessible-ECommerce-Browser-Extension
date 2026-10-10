@@ -1,0 +1,51 @@
+{
+  "model": "openai/gpt-oss-120b",
+  "response": {
+    "id": "chatcmpl-fc5939a9-3e87-4f50-94b8-06686d067089",
+    "object": "chat.completion",
+    "created": 1791656638,
+    "model": "openai/gpt-oss-120b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "id": "fc_8f220f94-9a9f-42f8-a9c2-5d8675e0c51f",
+              "type": "function",
+              "function": {
+                "name": "search",
+                "arguments": "{\"alternatives\":[],\"confidence\":0.95,\"query\":\"wireless earphones under 2000\"}"
+              }
+            }
+          ]
+        },
+        "logprobs": null,
+        "finish_reason": "tool_calls"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.384214402,
+      "prompt_tokens": 2320,
+      "prompt_time": 0.032003282,
+      "completion_tokens": 68,
+      "completion_time": 0.140798288,
+      "total_tokens": 2388,
+      "total_time": 0.17280157,
+      "prompt_tokens_details": {
+        "cached_tokens": 1792
+      },
+      "completion_tokens_details": {
+        "reasoning_tokens": 20
+      }
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_ca5edfaab2",
+    "x_groq": {
+      "id": "req_01m4kgxdc6eevrk2k0sz18sq3g",
+      "seed": 2053004597
+    },
+    "service_tier": "on_demand"
+  }
+}

@@ -1,38 +1,38 @@
 {
   "model": "openai/gpt-oss-120b",
   "response": {
-    "id": "chatcmpl-34b8a6fb-faf2-495c-b2f4-43bf8cbcf8d8",
+    "id": "chatcmpl-58f35838-e21f-4562-8215-e163c4707cc4",
     "object": "chat.completion",
-    "created": 1791654490,
+    "created": 1791656194,
     "model": "openai/gpt-oss-120b",
     "choices": [
       {
         "index": 0,
         "message": {
           "role": "assistant",
-          "content": "{\n  \"facts\": [\n    {\n      \"claim\": \"44\",\n      \"field_path\": \"reviews.basis_count\"\n    },\n    {\n      \"claim\": \"Appearance: 28 positive, 4 negative mentions\",\n      \"field_path\": \"reviews.insights[0]\"\n    },\n    {\n      \"claim\": \"Speed: 11 positive, 3 negative mentions\",\n      \"field_path\": \"reviews.insights[1]\"\n    },\n    {\n      \"claim\": \"User experience: 9 positive, 3 negative mentions\",\n      \"field_path\": \"reviews.insights[2]\"\n    },\n    {\n      \"claim\": \"Performance: 29 positive, 15 negative mentions\",\n      \"field_path\": \"reviews.insights[3]\"\n    },\n    {\n      \"claim\": \"Battery life: 18 positive, 19 negative mentions\",\n      \"field_path\": \"reviews.insights[4]\"\n    },\n    {\n      \"claim\": \"Camera quality: 21 positive, 12 negative mentions\",\n      \"field_path\": \"reviews.insights[5]\"\n    },\n    {\n      \"claim\": \"Display quality: 11 positive, 7 negative mentions\",\n      \"field_path\": \"reviews.insights[6]\"\n    },\n    {\n      \"claim\": \"Heat: 1 positive, 11 negative mentions\",\n      \"field_path\": \"reviews.insights[7]\"\n    }\n  ],\n  \"summary\": [\n    {\n      \"fact_refs\": [0],\n      \"text\": \"Based on 44 reviews, customers most praised the Appearance and most complained about Heat.\"\n    }\n  ],\n  \"simpler\": {\n    \"fact_refs\": [0, 1, 8],\n    \"text\": \"Based on 44 reviews, the top praise is for Appearance and the biggest complaint is Heat.\"\n  },\n  \"sections\": [\n    {\n      \"heading\": \"Pros\",\n      \"items\": [\n        {\n          \"fact_ref\": 1,\n          \"kind\": \"pro\",\n          \"text\": \"Appearance: 28 positive, 4 negative mentions\"\n        },\n        {\n          \"fact_ref\": 2,\n          \"kind\": \"pro\",\n          \"text\": \"Speed: 11 positive, 3 negative mentions\"\n        },\n        {\n          \"fact_ref\": 3,\n          \"kind\": \"pro\",\n          \"text\": \"User experience: 9 positive, 3 negative mentions\"\n        }\n      ]\n    },\n    {\n      \"heading\": \"Mixed opinions\",\n      \"items\": [\n        {\n          \"fact_ref\": 4,\n          \"kind\": \"text\",\n          \"text\": \"Performance: 29 positive, 15 negative mentions\"\n        },\n        {\n          \"fact_ref\": 5,\n          \"kind\": \"text\",\n          \"text\": \"Battery life: 18 positive, 19 negative mentions\"\n        },\n        {\n          \"fact_ref\": 6,\n          \"kind\": \"text\",\n          \"text\": \"Camera quality: 21 positive, 12 negative mentions\"\n        },\n        {\n          \"fact_ref\": 7,\n          \"kind\": \"text\",\n          \"text\": \"Display quality: 11 positive, 7 negative mentions\"\n        }\n      ]\n    },\n    {\n      \"heading\": \"Cons\",\n      \"items\": [\n        {\n          \"fact_ref\": 8,\n          \"kind\": \"con\",\n          \"text\": \"Heat: 1 positive, 11 negative mentions\"\n        }\n      ]\n    }\n  ]\n}"
+          "content": "{\n  \"facts\": [\n    {\n      \"claim\": \"28 positive and 4 negative mentions\",\n      \"field_path\": \"reviews.insights[0]\"\n    },\n    {\n      \"claim\": \"11 positive and 3 negative mentions\",\n      \"field_path\": \"reviews.insights[1]\"\n    },\n    {\n      \"claim\": \"9 positive and 3 negative mentions\",\n      \"field_path\": \"reviews.insights[2]\"\n    },\n    {\n      \"claim\": \"29 positive and 15 negative mentions\",\n      \"field_path\": \"reviews.insights[3]\"\n    },\n    {\n      \"claim\": \"18 positive and 19 negative mentions\",\n      \"field_path\": \"reviews.insights[4]\"\n    },\n    {\n      \"claim\": \"21 positive and 12 negative mentions\",\n      \"field_path\": \"reviews.insights[5]\"\n    },\n    {\n      \"claim\": \"11 positive and 7 negative mentions\",\n      \"field_path\": \"reviews.insights[6]\"\n    },\n    {\n      \"claim\": \"1 positive and 11 negative mentions\",\n      \"field_path\": \"reviews.insights[7]\"\n    }\n  ],\n  \"summary\": [\n    {\n      \"fact_refs\": [0],\n      \"text\": \"Customers mention Appearance most: 28 positive and 4 negative mentions.\"\n    },\n    {\n      \"fact_refs\": [1, 2],\n      \"text\": \"They also note Speed and User experience positively.\"\n    }\n  ],\n  \"simpler\": {\n    \"fact_refs\": [0, 1, 2],\n    \"text\": \"Most customers talk about Appearance (28 positive, 4 negative), and also praise Speed and User experience.\"\n  },\n  \"sections\": [\n    {\n      \"heading\": \"Pros\",\n      \"items\": [\n        {\n          \"fact_ref\": 0,\n          \"kind\": \"pro\",\n          \"text\": \"Appearance: 28 positive and 4 negative mentions\"\n        },\n        {\n          \"fact_ref\": 1,\n          \"kind\": \"pro\",\n          \"text\": \"Speed: 11 positive and 3 negative mentions\"\n        },\n        {\n          \"fact_ref\": 2,\n          \"kind\": \"pro\",\n          \"text\": \"User experience: 9 positive and 3 negative mentions\"\n        }\n      ]\n    },\n    {\n      \"heading\": \"Mixed opinions\",\n      \"items\": [\n        {\n          \"fact_ref\": 3,\n          \"kind\": \"text\",\n          \"text\": \"Performance: 29 positive and 15 negative mentions\"\n        },\n        {\n          \"fact_ref\": 4,\n          \"kind\": \"text\",\n          \"text\": \"Battery life: 18 positive and 19 negative mentions\"\n        },\n        {\n          \"fact_ref\": 5,\n          \"kind\": \"text\",\n          \"text\": \"Camera quality: 21 positive and 12 negative mentions\"\n        },\n        {\n          \"fact_ref\": 6,\n          \"kind\": \"text\",\n          \"text\": \"Display quality: 11 positive and 7 negative mentions\"\n        }\n      ]\n    },\n    {\n      \"heading\": \"Cons\",\n      \"items\": [\n        {\n          \"fact_ref\": 7,\n          \"kind\": \"con\",\n          \"text\": \"Heat: 1 positive and 11 negative mentions\"\n        }\n      ]\n    }\n  ]\n}"
         },
         "logprobs": null,
         "finish_reason": "stop"
       }
     ],
     "usage": {
-      "queue_time": 0.342588822,
-      "prompt_tokens": 2045,
-      "prompt_time": 0.103523024,
-      "completion_tokens": 1088,
-      "completion_time": 2.288908846,
-      "total_tokens": 3133,
-      "total_time": 2.3924318700000002,
+      "queue_time": 0.216619297,
+      "prompt_tokens": 2099,
+      "prompt_time": 0.097590991,
+      "completion_tokens": 1097,
+      "completion_time": 2.296194588,
+      "total_tokens": 3196,
+      "total_time": 2.393785579,
       "completion_tokens_details": {
-        "reasoning_tokens": 351
+        "reasoning_tokens": 382
       }
     },
     "usage_breakdown": null,
-    "system_fingerprint": "fp_8ea50c0161",
+    "system_fingerprint": "fp_5a93aea882",
     "x_groq": {
-      "id": "req_01m4kevt3yeyarzjgxgtxbc2w1",
-      "seed": 2131361967
+      "id": "req_01m4kgfse2egsvpn3fgyg0r6j4",
+      "seed": 1758279249
     },
     "service_tier": "on_demand"
   }

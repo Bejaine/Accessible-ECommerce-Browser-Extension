@@ -5,6 +5,8 @@ With `MOCK=1` the backend replays these instead of calling Groq. Each file is
 
 - `summary/<section>.<product id with ":" as "_">.json` — section summaries for `/product/prepare`
 - `summary/test.*.json` — deliberately bad answers used by tests (invented specs, wrong sentiment, not JSON)
+- `turn/<utterance slug>.json` — `/turn` tool calls (recorded live; re-record with the script in the
+  PR description or by running `/turn` with `MOCK=0 LLM_RECORD=1`)
 
 The first files were hand-written in Groq's format before an API key was available (they
 carry a `_note`). To replace them with real recordings:

@@ -36,10 +36,12 @@ def test_recorded_answers_pass_every_check(product, name):
 
 def test_reviews_keep_mention_counts(product):
     out = run(llm_section("reviews", product)).output
-    assert out.summary.startswith("Based on 690 reviews")
-    pros = next(s for s in out.sections if s.heading == "Pros")
-    assert pros.items[0].text == "Battery life: 189 of 212 mentions are positive"
-    assert {i.kind.value for i in pros.items} == {"pro"}
+    # Insights exist, so no "based on N reviews"; counts are kept and topics grouped by sentiment.
+    assert "690" not in out.summary and "189 positive" in out.summary
+    groups = {s.heading: [i.text for i in s.items] for s in out.sections}
+    assert groups["Pros"][0] == "Battery life: 189 positive and 23 negative mentions"
+    assert groups["Mixed opinions"] == ["Heating: 25 positive and 29 negative mentions"]
+    assert groups["Cons"] == ["Low-light camera: 28 positive and 68 negative mentions"]
 
 
 def test_invented_specs_are_rejected(product):
@@ -158,15 +160,27 @@ def _assemble(name, raw, product):
 
 
 def test_ratings_called_reviews_are_dropped(product):
-    """Seen live: "4.2 from 3418 reviews" when 3,418 is the ratings count (690 reviews)."""
+    """Seen live: "4.2 from 3418 reviews" when 3,418 is the ratings count (690 reviews).
+    The sentence is dropped, and an overview without its rating is rejected (template)."""
     raw = _raw(
         [("₹17,999", "price.amount"), ("4.2", "rating.value"), ("3418", "rating.count")],
         [("It costs ₹17,999.", [0]), ("It is rated 4.2 from 3418 reviews.", [1, 2])],
-        simpler={"text": "Rated 4.2 from 3,418 ratings.", "fact_refs": [1, 2]},
     )
-    result = _assemble("overview", raw, product)
-    assert result.output.summary == "It costs ₹17,999."
-    assert result.output.simpler == "Rated 4.2 from 3,418 ratings."
+    with pytest.raises(LLMError, match="rating.value"):
+        _assemble("overview", raw, product)
+    raw["summary"][1]["text"] = "It is rated 4.2 from 3,418 ratings."
+    assert _assemble("overview", raw, product).output.summary.endswith("3,418 ratings.")
+
+
+def test_overview_must_say_price_and_rating_aloud(product):
+    """Seen live: the price fact was valid but its sentence was dropped, so the spoken
+    overview had no price. Facts in the list are not enough; the summary must state them."""
+    raw = _raw(
+        [("₹17,999", "price.amount"), ("4.2", "rating.value")],
+        [("Rated 4.2 out of 5.", [1]), ("It costs ₹99,999 today.", [0])],
+    )
+    with pytest.raises(LLMError, match="price.amount"):
+        _assemble("overview", raw, product)
 
 
 def test_unit_only_facts_and_whole_spec_citations_match(product):
@@ -189,7 +203,10 @@ def test_digits_in_the_product_name_are_not_claims(product):
             ("3,418 ratings", "rating.count"),
             ("In stock", "availability.text"),
         ],
-        [("Zentra Pulse 5G costs ₹17,999.", [0]), ("It has 6 GB RAM.", [0])],
+        [("Zentra Pulse 5G costs ₹17,999.", [0]), ("It is rated 4.2 out of 5.", [1])],
+        simpler={"text": "Zentra Pulse 5G has 6 GB RAM.", "fact_refs": [0]},
     )
     result = _assemble("overview", raw, product)
-    assert result.output.summary == "Zentra Pulse 5G costs ₹17,999."
+    # 5 (from "5G") and the title's 8/128 are name digits; 6 is in no field, so it is dropped.
+    assert result.output.summary == "Zentra Pulse 5G costs ₹17,999. It is rated 4.2 out of 5."
+    assert result.output.simpler is None

@@ -1,38 +1,38 @@
 {
   "model": "openai/gpt-oss-20b",
   "response": {
-    "id": "chatcmpl-26ae3c21-fa34-4e34-be61-0a701479e23e",
+    "id": "chatcmpl-d1c1e5e5-178b-473b-9cbf-1bb803e43dd6",
     "object": "chat.completion",
-    "created": 1791653632,
+    "created": 1791656116,
     "model": "openai/gpt-oss-20b",
     "choices": [
       {
         "index": 0,
         "message": {
           "role": "assistant",
-          "content": "{\"facts\":[{\"claim\":\"5000 mAh\",\"field_path\":\"specs.battery\"},{\"claim\":\"8 GB\",\"field_path\":\"specs.ram\"},{\"claim\":\"128 GB\",\"field_path\":\"specs.storage\"},{\"claim\":\"6.67 inches\",\"field_path\":\"specs.display_size\"},{\"claim\":\"120 Hz\",\"field_path\":\"specs.refresh_rate\"},{\"claim\":\"Android 15\",\"field_path\":\"specs.os\"}],\"summary\":[{\"text\":\"It has a 5000 mAh battery, 8 GB RAM and 128 GB storage.\",\"fact_refs\":[0,1,2]}],\"simpler\":null,\"sections\":[{\"heading\":\"Specs\",\"items\":[{\"fact_ref\":0,\"kind\":\"spec\",\"text\":\"Battery Capacity: 5000 mAh\"},{\"fact_ref\":1,\"kind\":\"spec\",\"text\":\"RAM: 8 GB\"},{\"fact_ref\":2,\"kind\":\"spec\",\"text\":\"Internal Storage: 128 GB\"},{\"fact_ref\":3,\"kind\":\"spec\",\"text\":\"Screen Size: 6.67 inches\"},{\"fact_ref\":4,\"kind\":\"spec\",\"text\":\"Refresh Rate: 120 Hz\"},{\"fact_ref\":5,\"kind\":\"spec\",\"text\":\"Operating System: Android 15\"}]}]}"
+          "content": "{\"facts\":[{\"claim\":\"5000\",\"field_path\":\"specs.battery\"},{\"claim\":\"8\",\"field_path\":\"specs.ram\"},{\"claim\":\"128\",\"field_path\":\"specs.storage\"},{\"claim\":\"6.67\",\"field_path\":\"specs.display_size\"},{\"claim\":\"120\",\"field_path\":\"specs.refresh_rate\"},{\"claim\":\"Android 15\",\"field_path\":\"specs.os\"}],\"summary\":[{\"text\":\"It has a 5000 mAh battery, 8 GB RAM, 128 GB storage, a 6.67 inch screen with 120 Hz refresh rate and runs Android 15.\",\"fact_refs\":[0,1,2,3,4,5]}],\"simpler\":{\"text\":\"It has a 5000 mAh battery, 8 GB RAM, 128 GB storage, a 6.67 inch screen with 120 Hz refresh rate and runs Android 15.\",\"fact_refs\":[0,1,2,3,4,5]},\"sections\":[{\"heading\":\"Specs\",\"items\":[{\"fact_ref\":0,\"kind\":\"spec\",\"text\":\"Battery Capacity: 5000 mAh\"},{\"fact_ref\":1,\"kind\":\"spec\",\"text\":\"RAM: 8 GB\"},{\"fact_ref\":2,\"kind\":\"spec\",\"text\":\"Internal Storage: 128 GB\"},{\"fact_ref\":3,\"kind\":\"spec\",\"text\":\"Screen Size: 6.67 inches\"},{\"fact_ref\":4,\"kind\":\"spec\",\"text\":\"Refresh Rate: 120 Hz\"},{\"fact_ref\":5,\"kind\":\"spec\",\"text\":\"Operating System: Android 15\"}]}]}"
         },
         "logprobs": null,
         "finish_reason": "stop"
       }
     ],
     "usage": {
-      "queue_time": 0.327169334,
-      "prompt_tokens": 1248,
-      "prompt_time": 0.0831607,
-      "completion_tokens": 303,
-      "completion_time": 0.324199316,
-      "total_tokens": 1551,
-      "total_time": 0.407360016,
+      "queue_time": 0.33824957,
+      "prompt_tokens": 1313,
+      "prompt_time": 0.073246708,
+      "completion_tokens": 504,
+      "completion_time": 0.53645949,
+      "total_tokens": 1817,
+      "total_time": 0.609706198,
       "completion_tokens_details": {
-        "reasoning_tokens": 45
+        "reasoning_tokens": 172
       }
     },
     "usage_breakdown": null,
-    "system_fingerprint": "fp_587d0d67cc",
+    "system_fingerprint": "fp_e189667b30",
     "x_groq": {
-      "id": "req_01m4ke1p16e26tk9zhxmvrzewm",
-      "seed": 1242732253
+      "id": "req_01m4kgdfecehybx70k75nw3ecv",
+      "seed": 306289148
     },
     "service_tier": "on_demand"
   }

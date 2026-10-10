@@ -26,8 +26,11 @@ def test_invalid_request_returns_error_shape(client, assert_schema):
     assert res.json()["code"] == "validation"
 
 
-def test_real_mode_stub_returns_calm_error(client, assert_schema, mock_body, monkeypatch):
+def test_real_mode_without_llm_returns_calm_error(client, assert_schema, mock_body, monkeypatch):
     monkeypatch.setenv("MOCK", "0")
+    monkeypatch.delenv("GROQ_API_KEY", raising=False)
     res = client.post("/turn", json=mock_body("TurnRequest"))
-    assert res.status_code == 501
+    assert res.status_code == 503
     assert_schema("ErrorResponse", res.json())
+    assert res.json()["code"] == "upstream_unavailable"
+    assert res.json()["retryable"] is True
