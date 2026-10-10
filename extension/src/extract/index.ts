@@ -1,18 +1,28 @@
 // Page extraction (Track B): JSON-LD/meta → site adapter → (LLM fallback request, built on demand).
 // Produces a PageContext with schema-valid ProductJSON and the page map of interactive targets.
-import type { PageContext, PageType, ProductJSON } from '@shared/index';
+import type { OrderJSON, PageContext, PageType, ProductJSON } from '@shared/index';
 import { amazonAdapter } from './adapters/amazon';
 import { flipkartAdapter } from './adapters/flipkart';
+import { mockStoreAdapter } from './adapters/mockstore';
 import type { SiteAdapter } from './adapters/types';
 import { hasType, jsonLdNodes, productFromJsonLd, productFromMeta } from './jsonld';
+import { redactOrderIds, toOrderJSON } from './orders';
 import { mergeTiers, type TierResult } from './product';
+import { isSecureZoneActive } from './secure';
 import { buildPageMap } from './targets';
 import { siteOf } from './util';
 
-export { buildLlmFallbackRequest } from './llm';
+export { applyFallback, buildFallbackRequest, buildLlmFallbackRequest, needsFallback } from './llm';
+export {
+  isSecureElement,
+  isSecureZoneActive,
+  muteMicInSecureZone,
+  watchSecureZone,
+} from './secure';
+export { orderStatusFromText, resolveOrderId } from './orders';
 export { buildPageMap, resolveTarget } from './targets';
 
-const ADAPTERS: SiteAdapter[] = [amazonAdapter, flipkartAdapter];
+const ADAPTERS: SiteAdapter[] = [amazonAdapter, flipkartAdapter, mockStoreAdapter];
 
 export function adapterFor(site: string): SiteAdapter | null {
   return ADAPTERS.find((a) => a.matches(site)) ?? null;
@@ -70,12 +80,30 @@ export function extractPageContext(
   const pageType = detectPageType(doc, url);
   const adapter = adapterFor(site);
 
+  // Secure zone: extract nothing while the user types a password, card number or OTP.
+  if (isSecureZoneActive(doc)) {
+    return {
+      schema_version: '1.0',
+      page_type: pageType,
+      url,
+      site,
+      products: [],
+      orders: [],
+      targets: [],
+      secure_zone_active: true,
+    };
+  }
+
   let products: ProductJSON[] = [];
   if (pageType === 'product') {
     const p = extractProduct(doc, { url, now });
     if (p) products = [p];
   } else if (pageType === 'search' && adapter) {
     products = adapter.searchResults(doc, url, now);
+  }
+  let orders: OrderJSON[] = [];
+  if ((pageType === 'orders' || pageType === 'order_detail') && adapter?.orders) {
+    orders = adapter.orders(doc, url).map((d) => toOrderJSON(doc, d));
   }
 
   return {
@@ -84,8 +112,12 @@ export function extractPageContext(
     url,
     site,
     products,
-    orders: [],
-    targets: buildPageMap(doc, { pageType, url }),
+    orders,
+    // Labels like "Order # 403-…" must not carry the real order number to the backend.
+    targets: buildPageMap(doc, { pageType, url }).map((t) => ({
+      ...t,
+      label: redactOrderIds(doc, t.label),
+    })),
     secure_zone_active: false,
   };
 }

@@ -8,12 +8,25 @@
 | D Access UX | Scaffold: overlay shell + live region, bus, profile store, `make check` | Everything else | Schemas are DRAFT until team review |
 
 ## Requests for other tracks
-- B → C: an endpoint (e.g. `POST /extract/fallback`) + schema for LLM-fallback extraction. Request
-  shape is `LlmFallbackRequest` in `extension/src/extract/llm.ts` ({url, site, missing, text,
-  truncated}); response should be a partial ProductJSON plus, per field, the text snippet it came
-  from (for learned adapters). Until then the fallback tier is not called.
+- B → C: done, thanks for `/extract/fallback`; the extension side is `buildFallbackRequest` /
+  `applyFallback` in `src/extract/llm.ts`.
 - B → integration lead (core): call `extractPageContext(document)` at page load and on SPA URL
-  changes; keep `resolveTarget(id)` for the actuator. Product sections speak from `products[0]`.
+  changes. If `needsFallback(products[0])` is non-empty, send `buildFallbackRequest(document,
+  product)` to `/extract/fallback` (needs a `extractFallback` method in `core/backend.ts`) and
+  replace the product with `applyFallback(product, res)`. Run TurnResponse.actions with
+  `performAction(action)`; run Confirmation.pending_actions only after the user's yes, with
+  `performAction(action, { confirmed: true })`, then speak the result (`ok`/`reason`).
+- B → A / core: secure zone is ready: `muteMicInSecureZone(document, mic, announce)` from
+  `src/extract` mutes on entering a card/CVV/OTP/password field and unmutes on leaving; call it
+  once per tab where the Mic is created. `announce('entered')` should say listening has stopped.
+- B → C (answering your workflow question): order action buttons get the ids you match on —
+  `t-track-N`, `t-cancel-N`, `t-return-N` for ORDER_N — on every page where B extracts orders
+  (mock store now; Amazon/Flipkart order pages once we have fixtures). Other targets keep
+  generic ids `t1, t2…`, so please only use the number match on `t-<action>-N` ids (a generic
+  `t1` would otherwise "match" ORDER_1).
+- B → C: OrderJSON ids are ORDER_n placeholders; real ids never leave the device. Order actions
+  on the mock store are links labelled "Track package" / "Cancel order" / "Return item", then a
+  "Reason" select and "Confirm cancellation" / "Confirm return" buttons.
 - B → D: page map targets carry `zone` for two-level scanning and `colour_name` on swatches;
   labels are capped at 120 chars.
 - C → A: done — `/turn` now translates through `bhashini.translate` (thanks).
