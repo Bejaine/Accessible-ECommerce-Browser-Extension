@@ -1,0 +1,81 @@
+{
+  "schema_version": "1.0",
+  "page_type": "checkout",
+  "url": "https://www.amazon.in/gp/buy/spc/handlers/display.html",
+  "site": "amazon.in",
+  "products": [],
+  "orders": [],
+  "checkout": {
+    "schema_version": "1.0",
+    "id": "CHECKOUT_1",
+    "items": [
+      {
+        "title": "Zentra Pulse 5G (Midnight Black, 8GB RAM, 128GB Storage)",
+        "quantity": 1,
+        "price": {
+          "amount": 17999,
+          "currency": "INR"
+        }
+      },
+      {
+        "title": "Silicone Back Cover for Zentra Pulse 5G",
+        "quantity": 2,
+        "price": {
+          "amount": 598,
+          "currency": "INR"
+        }
+      }
+    ],
+    "subtotal": {
+      "amount": 18597,
+      "currency": "INR"
+    },
+    "delivery_charge": {
+      "amount": 0,
+      "currency": "INR"
+    },
+    "total": {
+      "amount": 18597,
+      "currency": "INR"
+    },
+    "delivery_pin_code": "500032",
+    "delivery_address": "ADDR_1",
+    "payment_method": "cod",
+    "place_order_target_id": "t-place-order",
+    "missing": []
+  },
+  "targets": [
+    {
+      "schema_version": "1.0",
+      "id": "t-change-address",
+      "kind": "link",
+      "label": "Change delivery address",
+      "zone": "checkout",
+      "state": null,
+      "colour_name": null
+    },
+    {
+      "schema_version": "1.0",
+      "id": "t-pay-cod",
+      "kind": "radio",
+      "label": "Cash on Delivery/Pay on Delivery",
+      "zone": "checkout",
+      "state": {
+        "disabled": false,
+        "selected": true,
+        "expanded": false
+      },
+      "colour_name": null
+    },
+    {
+      "schema_version": "1.0",
+      "id": "t-place-order",
+      "kind": "button",
+      "label": "Place your order",
+      "zone": "checkout",
+      "state": null,
+      "colour_name": null
+    }
+  ],
+  "secure_zone_active": false
+}

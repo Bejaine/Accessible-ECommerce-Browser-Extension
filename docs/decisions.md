@@ -207,3 +207,13 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   your cart? Quantity 1, price ₹17,999."); the colour is its own line. Live Hindi showed several
   masked names in one sentence come back in a shuffled word order.
 - Demo: the backend warms the language models at startup (~25 s); start it a minute early.
+
+## 2026-10-11 — Schema: checkout summary (Track C for place-order; affects B, D, core)
+- New `CheckoutSummary` {id CHECKOUT_n, items [{title, quantity, price}], subtotal,
+  delivery_charge, total, delivery_pin_code, delivery_address (ADDR_n placeholder),
+  payment_method (selected), place_order_target_id, missing}; `PageContext.checkout` holds it on
+  checkout pages. Grounding may name a CheckoutSummary id as subject.
+- `checkout` is OPTIONAL (not required-but-nullable) so B's existing PageContext code keeps
+  compiling; schema_version stays "1.0". Team: bump to 1.1 later if we want strict versioning.
+- B: please extract it on Amazon/Flipkart checkout pages (logged-in account; save + sanitise).
+  Without `total` and the Place-order target, the backend refuses to place an order.

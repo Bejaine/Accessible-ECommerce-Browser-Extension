@@ -79,7 +79,10 @@
       "required": ["claim", "subject_id", "field_path"],
       "properties": {
         "claim": { "type": "string" },
-        "subject_id": { "type": "string", "description": "A ProductJSON or OrderJSON id." },
+        "subject_id": {
+          "type": "string",
+          "description": "A ProductJSON, OrderJSON or CheckoutSummary id."
+        },
         "field_path": {
           "type": "string",
           "description": "Dot path into that subject, e.g. specs.battery.value, reviews.items[3].text."

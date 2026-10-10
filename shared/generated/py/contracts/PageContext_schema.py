@@ -6,7 +6,13 @@ from enum import StrEnum
 
 from pydantic import AnyUrl, BaseModel, ConfigDict, Field
 
-from . import ActionTarget_schema, OrderJSON_schema, ProductJSON_schema, common_schema
+from . import (
+    ActionTarget_schema,
+    CheckoutSummary_schema,
+    OrderJSON_schema,
+    ProductJSON_schema,
+    common_schema,
+)
 
 
 class PageType(StrEnum):
@@ -31,6 +37,10 @@ class PageContext(BaseModel):
     products: list[ProductJSON_schema.ProductJSON]
     orders: list[OrderJSON_schema.OrderJSON]
     targets: list[ActionTarget_schema.ActionTarget]
+    checkout: CheckoutSummary_schema.CheckoutSummary | None = Field(
+        None,
+        description="Checkout pages only: the order summary before placing (optional; added in 1.0 without a version bump, see docs/decisions.md).",
+    )
     secure_zone_active: bool = Field(
         ...,
         description="True while focus is in a payment/password/OTP area: mic off, nothing extracted.",

@@ -14,6 +14,10 @@ export type TargetKind = "button" | "link" | "input" | "select" | "checkbox" | "
  * Top level of two-level switch scanning.
  */
 export type Zone = "search" | "results" | "product" | "cart" | "checkout" | "orders" | "help";
+/**
+ * The payment method the page shows as selected.
+ */
+export type CheckoutPayment = ("upi" | "saved_card" | "card" | "netbanking" | "cod" | "other") | null;
 export type ClientActionType = "click" | "fill" | "select" | "navigate" | "scroll";
 export type EffectKind =
   "cart_count_increase" | "url_change" | "element_appears" | "element_disappears" | "value_set" | "none";
@@ -68,6 +72,7 @@ export type OCRRequest = {
 export interface Contracts {
   AccessibleOutput?: AccessibleOutput;
   ActionTarget?: ActionTarget;
+  CheckoutSummary?: CheckoutSummary;
   ClientAction?: ClientAction;
   Confirmation?: Confirmation;
   OrderJSON?: OrderJSON;
@@ -166,7 +171,7 @@ export interface Table {
 export interface Grounding {
   claim: string;
   /**
-   * A ProductJSON or OrderJSON id.
+   * A ProductJSON, OrderJSON or CheckoutSummary id.
    */
   subject_id: string;
   /**
@@ -197,6 +202,52 @@ export interface TargetState {
   disabled: boolean;
   selected: boolean;
   expanded: boolean;
+}
+/**
+ * What the checkout page shows before the order is placed. Read aloud and read back (total, delivery PIN) before the user confirms placing the order (rule 2). Personal data is a placeholder; the extension maps it back locally.
+ */
+export interface CheckoutSummary {
+  schema_version: SchemaVersion;
+  /**
+   * Placeholder id; used as a grounding subject_id.
+   */
+  id: string;
+  items: CheckoutItem[];
+  subtotal: Money | null;
+  delivery_charge: Money | null;
+  /**
+   * The order total the page shows (what the user will pay). Required to place an order.
+   */
+  total: Money | null;
+  /**
+   * Delivery PIN code as shown (not a secret; read back before placing).
+   */
+  delivery_pin_code: string | null;
+  /**
+   * Placeholder (ADDR_n), never the real address; the extension reads it aloud itself.
+   */
+  delivery_address: string | null;
+  payment_method: CheckoutPayment;
+  /**
+   * ActionTarget id of the 'Place order' button.
+   */
+  place_order_target_id: string | null;
+  /**
+   * Fields the page doesn't show, e.g. delivery_charge.
+   */
+  missing: string[];
+}
+export interface CheckoutItem {
+  title: string;
+  quantity: number;
+  /**
+   * The line's price as the page shows it.
+   */
+  price: Money | null;
+}
+export interface Money {
+  amount: number;
+  currency: string;
 }
 /**
  * An action the extension performs in the user's tab. The backend never touches the shop.
@@ -251,10 +302,6 @@ export interface ReadBack {
    */
   pin_code: string | null;
 }
-export interface Money {
-  amount: number;
-  currency: string;
-}
 export interface OrderJSON {
   schema_version: SchemaVersion;
   /**
@@ -285,6 +332,10 @@ export interface PageContext {
   products: ProductJSON[];
   orders: OrderJSON[];
   targets: ActionTarget[];
+  /**
+   * Checkout pages only: the order summary before placing (optional; added in 1.0 without a version bump, see docs/decisions.md).
+   */
+  checkout?: CheckoutSummary | null;
   /**
    * True while focus is in a payment/password/OTP area: mic off, nothing extracted.
    */
