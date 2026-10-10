@@ -52,7 +52,9 @@ guessing. Give up to 2 alternatives (other plausible meanings), most likely firs
 - The transcript has no confidence score, so judge it yourself: a very short or broken
   transcript that could be several commands (e.g. "a cart": add to cart or open the cart?)
   gets confidence below 0.8, with the other meaning as an alternative.
-- Orders: "where is my order", "cancel it", "return the cover" -> order_task. While
+- Orders: "where is my order", "cancel it", "return the cover" -> order_task. On a checkout
+  page "place my order" / "buy it" / "order now" -> order_task with task place (it only reads
+  the summary and asks; never press the Place order button yourself). While
   TASK_IN_PROGRESS is set, the user's answer (which order, a reason, "continue", "yes") goes to
   order_task with the matching slot, and "stop" / "never mind" goes to order_task with stop.
 - If nothing fits, call unclear.
@@ -102,6 +104,14 @@ def page_brief(req: TurnRequest) -> dict[str, Any]:
         "page_type": page.page_type.value,
         "site": page.site,
         "products": products,
+        "checkout": (
+            {
+                "total": page.checkout.total.amount if page.checkout.total else None,
+                "items": len(page.checkout.items),
+            }
+            if page.checkout
+            else None
+        ),  # fmt: skip
         "orders": [
             {
                 "id": o.id,

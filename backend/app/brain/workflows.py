@@ -8,8 +8,10 @@ are only ever pending actions inside a high-risk Confirmation; the backend never
 Steps:  track  1 choose order -> 2 read status
         cancel 1 choose order -> 2 confirm -> 3 verify on the next page
         return 1 choose order -> 2 reason -> 3 confirm -> 4 verify on the next page
-Place order is not here yet: it needs the checkout total and delivery PIN code read back,
-and the page contracts don't carry a checkout summary (see docs/STATUS.md).
+        place  1 read the checkout summary + high-risk confirmation -> 2 verify the order page
+Place order (rule 2): the "Place order" press exists only as a pending action of a confirmation
+whose prompt reads back the total and delivery PIN; it runs only after the user's explicit yes.
+Without a readable total, a Place-order button and a selected payment method, nothing is offered.
 """
 
 from __future__ import annotations
@@ -31,6 +33,15 @@ TASKS = {
     "track": {"name": "track_order", "action": "track", "verb": "track", "steps": 2},
     "cancel": {"name": "cancel_order", "action": "cancel", "verb": "cancel", "steps": 3},
     "return": {"name": "return_order", "action": "return", "verb": "return", "steps": 4},
+    "place": {"name": "place_order", "action": None, "verb": "place", "steps": 2},
+}
+PAYMENT_WORDS = {
+    "upi": "UPI",
+    "saved_card": "your saved card",
+    "card": "card",
+    "netbanking": "net banking",
+    "cod": "cash on delivery",
+    "other": "another method",
 }
 BUTTONS = {
     "track": re.compile(r"\btrack\b", re.I),
@@ -203,6 +214,8 @@ async def advance(
     verb = TASKS[task]["verb"]
 
     orders = list(ctx.page.orders)
+    if task == "place":
+        return _place(ctx, state, orders)
     if state["awaiting"] == "verify":
         return _verify(ctx, state, orders)
     if not orders:
@@ -361,4 +374,111 @@ def _verify(ctx, state: dict[str, Any], orders: list[OrderJSON]) -> Result:
             followups=["Where am I?", "Stop"],
         ),
         workflow=_state_marker(task, step),
+    )
+
+
+def _refuse_place(ctx, why: str) -> Result:
+    session.get(ctx.req.session_id).workflow = None
+    return Result(plain_output(why, followups=["Read my cart", "Help"]), label="Place order")
+
+
+def _place(ctx, state: dict[str, Any], orders: list[OrderJSON]) -> Result:
+    s = session.get(ctx.req.session_id)
+    if state["awaiting"] == "verify":
+        placed = next((o for o in orders if o.status.value == "placed"), None)
+        if placed is not None:
+            s.workflow = None
+            b = OutputBuilder(placed.id)
+            b.ground("placed", "status")
+            out = b.checked(
+                {placed.id: placed}, "Your order is placed.", followups=["Track my order"]
+            )
+            return Result(out.output, workflow=_state_marker("place", 2), label="Place order")
+        return Result(
+            plain_output(
+                "I can't see an order confirmation yet. If the page asks for payment, enter it "
+                "yourself; I stop listening there. Or say stop.",
+                followups=["Where am I?", "Stop"],
+            ),
+            workflow=_state_marker("place", 2),
+        )
+
+    c = ctx.page.checkout
+    if c is None:
+        if ctx.page.page_type.value == "checkout":
+            return _refuse_place(
+                ctx, "I can't read the order summary on this page, so I won't place the order."
+            )
+        return _refuse_place(ctx, "Open your cart and go to checkout first, then ask me again.")
+    target = ctx.targets.get(c.place_order_target_id or "")
+    if c.total is None or target is None or (target.state and target.state.disabled):
+        return _refuse_place(
+            ctx,
+            "I can't read the order total or find the Place order button, so I won't place "
+            "the order. Nothing was changed.",
+        )
+    if c.payment_method is None:
+        return _refuse_place(ctx, "The page doesn't show a payment method yet. Choose one first.")
+
+    b = OutputBuilder(c.id)
+    items = []
+    for i, item in enumerate(c.items):
+        name = item.title.split(" (")[0]
+        b.ground(name, f"items[{i}].title")
+        line = f"{name}: quantity {item.quantity}"
+        b.derive(item.quantity)
+        if item.price is not None:
+            price = money(item.price.amount, item.price.currency)
+            b.ground(price, f"items[{i}].price.amount")
+            line += f", {price}"
+        items.append(b.item(line, claim=name, path=f"items[{i}].title"))
+    if c.delivery_charge is not None:
+        charge = money(c.delivery_charge.amount, c.delivery_charge.currency)
+        items.append(
+            b.item(f"Delivery charge: {charge}", claim=charge, path="delivery_charge.amount")
+        )
+    if c.delivery_address:
+        items.append(
+            b.item(
+                f"Deliver to: {c.delivery_address}",
+                claim=c.delivery_address,
+                path="delivery_address",
+            )
+        )
+    method = c.payment_method.value if hasattr(c.payment_method, "value") else c.payment_method
+    method = getattr(method, "root", method)
+    items.append(
+        b.item(f"Payment: {PAYMENT_WORDS.get(method, method)}", claim=method, path="payment_method")
+    )
+    b.section("Your order", items)
+
+    total = money(c.total.amount, c.total.currency)
+    b.ground(total, "total.amount")
+    summary = f"Place this order? Total {total}."
+    if c.delivery_pin_code:
+        b.ground(c.delivery_pin_code, "delivery_pin_code")
+        summary += f" Delivery PIN {c.delivery_pin_code}."
+    warnings = []
+    preferred = ctx.req.prefs.preferred_payment
+    preferred = getattr(preferred, "value", preferred)
+    if preferred and preferred != method:
+        warnings.append(
+            f"Your preferred payment is {PAYMENT_WORDS.get(preferred, preferred)}, but this page "
+            f"shows {PAYMENT_WORDS.get(method, method)}."
+        )
+    result = b.checked({c.id: c}, summary, followups=["Yes", "No"], warnings=warnings)
+    quantity = sum(item.quantity for item in c.items) or None
+    action = ctx.action("click", target.id, None, "url_change", "Order confirmation page opens")
+    confirmation = _confirmation(
+        ctx, result.output.summary, [action], quantity, (c.total.amount, c.total.currency)
+    )
+    confirmation["read_back"]["pin_code"] = c.delivery_pin_code
+    state["awaiting"] = "verify"
+    s.workflow = state
+    return Result(
+        result.output,
+        confirmation=confirmation,
+        workflow=_state_marker("place", 1),
+        label="Place order",
+        dropped=result.dropped,
     )

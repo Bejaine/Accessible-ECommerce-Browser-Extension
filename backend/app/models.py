@@ -23,6 +23,7 @@ from contracts.api.TTSRequest_schema import TTSRequest
 from contracts.api.TTSResponse_schema import TTSResponse
 from contracts.api.VisionDescribeRequest_schema import VisionDescribeRequest
 from contracts.api.VisionDescribeResponse_schema import VisionDescribeResponse
+from contracts.CheckoutSummary_schema import CheckoutSummary
 from contracts.ClientAction_schema import ClientAction
 from contracts.common_schema import AsrMeta, Lang, Money
 from contracts.Confirmation_schema import Confirmation
@@ -46,6 +47,7 @@ __all__ = [
     "ASRResponse",
     "AccessibleOutput",
     "ActionTarget",
+    "CheckoutSummary",
     "ClientAction",
     "Confirmation",
     "ErrorResponse",
