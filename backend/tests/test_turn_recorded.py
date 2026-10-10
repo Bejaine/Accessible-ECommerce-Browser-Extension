@@ -47,7 +47,8 @@ def test_hinglish_add_to_cart_asks_to_confirm(mock_body):
     assert r.actions == [], "never act before the user confirms"
     assert [a.target_id for a in r.confirmation.pending_actions] == ["t-add-to-cart"]
     assert r.confirmation.read_back.total.amount == 17999
-    # Translation isn't available yet (Track A), so the answer says it is English.
+    # MOCK: Track A's MT fixture only translates its recorded sample, so this stays English
+    # and says so (in real mode /turn translates through bhashini.translate).
     assert r.output.lang.value == "en"
 
 

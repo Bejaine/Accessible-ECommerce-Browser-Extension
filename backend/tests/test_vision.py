@@ -49,7 +49,7 @@ def test_numbers_and_printed_text_need_confirmation():
     assert len(d.dropped) == 3
 
 
-def test_ocr_text_confirms_printed_text():
+def test_page_text_confirms_printed_text():
     answer = {
         "is_product_photo": True,
         "description": "A box with a 33W charger.",
@@ -156,3 +156,14 @@ def test_vision_route_real_recording(client, assert_schema):
     assert_schema("VisionDescribeResponse", body)
     assert body["output"]["summary"].startswith("A black wireless charging case")
     assert body["output"]["warnings"] == [vision.AI_NOTE]
+
+
+def test_ocr_text_is_not_evidence_but_specs_are(iphone):
+    """Track A: OCR misreads numbers ("5000 mAh" -> "500 mAb"), so it never confirms a number;
+    the page's own data (title, alt, specs) does."""
+    data = iphone.model_dump(mode="json", by_alias=True)
+    data["images"][0]["ocr_text"] = "500 mAb battery, 99MP camera"
+    p = ProductJSON.model_validate(data)
+    evidence = vision._evidence(p, p.images[0].url)
+    assert "99MP" not in evidence and "500 mAb" not in evidence
+    assert "6.1 Inches" in evidence  # a spec value
