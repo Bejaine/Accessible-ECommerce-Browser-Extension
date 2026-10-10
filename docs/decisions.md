@@ -184,3 +184,15 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   "put it", "the cheaper one"), lone multipliers stay ("lakhs of reviews"), side-by-side numbers
   are not added ("two three days"), and digits are never reformatted.
 - Ranges share the multiplier: "पंद्रह से बीस हज़ार" → "15000 से 20000", never backwards.
+
+## 2026-10-11 — Actuator safety, secure zone and orders (Track B; affects A, C, core)
+- `performAction` refuses to click controls labelled place order / pay / buy now / confirm
+  purchase unless called with `{ confirmed: true }` (only for Confirmation.pending_actions after
+  the user's yes), never fills a secure field, and returns {ok, performed, verified, reason}.
+- Secure zone = password/cc-*/one-time-code fields, card/CVV/expiry/OTP/UPI-PIN wording, and
+  payment-gateway/3-D Secure iframes. "PIN code" (postal) is not secure. While focus is inside,
+  `extractPageContext` returns no products or targets and `secure_zone_active: true`.
+- Order numbers become ORDER_n everywhere they could leave the device (OrderJSON.id, target
+  labels, LLM text); `resolveOrderId()` maps back locally for reading aloud.
+- Mock store (MockMart) runs on localhost with `<meta name="asl-mock-store">`; a "Return
+  requested" status maps to OrderStatus `returned` (the enum has no requested state).
