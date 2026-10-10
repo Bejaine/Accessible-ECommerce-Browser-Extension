@@ -377,3 +377,12 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   and merging it into a real product would invent facts (rule 1).
 - Barge-in starts only after the user has used Speak once, so the mic permission prompt never
   appears unexpectedly during playback.
+
+## 2026-10-11 — Checkout summary and learned adapters (Track B; affects C, D, core)
+- `PageContext.checkout` is read from visible labels ("Order total", "Price (2 items)",
+  "Delivery charges FREE", a checked payment radio, "Place your order"), not per-site selectors,
+  so it works on Amazon, Flipkart and the mock store alike. Unknowns go to `missing`; with no
+  total or Place-order target C refuses to place. The button is `t-place-order`, pinned in targets.
+- Addresses are personal: only `ADDR_n` leaves the device, also in "Deliver to …" labels.
+- Learned adapters: a fallback evidence snippet is located in the page and stored as a selector
+  per site (storage.local). Rules only fill empty fields and never read a price.
