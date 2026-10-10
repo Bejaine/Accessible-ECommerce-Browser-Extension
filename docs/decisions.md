@@ -307,3 +307,15 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   stayed whole and in order (en→hi, en→te). Every packed reply is still verified (markers 1…n
   in order, each item keeps its placeholders); a failed batch is re-translated line by line.
 - Live: a 14-line reviews answer took 2 calls per language (was 14), 0.4 s hi / 1.1 s te.
+
+## 2026-10-11 — Player, audio sources and barge-in (Track A; affects D, core, C)
+- `player.ts` plays an AccessibleOutput segment by segment (summary, headings, items, spoken
+  tables), prefetching the next segment's audio: this is the sentence-by-sentence streaming
+  (Track C decided /turn itself does not stream). Replays come from cache, never a new TTS call.
+- Audio per segment (`sources.ts`): pre-recorded phrase → cache → device voice in lite mode →
+  server TTS (25 s) → device voice on failure (announced once; device-only for 1 min after two
+  failures) → text only if the device has no voice for the language. Never an English voice for
+  Hindi/Telugu.
+- Barge-in (`bargeIn.ts`): speech pauses playback; the utterance goes to the matcher or /turn.
+  Not during device-voice segments: the OS plays them, so echo cancellation may not remove them
+  and the mic could hear our own voice. Keys/taps always work.
