@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ActionTarget",
+  "description": "An interactive element on the page. Selectors stay client-side; only the id travels.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id", "kind", "label"],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "kind": {
+      "type": "string",
+      "enum": ["button", "link", "input", "select", "checkbox", "radio", "swatch", "other"]
+    },
+    "label": { "type": "string" }
+  }
+}

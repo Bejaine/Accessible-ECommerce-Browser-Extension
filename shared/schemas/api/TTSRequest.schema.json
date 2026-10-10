@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TTSRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["text", "lang"],
+  "properties": {
+    "text": { "type": "string", "minLength": 1 },
+    "lang": { "type": "string" },
+    "voice": { "type": ["string", "null"] }
+  }
+}

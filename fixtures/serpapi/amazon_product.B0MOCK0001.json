@@ -1,0 +1,16 @@
+{
+  "_note": "Synthetic stand-in for a recorded SerpApi amazon_product response. Replace with real recordings (one file per ASIN) before relying on field names.",
+  "search_metadata": { "status": "Success" },
+  "search_parameters": {
+    "engine": "amazon_product",
+    "asin": "B0MOCK0001",
+    "amazon_domain": "amazon.in"
+  },
+  "product_results": {
+    "asin": "B0MOCK0001",
+    "title": "Example Wireless Earbuds X1",
+    "brand": "ExampleBrand",
+    "rating": 4.1,
+    "reviews": 1250
+  }
+}

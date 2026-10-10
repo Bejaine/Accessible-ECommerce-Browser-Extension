@@ -1,0 +1,21 @@
+{
+  "id": "ORDER_1",
+  "items": [
+    {
+      "title": "Example Wireless Earbuds X1",
+      "quantity": 1,
+      "price": {
+        "amount": 1999,
+        "currency": "INR"
+      },
+      "product_url": "https://mock-store.local/product/B0MOCK0001"
+    }
+  ],
+  "status": "shipped",
+  "dates": {
+    "ordered": "2026-10-08",
+    "expected_delivery": "2026-10-14",
+    "delivered": null
+  },
+  "available_actions": ["track", "cancel"]
+}

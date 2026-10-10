@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TranslateResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["text", "source_lang", "target_lang"],
+  "properties": {
+    "text": { "type": "string" },
+    "source_lang": { "type": "string" },
+    "target_lang": { "type": "string" }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TurnRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["session_id", "input", "page", "prefs", "history"],
+  "properties": {
+    "session_id": { "type": "string" },
+    "input": {
+      "title": "TurnInput",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "text", "lang"],
+      "properties": {
+        "kind": { "type": "string", "enum": ["voice", "text", "phrase", "switch"] },
+        "text": { "type": "string" },
+        "lang": { "type": "string" },
+        "asr_meta": {
+          "type": ["object", "null"],
+          "description": "Whatever the ASR returned plus our mic level."
+        }
+      }
+    },
+    "page": { "$ref": "PageContext.schema.json" },
+    "prefs": { "$ref": "Profile.schema.json#/$defs/Prefs" },
+    "history": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "title": "HistoryTurn",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["role", "text"],
+        "properties": {
+          "role": { "type": "string", "enum": ["user", "assistant"] },
+          "text": { "type": "string" }
+        }
+      }
+    }
+  }
+}

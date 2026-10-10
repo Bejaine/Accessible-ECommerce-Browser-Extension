@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ProductPrepareRequest",
+  "description": "Sent when a product page opens. Triggers one data fetch and parallel precompute.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["product", "prefs"],
+  "properties": {
+    "product": { "$ref": "../ProductJSON.schema.json" },
+    "prefs": { "$ref": "../Profile.schema.json#/$defs/Prefs" },
+    "review_texts": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "Visible reviews from the page."
+    }
+  }
+}

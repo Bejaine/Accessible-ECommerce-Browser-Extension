@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ReviewsSummarizeRequest",
+  "description": "Response is an AccessibleOutput (pros, cons, verdict with mention counts).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["product", "review_texts", "lang"],
+  "properties": {
+    "product": { "$ref": "../ProductJSON.schema.json" },
+    "review_texts": { "type": "array", "items": { "type": "string" } },
+    "lang": { "type": "string" }
+  }
+}

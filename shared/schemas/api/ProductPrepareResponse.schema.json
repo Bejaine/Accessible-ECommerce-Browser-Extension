@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ProductPrepareResponse",
+  "description": "Cached sections, precomputed in parallel. Translation and TTS happen only for the section the user asks for.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["product_id", "product", "sections"],
+  "properties": {
+    "product_id": {
+      "type": "string"
+    },
+    "product": {
+      "$ref": "../ProductJSON.schema.json"
+    },
+    "sections": {
+      "title": "PreparedSections",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["overview", "specs", "reviews", "images", "comparison"],
+      "properties": {
+        "overview": {
+          "anyOf": [
+            {
+              "$ref": "../AccessibleOutput.schema.json"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "specs": {
+          "anyOf": [
+            {
+              "$ref": "../AccessibleOutput.schema.json"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "reviews": {
+          "anyOf": [
+            {
+              "$ref": "../AccessibleOutput.schema.json"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "images": {
+          "anyOf": [
+            {
+              "$ref": "../AccessibleOutput.schema.json"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "comparison": {
+          "anyOf": [
+            {
+              "$ref": "../AccessibleOutput.schema.json"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

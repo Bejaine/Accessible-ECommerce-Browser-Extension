@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ProductJSON",
+  "description": "A product as extracted from the page (and optionally enriched). Unknown values are null and listed in `missing`, never guessed.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "url",
+    "site",
+    "title",
+    "brand",
+    "price",
+    "availability",
+    "category",
+    "specs",
+    "images",
+    "source",
+    "missing"
+  ],
+  "properties": {
+    "id": { "type": "string", "minLength": 1 },
+    "url": { "type": "string", "format": "uri" },
+    "site": { "type": "string" },
+    "title": { "type": ["string", "null"] },
+    "brand": { "type": ["string", "null"] },
+    "price": { "anyOf": [{ "$ref": "#/$defs/Price" }, { "type": "null" }] },
+    "rating": { "anyOf": [{ "$ref": "#/$defs/Rating" }, { "type": "null" }] },
+    "availability": { "type": ["string", "null"] },
+    "category": { "type": ["string", "null"] },
+    "specs": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/SpecValue" }
+    },
+    "variants": {
+      "anyOf": [{ "type": "array", "items": { "$ref": "#/$defs/Variant" } }, { "type": "null" }]
+    },
+    "images": { "type": "array", "items": { "$ref": "#/$defs/ProductImage" } },
+    "delivery": { "anyOf": [{ "$ref": "#/$defs/Delivery" }, { "type": "null" }] },
+    "seller": { "type": ["string", "null"] },
+    "source": { "$ref": "#/$defs/ProductSource" },
+    "missing": { "type": "array", "items": { "type": "string" } }
+  },
+  "$defs": {
+    "SourceMethod": {
+      "title": "SourceMethod",
+      "type": "string",
+      "enum": ["jsonld", "adapter", "llm", "serpapi"]
+    },
+    "Price": {
+      "title": "Price",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["amount", "currency"],
+      "properties": {
+        "amount": { "type": "number", "minimum": 0 },
+        "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+        "mrp": { "type": ["number", "null"], "minimum": 0 }
+      }
+    },
+    "Rating": {
+      "title": "Rating",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value", "count"],
+      "properties": {
+        "value": { "type": "number", "minimum": 0, "maximum": 5 },
+        "count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "SpecValue": {
+      "title": "SpecValue",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value"],
+      "properties": {
+        "value": { "type": ["string", "number", "boolean"] },
+        "unit": { "type": ["string", "null"] }
+      }
+    },
+    "Variant": {
+      "title": "Variant",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "value", "selected"],
+      "properties": {
+        "name": { "type": "string", "description": "Dimension, e.g. colour or size." },
+        "value": { "type": "string" },
+        "selected": { "type": "boolean" },
+        "available": { "type": ["boolean", "null"] },
+        "target_id": {
+          "type": ["string", "null"],
+          "description": "ActionTarget id that selects this variant."
+        }
+      }
+    },
+    "ProductImage": {
+      "title": "ProductImage",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url"],
+      "properties": {
+        "url": { "type": "string" },
+        "alt": { "type": ["string", "null"] },
+        "description": { "type": ["string", "null"] }
+      }
+    },
+    "Delivery": {
+      "title": "Delivery",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text"],
+      "properties": {
+        "text": { "type": "string" },
+        "cost": { "type": ["number", "null"], "minimum": 0 },
+        "date": { "type": ["string", "null"] }
+      }
+    },
+    "ProductSource": {
+      "title": "ProductSource",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "extracted_at"],
+      "properties": {
+        "method": { "$ref": "#/$defs/SourceMethod" },
+        "extracted_at": { "type": "string", "format": "date-time" },
+        "fields": {
+          "type": "object",
+          "description": "Per-field source when data from several methods was merged.",
+          "additionalProperties": { "$ref": "#/$defs/SourceMethod" }
+        }
+      }
+    }
+  }
+}

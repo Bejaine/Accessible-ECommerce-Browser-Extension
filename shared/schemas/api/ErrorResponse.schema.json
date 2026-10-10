@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ErrorResponse",
+  "description": "Every backend error. The client turns it into a calm spoken message plus a retry or alternative.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["error", "code", "retryable"],
+  "properties": {
+    "error": { "type": "string" },
+    "code": { "type": "string" },
+    "retryable": { "type": "boolean" }
+  }
+}

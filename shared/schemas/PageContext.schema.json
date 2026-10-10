@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PageContext",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["page_type", "url", "site", "products", "targets"],
+  "properties": {
+    "page_type": {
+      "title": "PageType",
+      "type": "string",
+      "enum": ["search", "product", "reviews", "cart", "checkout", "other"]
+    },
+    "url": { "type": "string", "format": "uri" },
+    "site": { "type": "string" },
+    "products": { "type": "array", "items": { "$ref": "ProductJSON.schema.json" } },
+    "targets": { "type": "array", "items": { "$ref": "ActionTarget.schema.json" } }
+  }
+}

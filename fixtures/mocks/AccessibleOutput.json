@@ -1,0 +1,31 @@
+{
+  "lang": "en",
+  "summary": "Example Wireless Earbuds X1 by ExampleBrand cost 1,999 rupees. Rated 4.1 out of 5 from 1,250 ratings.",
+  "sections": [
+    {
+      "heading": "Key specs",
+      "items": ["Battery life: 30 hours", "Bluetooth 5.3", "Water resistance: IPX5"]
+    }
+  ],
+  "simpler": "These earbuds cost 1,999 rupees. People rate them 4 out of 5.",
+  "followups": ["Read the reviews", "Add to cart", "Compare with similar"],
+  "grounding": [
+    {
+      "claim": "cost 1,999 rupees",
+      "field_path": "price.amount"
+    },
+    {
+      "claim": "Rated 4.1 out of 5",
+      "field_path": "rating.value"
+    },
+    {
+      "claim": "1,250 ratings",
+      "field_path": "rating.count"
+    },
+    {
+      "claim": "Battery life: 30 hours",
+      "field_path": "specs.battery_life"
+    }
+  ],
+  "warnings": []
+}

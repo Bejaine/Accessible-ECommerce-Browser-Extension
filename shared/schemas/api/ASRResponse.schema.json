@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ASRResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["text", "lang", "asr_meta"],
+  "properties": {
+    "text": { "type": "string" },
+    "lang": { "type": "string" },
+    "asr_meta": { "type": "object" }
+  }
+}

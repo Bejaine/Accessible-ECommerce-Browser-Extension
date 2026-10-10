@@ -1,0 +1,18 @@
+{
+  "image_url": "https://mock-store.local/img/x1-main.jpg",
+  "cached": false,
+  "output": {
+    "lang": "en",
+    "summary": "Mock description: two black earbuds in an open charging case.",
+    "sections": [],
+    "simpler": null,
+    "followups": ["Describe the next image"],
+    "grounding": [
+      {
+        "claim": "black",
+        "field_path": "images[0]"
+      }
+    ],
+    "warnings": ["Mock image description; not generated from the real image."]
+  }
+}

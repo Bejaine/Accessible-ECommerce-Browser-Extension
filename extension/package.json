@@ -1,0 +1,21 @@
+{
+  "name": "@asl/extension",
+  "private": true,
+  "version": "0.0.1",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip",
+    "postinstall": "wxt prepare",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "happy-dom": "^20.14.6",
+    "vitest": "^5.0.3",
+    "wxt": "^0.21.4"
+  }
+}

@@ -1,0 +1,10 @@
+# Shared ruff config for all Python in the repo (backend, scripts, eval).
+line-length = 100
+target-version = "py311"
+extend-exclude = ["shared/generated"]
+
+[lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[lint.isort]
+known-first-party = ["app", "contracts"]

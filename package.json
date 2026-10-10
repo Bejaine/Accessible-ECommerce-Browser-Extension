@@ -1,0 +1,27 @@
+{
+  "name": "accessible-shopping-layer",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "workspaces": [
+    "extension"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "types:ts": "node scripts/gen_ts.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "json-schema-to-typescript": "^16.0.0",
+    "prettier": "^3.9.10",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.71.1"
+  }
+}

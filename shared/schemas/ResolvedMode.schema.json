@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ResolvedMode",
+  "description": "Output of src/core/composer.ts: all active conditions resolved into one mode.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "input_channels",
+    "input_rung",
+    "output_channels",
+    "tts_rate",
+    "scan_interval_ms",
+    "max_options",
+    "verbosity"
+  ],
+  "properties": {
+    "input_channels": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/InputRung" }
+    },
+    "input_rung": { "$ref": "#/$defs/InputRung" },
+    "output_channels": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "title": "OutputChannel",
+        "type": "string",
+        "enum": ["audio", "large_text", "visual"]
+      }
+    },
+    "tts_rate": { "type": "number", "minimum": 0.5, "maximum": 2 },
+    "scan_interval_ms": { "type": "integer", "minimum": 0 },
+    "max_options": { "type": "integer", "minimum": 1 },
+    "verbosity": { "$ref": "Profile.schema.json#/$defs/Verbosity" }
+  },
+  "$defs": {
+    "InputRung": {
+      "title": "InputRung",
+      "description": "Fallback ladder, highest first: voice -> keyboard/tap -> phrase chips -> single switch.",
+      "type": "string",
+      "enum": ["voice", "keyboard", "phrase", "switch"]
+    }
+  }
+}

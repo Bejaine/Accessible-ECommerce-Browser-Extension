@@ -1,0 +1,31 @@
+{
+  "intent": "add_to_cart",
+  "confidence": 0.93,
+  "alternatives": ["buy_now", "read_reviews"],
+  "actions": [
+    {
+      "type": "click",
+      "target_id": "t-add-to-cart",
+      "value": null
+    }
+  ],
+  "output": {
+    "lang": "en",
+    "summary": "I can add Example Wireless Earbuds X1 to your cart for 1,999 rupees.",
+    "sections": [],
+    "simpler": null,
+    "followups": ["Yes", "No"],
+    "grounding": [
+      {
+        "claim": "1,999 rupees",
+        "field_path": "price.amount"
+      }
+    ],
+    "warnings": []
+  },
+  "confirmation": {
+    "prompt": "Add Example Wireless Earbuds X1, quantity 1, for 1,999 rupees to your cart?",
+    "action_ref": "act-1",
+    "risk": "low"
+  }
+}

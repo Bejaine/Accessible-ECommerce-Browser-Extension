@@ -1,0 +1,83 @@
+{
+  "product": {
+    "id": "mock-B0MOCK0001",
+    "url": "https://mock-store.local/product/B0MOCK0001",
+    "site": "mock-store",
+    "title": "Example Wireless Earbuds X1",
+    "brand": "ExampleBrand",
+    "price": {
+      "amount": 1999,
+      "currency": "INR",
+      "mrp": 3999
+    },
+    "rating": {
+      "value": 4.1,
+      "count": 1250
+    },
+    "availability": "In stock",
+    "category": "Headphones",
+    "specs": {
+      "battery_life": {
+        "value": 30,
+        "unit": "hours"
+      },
+      "bluetooth_version": {
+        "value": "5.3",
+        "unit": null
+      },
+      "water_resistance": {
+        "value": "IPX5",
+        "unit": null
+      }
+    },
+    "variants": [
+      {
+        "name": "colour",
+        "value": "Black",
+        "selected": true,
+        "available": true,
+        "target_id": "t-swatch-black"
+      },
+      {
+        "name": "colour",
+        "value": "White",
+        "selected": false,
+        "available": true,
+        "target_id": "t-swatch-white"
+      }
+    ],
+    "images": [
+      {
+        "url": "https://mock-store.local/img/x1-main.jpg",
+        "alt": "Earbuds in open charging case",
+        "description": null
+      }
+    ],
+    "delivery": {
+      "text": "Free delivery by Tuesday",
+      "cost": 0,
+      "date": "2026-10-14"
+    },
+    "seller": "Mock Retail",
+    "source": {
+      "method": "jsonld",
+      "extracted_at": "2026-10-10T10:00:00Z",
+      "fields": {
+        "specs": "adapter"
+      }
+    },
+    "missing": []
+  },
+  "prefs": {
+    "lang": "en",
+    "tts_rate": 1,
+    "text_scale": 1,
+    "verbosity": "normal",
+    "lite_mode": false
+  },
+  "review_texts": [
+    "Battery lasts all week.",
+    "Great battery, decent sound.",
+    "Fit is a bit loose for me."
+  ]
+}

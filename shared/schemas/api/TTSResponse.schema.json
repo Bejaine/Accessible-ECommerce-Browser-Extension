@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TTSResponse",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["audio_base64", "encoding", "lang", "cached"],
+  "properties": {
+    "audio_base64": { "type": "string" },
+    "encoding": { "type": "string", "enum": ["wav", "mp3", "ogg"] },
+    "lang": { "type": "string" },
+    "cached": { "type": "boolean" }
+  }
+}

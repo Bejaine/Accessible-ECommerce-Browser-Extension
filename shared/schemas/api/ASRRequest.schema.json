@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ASRRequest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["lang", "audio_base64", "encoding"],
+  "properties": {
+    "lang": { "type": "string" },
+    "audio_base64": { "type": "string" },
+    "encoding": { "type": "string", "enum": ["opus", "webm", "wav"] },
+    "sample_rate": { "type": ["integer", "null"], "minimum": 8000 },
+    "mic_level": {
+      "type": ["number", "null"],
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Our own RMS level, to tell silence from unclear speech."
+    }
+  }
+}
