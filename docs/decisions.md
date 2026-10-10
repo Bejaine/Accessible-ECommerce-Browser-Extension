@@ -165,3 +165,22 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   the model is told a short or broken transcript must score below 0.8.
 - Empty transcript: `mic_level` < 0.05 → "I couldn't hear anything, check your microphone"
   (not counted as a miss); otherwise a miss with phrase chips. Previously HTTP 400.
+
+## 2026-10-11 — Masking around MT (Track A; affects Track C)
+- `masking.mask(text, keep=())` replaces prices, number+unit, decimals, model names and brands
+  with `ZQX0, ZQX1, …`; `unmask()` restores them. Chosen by a live test: with `⟦0⟧` the MT model
+  invented numbers; `ZQX0` survived en→hi, en→te and hi→en. Unmasked MT turned "Bluetooth 5.3"
+  into "5" and "6.8 inch" into "6.80"; masked, every name, unit and price came through exactly.
+- Pass the product's brand in `keep` (e.g. `keep=[product.brand]`): brands that are everyday
+  words ("Noise", "Apple") at the start of a sentence are otherwise translated.
+- `bhashini.translate` fails with `upstream_unavailable` if the MT drops a placeholder, so callers
+  keep English rather than speak a sentence with a name or price missing.
+
+## 2026-10-11 — Spoken-number normaliser (Track A; affects Track C, and D's local matcher)
+- `numbers.normalise_numbers(text, lang)` turns number words into digits for en, hi (Devanagari
+  and, when lang is hi, romanised), te: lakh/crore, डेढ़/ढाई/साढ़े/सवा/पौने, ఒకటిన్నర, 15k,
+  native digits, 1,50,000. `parse_number(text, lang)` returns the value of a lone number.
+- A wrong number is worse than a word left alone: lone एक/दो/ek/do/one/ఒక stay words ("डाल दो" is
+  "put it", "the cheaper one"), lone multipliers stay ("lakhs of reviews"), side-by-side numbers
+  are not added ("two three days"), and digits are never reformatted.
+- Ranges share the multiplier: "पंद्रह से बीस हज़ार" → "15000 से 20000", never backwards.

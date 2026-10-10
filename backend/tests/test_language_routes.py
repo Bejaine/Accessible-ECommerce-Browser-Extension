@@ -138,7 +138,7 @@ def test_translate_en_to_hi(client, assert_schema):
     assert_schema("TranslateResponse", body)
     assert body == {
         **V,
-        "text": fixture_text("mt.en-hi.json", "output_text"),
+        "text": fixture_text("mt.en-hi.json", "output_text").replace("ZQX0", "5000 mAh"),
         "source_lang": "en",
         "target_lang": "hi",
     }
@@ -152,7 +152,7 @@ def test_translate_same_language_echoes(client):
 def test_translate_hi_to_te_pivots(client):
     req = {**V, "text": "बैटरी क्षमता: 5000 mAh", "source_lang": "hi", "target_lang": "te"}
     body = client.post("/translate", json=req).json()
-    assert body["text"] == fixture_text("mt.en-te.json", "output_text")
+    assert body["text"] == fixture_text("mt.en-te.json", "output_text").replace("ZQX0", "5000 mAh")
 
 
 def test_translate_masks_before_mt_and_unmasks_after(client, monkeypatch):
@@ -160,7 +160,7 @@ def test_translate_masks_before_mt_and_unmasks_after(client, monkeypatch):
     sent = []
 
     def fake_mask(text):
-        return text.replace("boAt", "⟦B0⟧"), {"⟦B0⟧": "boAt"}
+        return text.replace("boAt", "ZQX0"), {"ZQX0": "boAt"}
 
     async def fake_call(task, key, json_body=None, **kw):
         sent.append(json_body["input_text"])
@@ -170,7 +170,7 @@ def test_translate_masks_before_mt_and_unmasks_after(client, monkeypatch):
     monkeypatch.setattr(bhashini, "call_model", fake_call)
     req = {**V, "text": "buy boAt", "source_lang": "en", "target_lang": "hi"}
     assert client.post("/translate", json=req).json()["text"] == "खरीदें boAt"
-    assert sent == ["buy ⟦B0⟧"]
+    assert sent == ["buy ZQX0"]
 
 
 # --- /ocr -------------------------------------------------------------------------------

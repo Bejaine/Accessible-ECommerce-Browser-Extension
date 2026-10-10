@@ -498,7 +498,7 @@ async def test_translate_pivots_hi_to_te_through_english(monkeypatch):
         return await real(task, key, json_body, **kw)
 
     monkeypatch.setattr(bhashini, "call_model", spy)
-    assert await bhashini.translate("बैटरी क्षमता: 5000 mAh", "hi", "te")
+    assert await bhashini.translate("बैटरी क्षमता: ZQX0", "hi", "te")
     assert calls == ["hi-en", "en-te"]
 
 
@@ -775,9 +775,31 @@ async def test_warm_up_runs_at_most_two_calls_at_once(monkeypatch):
 async def test_mock_mt_translates_only_its_recorded_input():
     """MOCK must never pass off a canned sentence as the translation of other text: consumers
     (Track C's /turn) then keep English and say so, exactly as in real mode on a failure."""
-    assert (
-        await bhashini.translate("Battery capacity: 5000 mAh", "en", "hi") == "बैटरी क्षमता: 5000 mAh"
-    )
+    assert await bhashini.translate("Battery capacity: ZQX0", "en", "hi") == "बैटरी क्षमता: ZQX0"
     with pytest.raises(ApiError) as exc:
         await bhashini.translate("isse cart mein daal do", "hi", "en")
     assert exc.value.code == ErrorCode.upstream_unavailable and not exc.value.retryable
+
+
+# --- Placeholder integrity (rule 7 + rule 1) ---------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "returned",
+    ["ZQX0 की कीमत ZQX1 है", "ZQX 0 की कीमत zqx1 है", "ZQX० की कीमत ZQX१ है"],
+)
+async def test_translate_accepts_placeholders_the_mt_merely_reformatted(monkeypatch, returned):
+    _live(monkeypatch, lambda req: httpx.Response(200, json=ok({"output_text": returned})))
+    assert await bhashini.translate("ZQX0 costs ZQX1", "en", "hi") == returned
+
+
+async def test_translate_fails_rather_than_drop_a_masked_name_or_price(monkeypatch):
+    """A lost placeholder means a brand or price silently vanished (or, as ⟦0⟧ showed live,
+    got replaced by an invented number): fail so callers keep English."""
+    _live(monkeypatch, lambda req: httpx.Response(200, json=ok({"output_text": "ZQX0 की कीमत है"})))
+    with pytest.raises(ApiError) as exc:
+        await bhashini.translate("ZQX0 costs ZQX1", "en", "hi")
+    assert exc.value.code == ErrorCode.upstream_unavailable and not exc.value.retryable
+    # and the bad result was not cached
+    _live(monkeypatch, lambda req: httpx.Response(200, json=ok({"output_text": "ZQX0 ZQX1"})))
+    assert await bhashini.translate("ZQX0 costs ZQX1", "en", "hi") == "ZQX0 ZQX1"

@@ -1,9 +1,9 @@
 {
-  "_mock_input": "बैटरी क्षमता: 5000 mAh",
+  "_mock_input": "बैटरी क्षमता: ZQX0",
   "status": "success",
   "message": "Inference performed successfully",
   "data": {
-    "output_text": "Battery capacity: 5000 mAh"
+    "output_text": "Battery capacity: ZQX0"
   },
   "error": null,
   "code": 200
