@@ -102,7 +102,13 @@ describe('player', () => {
       'audio:Camera is average.',
     ]);
     const sentences = t.events.filter((e) => e.type === 'sentence');
-    expect(sentences[2]).toEqual({ type: 'sentence', section: 1, index: 0, text: 'Good points.' });
+    expect(sentences[2]).toEqual({
+      type: 'sentence',
+      section: 1,
+      index: 0,
+      text: 'Good points.',
+      source: 'audio',
+    });
     expect(t.events.at(-1)).toEqual({ type: 'end' });
     expect(t.player.state).toBe('idle');
   });
@@ -260,6 +266,28 @@ describe('player', () => {
     u.player.restore(JSON.parse(JSON.stringify(snap)));
     await tick();
     expect(u.playing()).toBe('audio:Good points.');
+  });
+
+  it('lets several listeners subscribe to events (the UI and the barge-in glue)', async () => {
+    const t = setup();
+    const seen: string[] = [];
+    const off = t.player.subscribe((e) => seen.push(e.type));
+    t.player.play(SECTIONS, 'en');
+    await tick();
+    off();
+    await t.finish();
+    expect(seen).toEqual(['state', 'sentence']);
+    expect(t.events.map((e) => e.type)).toContain('sentence'); // onEvent still gets everything
+  });
+
+  it('says how each segment is played (device voice: the mic must not listen)', async () => {
+    const voice = { lang: 'hi-IN' } as SpeechSynthesisVoice;
+    const t = setup(() => ({ kind: 'device', voice, lang: 'hi' }));
+    t.player.play([{ segments: [{ text: 'नमस्ते।' }] }], 'hi');
+    await tick();
+    expect(t.events).toContainEqual(
+      expect.objectContaining({ type: 'sentence', source: 'device' }),
+    );
   });
 
   it('snapshot is null when nothing is playing', () => {

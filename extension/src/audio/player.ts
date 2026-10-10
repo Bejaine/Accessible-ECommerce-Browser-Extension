@@ -7,7 +7,7 @@
 // Replays come from the sources' cache: never a new TTS or LLM call.
 import type { AccessibleOutput, Lang } from '@shared/index';
 import { speechSegments } from './sentences';
-import type { SpeechSources } from './sources';
+import type { SpeechSource, SpeechSources } from './sources';
 
 export type PlayerState = 'idle' | 'playing' | 'paused';
 
@@ -17,7 +17,14 @@ export interface PlaySection {
 }
 
 export type PlayerEvent =
-  | { type: 'sentence'; section: number; index: number; text: string }
+  | {
+      type: 'sentence';
+      section: number;
+      index: number;
+      text: string;
+      /** How it is played: the barge-in glue does not listen during the device voice. */
+      source: SpeechSource['kind'];
+    }
   | { type: 'state'; state: PlayerState }
   | { type: 'rate'; rate: number }
   | { type: 'text-only'; text: string }
@@ -67,6 +74,8 @@ export interface Player {
   /** Where playback is, to offer "resume where it stopped" after a page change. */
   snapshot(): PlayerSnapshot | null;
   restore(snapshot: PlayerSnapshot): void;
+  /** Listen to events too (besides `onEvent`); returns an unsubscribe function. */
+  subscribe(listener: (event: PlayerEvent) => void): () => void;
 }
 
 export const MIN_RATE = 0.5;
@@ -88,7 +97,11 @@ export function createPlayer(deps: {
   onEvent?: (event: PlayerEvent) => void;
 }): Player {
   const engines = deps.engines ?? browserEngines();
-  const emit = deps.onEvent ?? (() => {});
+  const listeners = new Set<(event: PlayerEvent) => void>();
+  const emit = (event: PlayerEvent) => {
+    deps.onEvent?.(event);
+    for (const listener of [...listeners]) listener(event);
+  };
   let sections: PlaySection[] = [];
   let lang: Lang = 'en';
   let items: Item[] = [];
@@ -119,7 +132,13 @@ export function createPlayer(deps: {
       if (next) deps.sources.prefetch({ text: next.text, lang, key: next.key });
       const source = await deps.sources.resolve({ text: item.text, lang, key: item.key });
       if (gen !== generation) return;
-      emit({ type: 'sentence', section: item.section, index: item.index, text: item.text });
+      emit({
+        type: 'sentence',
+        section: item.section,
+        index: item.index,
+        text: item.text,
+        source: source.kind,
+      });
       if (source.kind === 'text') {
         emit({ type: 'text-only', text: item.text });
         pos++;
@@ -232,6 +251,10 @@ export function createPlayer(deps: {
       const item = items[pos];
       if (state === 'idle' || !item) return null;
       return { sections, lang, section: item.section, index: item.index };
+    },
+    subscribe(listener) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
     },
     restore(snap) {
       load(snap.sections, snap.lang);
