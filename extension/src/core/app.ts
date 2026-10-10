@@ -79,6 +79,8 @@ const SECTION_FOR_PHRASE = {
 
 export const URL_CHECK_MS = 1000;
 
+const LANGUAGE_NAMES = { en: 'English', hi: 'हिंदी', te: 'తెలుగు' } as const;
+
 /** Typing a space in a text field must never count as a switch press. */
 function isEditable(target: EventTarget | undefined): boolean {
   const el = target instanceof HTMLElement ? target : null;
@@ -140,6 +142,9 @@ export function mountApp(
     options.speaker ??
     createSpeaker({
       tts: demo ? undefined : (text, l) => backend.tts({ schema_version: '1.0', text, lang: l }),
+      // Say once (as text, and through any voice we do have) that a language has no voice here.
+      onNoVoice: (l) =>
+        announce(label('voice.missing', lang()).replaceAll('{language}', LANGUAGE_NAMES[l])),
     });
   speaker.setRate(profile.prefs.tts_rate);
   const voiceOn = () => assistantVoiceOn(profile, devicePrefs);

@@ -211,6 +211,8 @@ const FALLBACK = {
   'checkout.pay.netbanking': 'Net banking',
   'checkout.pay.cod': 'Cash on delivery',
   'checkout.pay.other': 'Another method',
+  'voice.missing':
+    "There's no {language} voice on this device, so answers in {language} are shown as text.",
   'help.examples':
     "What's the price? | What do reviews say? | Add to cart | Slower or faster | Repeat that | Yes or no",
 } as const;

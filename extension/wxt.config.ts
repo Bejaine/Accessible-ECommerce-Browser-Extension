@@ -30,8 +30,6 @@ export default defineConfig({
       },
     }),
   }),
-  // Linux Chrome only uses speech-dispatcher (the device voice) with this flag.
-  webExt: { chromiumArgs: ['--enable-speech-dispatcher'] },
   vite: () => ({
     // Mock mode reads ../fixtures/mocks; allow the dev server outside the package.
     server: { fs: { allow: ['..'] } },

@@ -20,6 +20,38 @@ export interface SpeakerDeps {
   /** Injectable for tests. */
   synth?: SpeechSynthesis | null;
   createAudio?: (src: string) => HTMLAudioElement;
+  /** Called once per language that has no device voice (so the app can say so). */
+  onNoVoice?: (lang: Lang) => void;
+}
+
+/**
+ * The best device voice for a language: on-device voices first (nothing leaves the machine),
+ * then online ones (e.g. Chrome's Google voices, which send the text to Google), preferring the
+ * Indian variant. Null when the device has no voice for the language at all: reading Telugu with
+ * an English voice would be gibberish, so we don't.
+ */
+export function pickVoice(voices: SpeechSynthesisVoice[], lang: Lang): SpeechSynthesisVoice | null {
+  const base = lang.toLowerCase();
+  const matching = voices.filter(
+    (v) => v.lang.toLowerCase().replace('_', '-').split('-')[0] === base,
+  );
+  const score = (v: SpeechSynthesisVoice) =>
+    (v.localService ? 0 : 2) + (v.lang.toLowerCase().replace('_', '-') === `${base}-in` ? 0 : 1);
+  return matching.sort((a, b) => score(a) - score(b))[0] ?? null;
+}
+
+/** Chrome fills its voice list a moment after load; wait for it (briefly) the first time. */
+function loadVoices(synth: SpeechSynthesis): Promise<SpeechSynthesisVoice[]> {
+  const now = synth.getVoices();
+  if (now.length > 0 || typeof synth.addEventListener !== 'function') return Promise.resolve(now);
+  return new Promise((resolve) => {
+    const done = () => {
+      synth.removeEventListener('voiceschanged', done);
+      resolve(synth.getVoices());
+    };
+    synth.addEventListener('voiceschanged', done);
+    setTimeout(done, 1000);
+  });
 }
 
 export interface Speaker {
@@ -130,23 +162,41 @@ export function createSpeaker(deps: SpeakerDeps = {}): Speaker {
         audio = el;
         el.playbackRate = rate;
         el.onended = () => gen === generation && done();
-        el.onerror = () => gen === generation && deviceSpeak(item, gen, done);
+        el.onerror = () => gen === generation && void deviceSpeak(item, gen, done);
         await el.play();
         return;
       } catch {
         if (gen !== generation) return;
       }
     }
-    deviceSpeak(item, gen, done);
+    await deviceSpeak(item, gen, done);
   }
 
-  function deviceSpeak(item: Item, gen: number, done: () => void): void {
+  const missingVoice = new Set<Lang>();
+
+  async function deviceSpeak(item: Item, gen: number, done: () => void): Promise<void> {
     if (!synth || typeof SpeechSynthesisUtterance === 'undefined') {
       done();
       return;
     }
+    let voice: SpeechSynthesisVoice | null = null;
+    if (typeof synth.getVoices === 'function') {
+      voice = pickVoice(await loadVoices(synth), item.lang);
+      if (gen !== generation) return;
+      if (!voice) {
+        // No voice for this language on this device: the text stays on screen and in the live
+        // region (screen readers), and the app tells the user once.
+        if (!missingVoice.has(item.lang)) {
+          missingVoice.add(item.lang);
+          deps.onNoVoice?.(item.lang);
+        }
+        done();
+        return;
+      }
+    }
     const u = new SpeechSynthesisUtterance(item.text);
-    u.lang = item.lang === 'en' ? 'en-IN' : `${item.lang}-IN`;
+    if (voice) u.voice = voice;
+    u.lang = voice?.lang ?? (item.lang === 'en' ? 'en-IN' : `${item.lang}-IN`);
     u.rate = rate;
     u.onend = () => gen === generation && done();
     u.onerror = () => gen === generation && done();

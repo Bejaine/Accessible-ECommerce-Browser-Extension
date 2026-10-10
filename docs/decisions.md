@@ -297,3 +297,14 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - yes / no / repeat / help / slower / faster / undo are handled on the device (no server call).
 - Mock mode picks the fixture that fits the request and appends a "demo data, not from this
   page" warning to every answer, so fixture facts are never mistaken for the open page.
+
+## 2026-10-11 — Device voices and privacy (Track D; affects A, demo, Responsible AI slide)
+- Measured on Chrome 149 / Linux: without flags it offers 19 Google *online* voices (English,
+  Hindi; no Telugu); with `--enable-speech-dispatcher` it offers none, so that flag is not used.
+  Firefox uses on-device voices via speech-dispatcher (e.g. Piper, eSpeak incl. Telugu).
+- The speaker picks a voice per language: on-device first, then online, Indian variant preferred.
+  A language with no voice is not read with another language's voice; the user is told once and
+  the text stays on screen and in the live region.
+- Online voices send the spoken text to Google: say so on the Responsible AI slide; Bhashini TTS
+  (real backend) or Firefox avoids it. Addresses are never spoken through them (only ADDR_n
+  placeholders reach the overlay today).

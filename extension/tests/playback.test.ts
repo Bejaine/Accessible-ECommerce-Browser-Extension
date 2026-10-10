@@ -246,3 +246,44 @@ describe('playback in the app: single key, mini-menu and voice words', () => {
     }
   });
 });
+
+describe('choosing a device voice', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const voice = (name: string, lang: string, localService: boolean) =>
+    ({ name, lang, localService, default: false, voiceURI: name }) as SpeechSynthesisVoice;
+  const chromeLinux = [
+    voice('Google US English', 'en-US', false),
+    voice('Google UK English Female', 'en-GB', false),
+    voice('Google हिन्दी', 'hi-IN', false),
+  ];
+
+  it('prefers on-device voices, then the Indian variant; none for a missing language', async () => {
+    const { pickVoice } = await import('../src/render/speaker');
+    expect(pickVoice(chromeLinux, 'hi')?.name).toBe('Google हिन्दी');
+    expect(pickVoice(chromeLinux, 'en')?.name).toBe('Google US English');
+    expect(pickVoice(chromeLinux, 'te')).toBeNull();
+    const withLocal = [
+      ...chromeLinux,
+      voice('Piper English', 'en_US', true),
+      voice('eSpeak Hindi', 'hi', true),
+    ];
+    expect(pickVoice(withLocal, 'en')?.name).toBe('Piper English');
+    expect(pickVoice(withLocal, 'hi')?.name).toBe('eSpeak Hindi');
+  });
+
+  it('no Telugu voice: nothing garbled is spoken, and the app is told once', async () => {
+    const f = fakeSynth();
+    (f.synth as unknown as { getVoices: () => SpeechSynthesisVoice[] }).getVoices = () =>
+      chromeLinux;
+    const onNoVoice = vi.fn();
+    const speaker = createSpeaker({ synth: f.synth, onNoVoice });
+    speaker.say('ఇది తెలుగు. రెండవ వాక్యం ఇక్కడ ఉంది, ఇది కొంచెం పొడవుగా ఉంది.', 'te');
+    await vi.waitFor(() => expect(speaker.state).toBe('idle'));
+    expect(f.spoken).toHaveLength(0);
+    expect(onNoVoice).toHaveBeenCalledOnce();
+    expect(onNoVoice).toHaveBeenCalledWith('te');
+    speaker.say('Hindi is fine. यह हिंदी है।', 'hi');
+    await vi.waitFor(() => expect(f.spoken.length).toBeGreaterThan(0));
+    expect(f.spoken[0]!.text).toContain('Hindi is fine.');
+  });
+});

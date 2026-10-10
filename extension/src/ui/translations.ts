@@ -7,6 +7,8 @@ type Table = Partial<Record<UiKey, string>>;
 
 const hi: Table = {
   'overlay.title': 'शॉपिंग सहायक',
+  'voice.missing':
+    'इस डिवाइस पर {language} आवाज़ नहीं है, इसलिए {language} में जवाब लिखकर दिखाए जाएँगे।',
   'checkout.open': 'चेकआउट एक-एक कदम में',
   'checkout.counter': 'कदम {n} / {total}',
   'checkout.step.items': 'आपका सामान',
@@ -201,6 +203,8 @@ const hi: Table = {
 
 const te: Table = {
   'overlay.title': 'షాపింగ్ సహాయకుడు',
+  'voice.missing':
+    'ఈ పరికరంలో {language} గొంతు లేదు, కాబట్టి {language}లో సమాధానాలు రాతగా చూపిస్తాము.',
   'checkout.open': 'చెక్అవుట్ దశలవారీగా',
   'checkout.counter': 'దశ {n} / {total}',
   'checkout.step.items': 'మీ వస్తువులు',
