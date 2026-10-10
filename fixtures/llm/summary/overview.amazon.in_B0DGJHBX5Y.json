@@ -1,0 +1,39 @@
+{
+  "model": "openai/gpt-oss-20b",
+  "response": {
+    "id": "chatcmpl-fd8e9759-26af-4bd0-806b-ce94abb7274b",
+    "object": "chat.completion",
+    "created": 1791656192,
+    "model": "openai/gpt-oss-20b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\"facts\":[{\"claim\":\"₹76,999\",\"field_path\":\"price.amount\"},{\"claim\":\"₹89,900\",\"field_path\":\"price.mrp\"},{\"claim\":\"3.2\",\"field_path\":\"rating.value\"},{\"claim\":\"2764\",\"field_path\":\"rating.count\"},{\"claim\":\"In stock\",\"field_path\":\"availability.text\"},{\"claim\":\"FREE delivery Monday, 12 October\",\"field_path\":\"delivery.text\"},{\"claim\":\"Clicktech Retail Private Ltd\",\"field_path\":\"seller\"},{\"claim\":\"Black, Pink, Teal, Ultramarine, White, Without Apple Care, With Apple Care\",\"field_path\":\"variants\"}],\"summary\":[{\"text\":\"Apple iPhone 16 128 GB costs ₹76,999 (MRP ₹89,900).\",\"fact_refs\":[0,1]},{\"text\":\"It has a rating of 3.2 out of 5 from 2764 ratings.\",\"fact_refs\":[2,3]}],\"simpler\":null,\"sections\":[{\"heading\":\"At a glance\",\"items\":[{\"kind\":\"text\",\"text\":\"In stock\",\"fact_ref\":4},{\"kind\":\"text\",\"text\":\"FREE delivery Monday, 12 October\",\"fact_ref\":5},{\"kind\":\"text\",\"text\":\"Sold by Clicktech Retail Private Ltd\",\"fact_ref\":6},{\"kind\":\"text\",\"text\":\"Colours: Black (selected), Pink, Teal, Ultramarine, White\",\"fact_ref\":7},{\"kind\":\"text\",\"text\":\"Configurations: Without Apple Care (selected), With Apple Care\",\"fact_ref\":7}]}]}"
+        },
+        "logprobs": null,
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.311721853,
+      "prompt_tokens": 1438,
+      "prompt_time": 0.117225158,
+      "completion_tokens": 391,
+      "completion_time": 0.402729996,
+      "total_tokens": 1829,
+      "total_time": 0.519955154,
+      "completion_tokens_details": {
+        "reasoning_tokens": 73
+      }
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_37c9245f64",
+    "x_groq": {
+      "id": "req_01m4kgfsaqe9pbckg4ncn6esvk",
+      "seed": 737962437
+    },
+    "service_tier": "on_demand"
+  }
+}

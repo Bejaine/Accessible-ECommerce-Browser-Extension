@@ -1,0 +1,86 @@
+{
+  "model": "gemini-3.5-flash-lite",
+  "image_url": "https://m.media-amazon.com/images/I/512jrg8-68L._SL1500_.jpg",
+  "response": {
+    "status": "completed",
+    "usage": {
+      "total_tokens": 1468,
+      "total_input_tokens": 1335,
+      "input_tokens_by_modality": [
+        {
+          "modality": "text",
+          "tokens": 246
+        },
+        {
+          "modality": "image",
+          "tokens": 1089
+        }
+      ],
+      "total_cached_tokens": 0,
+      "total_output_tokens": 133,
+      "total_tool_use_tokens": 0,
+      "total_thought_tokens": 0,
+      "raw_prompt_token": 1679,
+      "model_invocation_token_counts": [
+        {
+          "prompt_tokens_details": [
+            {
+              "modality": "text",
+              "tokens": 590
+            },
+            {
+              "modality": "image",
+              "tokens": 1089
+            }
+          ],
+          "candidates_tokens_details": [
+            {
+              "modality": "text",
+              "tokens": 149
+            }
+          ]
+        }
+      ],
+      "non_grounding_model_invocation_token_counts": [
+        {
+          "prompt_tokens_details": [
+            {
+              "modality": "text",
+              "tokens": 590
+            },
+            {
+              "modality": "image",
+              "tokens": 1089
+            }
+          ],
+          "candidates_tokens_details": [
+            {
+              "modality": "text",
+              "tokens": 149
+            }
+          ]
+        }
+      ]
+    },
+    "created": "2026-10-10T18:36:37Z",
+    "updated": "2026-10-10T18:36:37Z",
+    "service_tier": "standard",
+    "steps": [
+      {
+        "signature": "EmAKXgFpFH0ToaBbXaDdYx1L/H+w52Ngk2TLRi30zVegDKv9U/NAUoEAJvisrN3/3Ntv7b51Uo17lyiwxGodkM7Uqri9cgZNVb5x86fSNiB8bxI3OtYEoekChQElVbYMmIc=",
+        "type": "thought"
+      },
+      {
+        "content": [
+          {
+            "text": "{\n  \"is_product_photo\": true,\n  \"description\": \"A black wireless charging case with two matching black earbuds standing upright behind it.\",\n  \"colours\": [\n    \"black\"\n  ],\n  \"items_shown\": [\n    \"charging case\",\n    \"left earbud\",\n    \"right earbud\"\n  ],\n  \"visible_text\": [\n    \"boat\",\n    \"R\",\n    \"L\"\n  ],\n  \"unclear\": [\n    \"charging cable presence\",\n    \"charging port type inside the case\"\n  ]\n}",
+            "type": "text"
+          }
+        ],
+        "type": "model_output"
+      }
+    ],
+    "object": "interaction",
+    "model": "gemini-3.5-flash-lite"
+  }
+}

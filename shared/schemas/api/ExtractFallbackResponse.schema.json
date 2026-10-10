@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ExtractFallbackResponse",
+  "description": "Fields found in the page text, each backed by a snippet copied verbatim from the request text. The extension merges `found` into its ProductJSON (source method `llm`) and may learn an adapter from `evidence`. Anything not found stays null and is listed in `missing`.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "found", "evidence", "missing"],
+  "properties": {
+    "schema_version": {
+      "$ref": "../common.schema.json#/$defs/SchemaVersion"
+    },
+    "found": {
+      "title": "ExtractedFields",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "brand",
+        "price",
+        "rating",
+        "availability",
+        "category",
+        "specs",
+        "delivery",
+        "seller"
+      ],
+      "properties": {
+        "title": { "type": ["string", "null"] },
+        "brand": { "type": ["string", "null"] },
+        "price": {
+          "anyOf": [{ "$ref": "../ProductJSON.schema.json#/$defs/Price" }, { "type": "null" }]
+        },
+        "rating": {
+          "anyOf": [{ "$ref": "../ProductJSON.schema.json#/$defs/Rating" }, { "type": "null" }]
+        },
+        "availability": {
+          "anyOf": [
+            { "$ref": "../ProductJSON.schema.json#/$defs/Availability" },
+            { "type": "null" }
+          ]
+        },
+        "category": { "type": ["string", "null"] },
+        "specs": {
+          "type": "object",
+          "description": "Only specs found in the text; empty when none.",
+          "propertyNames": { "pattern": "^[a-z0-9_]+$" },
+          "additionalProperties": { "$ref": "../ProductJSON.schema.json#/$defs/SpecValue" }
+        },
+        "delivery": {
+          "anyOf": [{ "$ref": "../ProductJSON.schema.json#/$defs/Delivery" }, { "type": "null" }]
+        },
+        "seller": { "type": ["string", "null"] }
+      }
+    },
+    "evidence": {
+      "type": "array",
+      "description": "Per found field, the text it came from (verbatim substring of the request text).",
+      "items": {
+        "title": "FieldEvidence",
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["field_path", "snippet"],
+        "properties": {
+          "field_path": {
+            "type": "string",
+            "description": "ProductJSON dot path, e.g. price.amount, specs.battery."
+          },
+          "snippet": { "type": "string" }
+        }
+      }
+    },
+    "missing": {
+      "type": "array",
+      "description": "Requested paths still not found.",
+      "items": { "type": "string" }
+    }
+  }
+}

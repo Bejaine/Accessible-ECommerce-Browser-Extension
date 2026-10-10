@@ -1,0 +1,24 @@
+{
+  "_note": "Hand-written in Groq's response format before an API key was available. Re-record with LLM_RECORD=1 (fixtures/llm/README.md).",
+  "model": "openai/gpt-oss-20b",
+  "response": {
+    "id": "chatcmpl-fixture",
+    "object": "chat.completion",
+    "model": "openai/gpt-oss-20b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\"facts\": [{\"claim\": \"6000 mAh\", \"field_path\": \"specs.battery.value\"}, {\"claim\": \"12 GB\", \"field_path\": \"specs.ram.value\"}, {\"claim\": \"wireless charging\", \"field_path\": \"specs.wireless_charging.value\"}, {\"claim\": \"IP68 water resistance\", \"field_path\": \"specs.ip_rating.value\"}, {\"claim\": \"Android 15\", \"field_path\": \"specs.os.value\"}], \"summary\": [{\"text\": \"It has a 6000 mAh battery and 12 GB RAM.\", \"fact_refs\": [0, 1]}, {\"text\": \"It supports wireless charging and is IP68 rated.\", \"fact_refs\": [2, 3]}], \"simpler\": null, \"sections\": [{\"heading\": \"Specs\", \"items\": [{\"text\": \"Battery: 6000 mAh\", \"kind\": \"spec\", \"fact_ref\": 0}, {\"text\": \"RAM: 12 GB\", \"kind\": \"spec\", \"fact_ref\": 1}, {\"text\": \"Wireless charging: yes\", \"kind\": \"spec\", \"fact_ref\": 2}, {\"text\": \"Operating System: Android 15\", \"kind\": \"spec\", \"fact_ref\": 4}]}]}"
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0
+    }
+  }
+}

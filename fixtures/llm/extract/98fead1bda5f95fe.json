@@ -1,0 +1,39 @@
+{
+  "model": "openai/gpt-oss-20b",
+  "response": {
+    "id": "chatcmpl-27dedb19-66c7-4426-8420-ec8dae9bd598",
+    "object": "chat.completion",
+    "created": 1791658843,
+    "model": "openai/gpt-oss-20b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\"items\":[{\"field\":\"availability\",\"label\":null,\"value\":\"In stock\",\"snippet\":\"In stock\"},{\"field\":\"delivery\",\"label\":null,\"value\":\"FREE delivery Monday, 12 October.\",\"snippet\":\"FREE delivery Monday, 12 October.\"},{\"field\":\"delivery_cost\",\"label\":null,\"value\":\"FREE delivery\",\"snippet\":\"FREE delivery Monday, 12 October.\"},{\"field\":\"rating\",\"label\":null,\"value\":\"4.4 out of 5 stars\",\"snippet\":\"4.4 out of 5 stars (784)\"},{\"field\":\"rating_count\",\"label\":null,\"value\":\"784\",\"snippet\":\"4.4 out of 5 stars (784)\"},{\"field\":\"seller\",\"label\":null,\"value\":\"Clicktech Retail Private Ltd\",\"snippet\":\"Sold by Clicktech Retail Private Ltd\"},{\"field\":\"spec\",\"label\":\"Colour\",\"value\":\"Awesome Midnight Blue\",\"snippet\":\"Colour: Awesome Midnight Blue\"},{\"field\":\"spec\",\"label\":\"Size\",\"value\":\"8GB RAM + 128GB Storage\",\"snippet\":\"Size: 8GB RAM + 128GB Storage\"},{\"field\":\"spec\",\"label\":\"Brand\",\"value\":\"Samsung\",\"snippet\":\"Brand Samsung\"},{\"field\":\"spec\",\"label\":\"Operating System\",\"value\":\"Android 16 with One UI 8.5\",\"snippet\":\"Operating System Android 16 with One UI 8.5\"},{\"field\":\"spec\",\"label\":\"RAM Memory Installed Size\",\"value\":\"8 GB\",\"snippet\":\"RAM Memory Installed Size 8 GB\"},{\"field\":\"spec\",\"label\":\"CPU Model\",\"value\":\"Exynos 1580 S5E8855\",\"snippet\":\"CPU Model Exynos 1580 S5E8855\"},{\"field\":\"spec\",\"label\":\"CPU Speed\",\"value\":\"2.9 GHz\",\"snippet\":\"CPU Speed 2.9 GHz\"}]}"
+        },
+        "logprobs": null,
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.341648664,
+      "prompt_tokens": 3376,
+      "prompt_time": 0.189925235,
+      "completion_tokens": 446,
+      "completion_time": 0.469787237,
+      "total_tokens": 3822,
+      "total_time": 0.659712472,
+      "completion_tokens_details": {
+        "reasoning_tokens": 70
+      }
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_feb9b278f1",
+    "x_groq": {
+      "id": "req_01m4kk0pr7e6m8ep59zqyemwm5",
+      "seed": 226753274
+    },
+    "service_tier": "on_demand"
+  }
+}

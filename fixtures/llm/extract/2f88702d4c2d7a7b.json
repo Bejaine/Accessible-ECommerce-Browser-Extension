@@ -1,0 +1,39 @@
+{
+  "model": "openai/gpt-oss-20b",
+  "response": {
+    "id": "chatcmpl-16d11554-ae0c-436e-a06f-550c39e08678",
+    "object": "chat.completion",
+    "created": 1791658751,
+    "model": "openai/gpt-oss-20b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\"items\":[{\"field\":\"availability\",\"label\":null,\"value\":\"Only 2 left in stock.\",\"snippet\":\"Only 2 left in stock.\"},{\"field\":\"delivery\",\"label\":null,\"value\":\"FREE delivery Tuesday, 13 October\",\"snippet\":\"FREE delivery Tuesday, 13 October\"},{\"field\":\"delivery_cost\",\"label\":null,\"value\":\"FREE delivery Tuesday, 13 October\",\"snippet\":\"FREE delivery Tuesday, 13 October\"},{\"field\":\"rating\",\"label\":null,\"value\":\"4.3 out of 5 stars\",\"snippet\":\"4.3 out of 5 stars\"},{\"field\":\"rating_count\",\"label\":null,\"value\":\"(3,208)\",\"snippet\":\"(3,208)\"},{\"field\":\"seller\",\"label\":null,\"value\":\"Sold by SHIV HOME WORLD\",\"snippet\":\"Sold by SHIV HOME WORLD\"},{\"field\":\"spec\",\"label\":\"Size\",\"value\":\"8 Litres\",\"snippet\":\"Size: 8 Litres\"},{\"field\":\"spec\",\"label\":\"Capacity\",\"value\":\"8 Liters\",\"snippet\":\"Capacity 8 Liters\"},{\"field\":\"spec\",\"label\":\"Material\",\"value\":\"Aluminium\",\"snippet\":\"Material Aluminium\"},{\"field\":\"spec\",\"label\":\"Colour\",\"value\":\"Silver\",\"snippet\":\"Colour Silver\"},{\"field\":\"spec\",\"label\":\"Finish Type\",\"value\":\"Glossy\",\"snippet\":\"Finish Type Glossy\"},{\"field\":\"spec\",\"label\":\"Product Dimensions\",\"value\":\"25.4D x 45.7W x 24.8H Centimeters\",\"snippet\":\"Product Dimensions 25.4D x 45.7W x 24.8H Centimeters\"},{\"field\":\"spec\",\"label\":\"Special Feature\",\"value\":\"Electric Stovetop Compatible, Gas Stovetop Compatible, Locking Lid\",\"snippet\":\"Special Feature Electric Stovetop Compatible, Gas Stovetop Compatible, Locking Lid\"},{\"field\":\"spec\",\"label\":\"Wattage\",\"value\":\"1 Watts\",\"snippet\":\"Wattage 1 Watts\"},{\"field\":\"spec\",\"label\":\"Item Weight\",\"value\":\"3.39 Kilograms\",\"snippet\":\"Item Weight 3.39 Kilograms\"},{\"field\":\"spec\",\"label\":\"Control Method\",\"value\":\"Touch\",\"snippet\":\"Control Method Touch\"}]}"
+        },
+        "logprobs": null,
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.305013333,
+      "prompt_tokens": 4816,
+      "prompt_time": 0.375998536,
+      "completion_tokens": 645,
+      "completion_time": 0.736021883,
+      "total_tokens": 5461,
+      "total_time": 1.112020419,
+      "completion_tokens_details": {
+        "reasoning_tokens": 188
+      }
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_ef00694abe",
+    "x_groq": {
+      "id": "req_01m4kjxvnven0vgv07h8bx1mta",
+      "seed": 533774023
+    },
+    "service_tier": "on_demand"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "model": "openai/gpt-oss-20b",
+  "response": {
+    "id": "chatcmpl-f9cd3cc9-7e99-4343-8b7a-ae71d9b4efe3",
+    "object": "chat.completion",
+    "created": 1791656115,
+    "model": "openai/gpt-oss-20b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\"facts\":[{\"claim\":\"₹17,999\",\"field_path\":\"price.amount\"},{\"claim\":\"₹24,999\",\"field_path\":\"price.mrp\"},{\"claim\":\"4.2\",\"field_path\":\"rating.value\"},{\"claim\":\"3418\",\"field_path\":\"rating.count\"},{\"claim\":\"In stock\",\"field_path\":\"availability.text\"},{\"claim\":\"FREE delivery Tuesday, 14 October\",\"field_path\":\"delivery.text\"},{\"claim\":\"Zentra Official Store\",\"field_path\":\"seller\"},{\"claim\":\"Midnight Black (selected), Sage Green\",\"field_path\":\"variants\"}],\"summary\":[{\"text\":\"Zentra Pulse 5G costs ₹17,999 (MRP ₹24,999).\",\"fact_refs\":[0,1]},{\"text\":\"It has a rating of 4.2 out of 5 from 3418 ratings.\",\"fact_refs\":[2,3]}],\"simpler\":{\"text\":\"The phone costs ₹17,999, MRP ₹24,999, rating 4.2/5 from 3418 ratings.\",\"fact_refs\":[0,1,2,3]},\"sections\":[{\"heading\":\"At a glance\",\"items\":[{\"fact_ref\":4,\"kind\":\"text\",\"text\":\"In stock\"},{\"fact_ref\":5,\"kind\":\"text\",\"text\":\"FREE delivery Tuesday, 14 October\"},{\"fact_ref\":6,\"kind\":\"text\",\"text\":\"Sold by Zentra Official Store\"},{\"fact_ref\":7,\"kind\":\"text\",\"text\":\"Colours: Midnight Black (selected), Sage Green\"}]}]}"
+        },
+        "logprobs": null,
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.33138964,
+      "prompt_tokens": 1315,
+      "prompt_time": 0.094466494,
+      "completion_tokens": 641,
+      "completion_time": 0.761220922,
+      "total_tokens": 1956,
+      "total_time": 0.855687416,
+      "completion_tokens_details": {
+        "reasoning_tokens": 325
+      }
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_63473661d7",
+    "x_groq": {
+      "id": "req_01m4kgddsre3fa9vyd1xb9bem1",
+      "seed": 1050932398
+    },
+    "service_tier": "on_demand"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "_note": "Hand-written in Groq's response format before an API key was available. Re-record with LLM_RECORD=1 (fixtures/llm/README.md).",
+  "model": "openai/gpt-oss-120b",
+  "response": {
+    "id": "chatcmpl-fixture",
+    "object": "chat.completion",
+    "model": "openai/gpt-oss-120b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\"facts\": [{\"claim\": \"690 reviews\", \"field_path\": \"reviews.basis_count\"}, {\"claim\": \"Battery life: 189 of 212 mentions positive\", \"field_path\": \"reviews.insights[0]\"}, {\"claim\": \"Display: 131 of 148 mentions positive\", \"field_path\": \"reviews.insights[1]\"}, {\"claim\": \"Low-light camera: 68 of 96 mentions negative\", \"field_path\": \"reviews.insights[2]\"}, {\"claim\": \"Heating: mixed, 54 mentions\", \"field_path\": \"reviews.insights[3]\"}, {\"claim\": \"indoor and night photos are noisy\", \"field_path\": \"reviews.items[2].text\"}], \"summary\": [{\"text\": \"Based on 690 reviews, buyers like the battery life and the display.\", \"fact_refs\": [0, 1, 2]}, {\"text\": \"The main complaint is the low-light camera, and opinions on heating are mixed.\", \"fact_refs\": [3, 4]}], \"simpler\": {\"text\": \"Most buyers like the battery and the display, but not the low-light camera.\", \"fact_refs\": [1, 2, 3]}, \"sections\": [{\"heading\": \"Pros\", \"items\": [{\"text\": \"Battery life: 189 of 212 mentions are positive\", \"kind\": \"pro\", \"fact_ref\": 1}, {\"text\": \"Display: 131 of 148 mentions are positive\", \"kind\": \"pro\", \"fact_ref\": 2}, {\"text\": \"Low-light camera: 68 of 96 mentions\", \"kind\": \"pro\", \"fact_ref\": 3}, {\"text\": \"Feels premium in the hand\", \"kind\": \"pro\", \"fact_ref\": null}]}, {\"heading\": \"Cons\", \"items\": [{\"text\": \"Low-light camera: 68 of 96 mentions are negative\", \"kind\": \"con\", \"fact_ref\": 3}, {\"text\": \"Heating: opinions are mixed, 54 mentions\", \"kind\": \"con\", \"fact_ref\": 4}, {\"text\": \"One reviewer says indoor and night photos are noisy\", \"kind\": \"con\", \"fact_ref\": 5}]}]}"
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0
+    }
+  }
+}

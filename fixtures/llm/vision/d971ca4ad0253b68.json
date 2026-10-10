@@ -1,0 +1,86 @@
+{
+  "model": "gemini-3.5-flash-lite",
+  "image_url": "https://m.media-amazon.com/images/I/71huGP+5FkL._SL1500_.jpg",
+  "response": {
+    "status": "completed",
+    "usage": {
+      "total_tokens": 1546,
+      "total_input_tokens": 1341,
+      "input_tokens_by_modality": [
+        {
+          "modality": "image",
+          "tokens": 1089
+        },
+        {
+          "modality": "text",
+          "tokens": 252
+        }
+      ],
+      "total_cached_tokens": 0,
+      "total_output_tokens": 205,
+      "total_tool_use_tokens": 0,
+      "total_thought_tokens": 0,
+      "raw_prompt_token": 1685,
+      "model_invocation_token_counts": [
+        {
+          "prompt_tokens_details": [
+            {
+              "modality": "text",
+              "tokens": 596
+            },
+            {
+              "modality": "image",
+              "tokens": 1089
+            }
+          ],
+          "candidates_tokens_details": [
+            {
+              "modality": "text",
+              "tokens": 221
+            }
+          ]
+        }
+      ],
+      "non_grounding_model_invocation_token_counts": [
+        {
+          "prompt_tokens_details": [
+            {
+              "modality": "text",
+              "tokens": 596
+            },
+            {
+              "modality": "image",
+              "tokens": 1089
+            }
+          ],
+          "candidates_tokens_details": [
+            {
+              "modality": "text",
+              "tokens": 221
+            }
+          ]
+        }
+      ]
+    },
+    "created": "2026-10-10T18:36:17Z",
+    "updated": "2026-10-10T18:36:17Z",
+    "service_tier": "standard",
+    "steps": [
+      {
+        "signature": "EmAKXgFpFH0TcQ+FUS520uJ+vXGSTVcAHAZVQ7x5GTGXhiIu00PWfq1dJc3firzSp6HJ3Qbk/UtxXq+lumDyLP+ncq4gTxGPU1B8OKIpJ+OFGWdw48nJg7TnYfnm9wDrqpM=",
+        "type": "thought"
+      },
+      {
+        "content": [
+          {
+            "text": "{\n  \"is_product_photo\": true,\n  \"description\": \"Two views of a dark blue Samsung Galaxy A56 5G mobile phone are shown. The back view shows a vertical triple camera setup, and the front view displays promotional text on the screen.\",\n  \"colours\": [\n    \"dark blue\",\n    \"black\",\n    \"green\",\n    \"pink\"\n  ],\n  \"items_shown\": [\n    \"mobile phone\"\n  ],\n  \"visible_text\": [\n    \"Galaxy A56 5G\",\n    \"Segment's most complete camera*\",\n    \"Corning® Gorilla® Glass Victus+®*\",\n    \"IP67 Rating\",\n    \"5 Gen OS Upgrades\",\n    \"SAMSUN\"\n  ],\n  \"unclear\": [\n    \"bottom ports\",\n    \"charging cable\",\n    \"power adapter\"\n  ]\n}",
+            "type": "text"
+          }
+        ],
+        "type": "model_output"
+      }
+    ],
+    "object": "interaction",
+    "model": "gemini-3.5-flash-lite"
+  }
+}

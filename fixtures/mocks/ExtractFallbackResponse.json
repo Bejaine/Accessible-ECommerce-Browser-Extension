@@ -1,0 +1,65 @@
+{
+  "schema_version": "1.0",
+  "found": {
+    "title": null,
+    "brand": null,
+    "price": null,
+    "rating": null,
+    "availability": null,
+    "category": null,
+    "specs": {
+      "battery_capacity": {
+        "label": "Battery Capacity",
+        "value": 6000,
+        "unit": "mAh"
+      },
+      "display_size": {
+        "label": "Display Size",
+        "value": "17.13 cm (6.745 inch)",
+        "unit": null
+      },
+      "processor_type": {
+        "label": "Processor Type",
+        "value": "T8200",
+        "unit": null
+      },
+      "expandable_storage": {
+        "label": "Expandable Storage",
+        "value": 1,
+        "unit": "TB"
+      }
+    },
+    "delivery": {
+      "text": "Free delivery by Wednesday, 14 Oct",
+      "cost": {
+        "amount": 0,
+        "currency": "INR"
+      },
+      "date": null
+    },
+    "seller": null
+  },
+  "evidence": [
+    {
+      "field_path": "specs.battery_capacity",
+      "snippet": "Battery Capacity 6000 mAh"
+    },
+    {
+      "field_path": "specs.display_size",
+      "snippet": "Display Size 17.13 cm (6.745 inch)"
+    },
+    {
+      "field_path": "specs.processor_type",
+      "snippet": "Processor Type T8200"
+    },
+    {
+      "field_path": "specs.expandable_storage",
+      "snippet": "Expandable Storage 1 TB"
+    },
+    {
+      "field_path": "delivery.cost",
+      "snippet": "Free delivery by Wednesday, 14 Oct"
+    }
+  ],
+  "missing": ["category"]
+}

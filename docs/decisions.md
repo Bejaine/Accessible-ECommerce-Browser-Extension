@@ -54,6 +54,72 @@ VisionDescribeRequest.product_id) are optional and non-null. Generated Pydantic/
 OCRRequest's oneOf; JSON Schema validation does.
 Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 
+## 2026-10-10 — Extraction tiers and field precedence (Track B, affects C and D)
+- Tiers run fastest-first: JSON-LD/meta → site adapter; a later tier overrides a field it found
+  (adapters read what the user sees: price, stock, delivery, seller). `source.fields` records
+  the tier per field. Anything not found is null and listed in `missing`, never guessed.
+- Amazon shows the rating histogram as percentages; `reviews.histogram` counts are
+  round(percent × rating.count / 100), so they carry Amazon's ±1% rounding. Say "about".
+- Flipkart's CSS classes are generated, so its adapter reads structure and wording, never class
+  names. Image-only colour options without a name on the page are left out of `variants`.
+- `reviews.basis_count` = review items actually read from the page (not the site's total).
+- Page map: ids are `t1, t2, …`, stable for the document's lifetime; max 200 targets, search and
+  cart zones first; labels only, input values are never read.
+
+## 2026-10-10 — Section summaries via Groq, verified (Track C; affects demo, B/core, slides)
+- `/product/prepare` writes overview/specs/reviews with Groq (`gpt-oss-120b` for reviews,
+  `gpt-oss-20b` for the others, strict JSON). The model must cite a ProductJSON field for every
+  claim; code verifies each one and falls back to deterministic templates on any failure. Response
+  shape is unchanged, but the call now takes ~2–4 s: call it at page load and don't block on it.
+- Free tier ≈ 6k tokens per product and ~8k tokens/min per model, so about 2 *new* products per
+  minute; beyond that the template answers until the limit resets. Results are cached per product.
+- Demo machine needs `GROQ_API_KEY` in `.env` (see `.env.example`). Groq's free tier may use what we
+  send; we send only public product data, never user data (note for the Responsible AI slide).
+- SerpApi converter (`services/serpapi.py`): star "counts" are percentages (not used as a
+  histogram); `basis_count` = review texts read, as for the page extractor. When the shop's
+  own topic counts exist, summaries say "customers mention…" and never "based on N reviews";
+  listing errors (e.g. RAM = storage) are read as written with a warning, never corrected.
+
+## 2026-10-10 — /turn behaviour (Track C; affects D, core, A)
+- One Groq tool call per turn picks a tool; tools build the answer from the page. Confidence
+  ≥ 0.8 acts; 0.5–0.8 returns `actions: []` and "Did you mean X or Y?" with `intent.alternatives`
+  (an alternative carries actions only when they are safe to run directly); < 0.5, or a second
+  miss in a row, returns phrase chips in `output.followups`.
+- Consequential actions (add to cart, quantity, cancel/return/remove, checkout) are only ever in
+  `confirmation.pending_actions`; "Buy now", "Place order" and "Pay" are never pressed.
+- Tapped targets (`input.target_id`) and phrase chips (`kind: phrase`, chip label as text) run
+  without an LLM call. `page.secure_zone_active` → ErrorResponse `secure_zone` (HTTP 423).
+- MOCK=1: `/turn` runs the real orchestrator on recorded Groq calls (`fixtures/llm/turn/`); an
+  utterance with no recording gets the canned `TurnResponse.json` as before.
+- Until Track A adds `bhashini.translate()`, answers stay English and say so (`output.lang: en`).
+
+## 2026-10-11 — Photo descriptions via Gemini (Track C; affects A, D, slides)
+- The main product photo is described by Gemini during `/product/prepare` (more on request via
+  `/turn` "describe the photo"); descriptions are cached by image URL and returned in
+  `product.images[i].description`. Outputs carry a warning that the description is AI-made.
+- Numbers and printed text the VLM reads are kept only if the page confirms them (OCR text, alt
+  text or title); "IP67 Rating" read off a banner is dropped until OCR (Track A) fills `ocr_text`.
+- The backend downloads images only from the shops' image hosts (Amazon, Flipkart CDNs), https,
+  max 4 MB. Requests set `store: false`; we send only public product photos (Responsible AI slide).
+- A transcript with ASR confidence < 0.5 never acts directly in `/turn`: it asks first.
+
+## 2026-10-11 — Schema: /extract/fallback (Track C for Track B; additive, no version bump)
+- New `api/ExtractFallbackRequest` (= `LlmFallbackRequest` in extension/src/extract/llm.ts plus
+  `schema_version`) and `api/ExtractFallbackResponse` {found, evidence, missing}. `found` holds
+  every extractable field required-but-nullable, reusing ProductJSON's Price/Rating/
+  Availability/SpecValue/Delivery; `evidence` gives per field the snippet it came from,
+  copied verbatim from the request text (the backend drops any value it can't find there).
+- New endpoint schemas only; no existing contract changes, so schema_version stays "1.0".
+
+## 2026-10-11 — /extract/fallback never returns a price (Track C; affects B, core)
+- Tested live on Track B's 5 saved pages: title, rating, stock, delivery, seller and some specs
+  came back right, but on the Flipkart phone the model returned the bank-offer price (₹11,999)
+  as the price (₹12,999), and every text check passed because that amount is on the page.
+- So `found.price` is always null: price and MRP come only from JSON-LD and the site adapters.
+  If they miss it, say the price couldn't be read and point to the page; never guess it.
+- A value is kept only if its snippet is verbatim in the request text and the value is in that
+  snippet; "name = value" highlight lines are not specs. Requests are redacted again server-side.
+
 ## 2026-10-10 — AnuvaadHub wire format (Track A; affects Track D's audio consumers and Track C)
 - ASR accepts WAV only (form field `audio_file`, ~20 s, < 5 MB), so the extension uploads
   16 kHz mono PCM WAV, not Opus. `/speech/asr` rejects other encodings with `validation`.

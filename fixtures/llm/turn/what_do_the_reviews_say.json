@@ -1,0 +1,48 @@
+{
+  "model": "openai/gpt-oss-120b",
+  "response": {
+    "id": "chatcmpl-2773d3d6-bb45-471b-a5f2-db0ca3f9f785",
+    "object": "chat.completion",
+    "created": 1791657499,
+    "model": "openai/gpt-oss-120b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "id": "fc_19946039-a1ce-4468-8203-e58266929998",
+              "type": "function",
+              "function": {
+                "name": "read_section",
+                "arguments": "{\"alternatives\":[],\"confidence\":0.99,\"product_id\":\"amazon.in:B0ZNTRA5G1\",\"section\":\"reviews\"}"
+              }
+            }
+          ]
+        },
+        "logprobs": null,
+        "finish_reason": "tool_calls"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.385633631,
+      "prompt_tokens": 2936,
+      "prompt_time": 0.142609486,
+      "completion_tokens": 68,
+      "completion_time": 0.143199356,
+      "total_tokens": 3004,
+      "total_time": 0.285808842,
+      "completion_tokens_details": {
+        "reasoning_tokens": 10
+      }
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_8655ddce88",
+    "x_groq": {
+      "id": "req_01m4khqpjce2avhpr9507yhyd1",
+      "seed": 701356030
+    },
+    "service_tier": "on_demand"
+  }
+}

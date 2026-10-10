@@ -1,0 +1,24 @@
+{
+  "_note": "Hand-written in Groq's response format before an API key was available. Re-record with LLM_RECORD=1 (fixtures/llm/README.md).",
+  "model": "openai/gpt-oss-20b",
+  "response": {
+    "id": "chatcmpl-fixture",
+    "object": "chat.completion",
+    "model": "openai/gpt-oss-20b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "Sure! Here is the summary: the phone is great."
+        },
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "prompt_tokens": 0,
+      "completion_tokens": 0,
+      "total_tokens": 0
+    }
+  }
+}
