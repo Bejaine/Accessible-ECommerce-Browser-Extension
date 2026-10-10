@@ -13,6 +13,7 @@ import { SETTINGS_CSS } from './settings';
 import { ACTION_MENU_CSS } from './actionMenu';
 import { COLOUR_LABEL_CSS } from './colourLabels';
 import { SIMPLE_VIEW_CSS } from './simpleView';
+import { PLAYBACK_CSS } from './playbackBar';
 import { initAnnouncer } from './announce';
 import { label } from './strings';
 
@@ -84,6 +85,8 @@ export interface Overlay {
   readonly content: HTMLElement;
   /** Phrase board and scan bar. */
   readonly controls: HTMLElement;
+  /** Themed root outside the panel, for floating UI (playback bar) that stays visible when closed. */
+  readonly floating: HTMLElement;
   readonly isOpen: boolean;
   open(): void;
   close(): void;
@@ -123,7 +126,8 @@ export function mountOverlay(container: HTMLElement, lang?: string): Overlay {
     SETTINGS_CSS +
     ACTION_MENU_CSS +
     COLOUR_LABEL_CSS +
-    SIMPLE_VIEW_CSS;
+    SIMPLE_VIEW_CSS +
+    PLAYBACK_CSS;
 
   const root = el('div', { class: 'asl-root' });
 
@@ -192,6 +196,7 @@ export function mountOverlay(container: HTMLElement, lang?: string): Overlay {
   return {
     content,
     controls,
+    floating: root,
     get isOpen() {
       return isOpen;
     },

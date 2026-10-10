@@ -9,7 +9,7 @@ import { createMockBackend } from '../src/core/backend';
 import { createBus } from '../src/core/bus';
 import { setConditionActive } from '../src/core/composer';
 import { createProfileStore } from '../src/core/profile';
-import type { Speaker } from '../src/render/speaker';
+import { recordingSpeaker } from './helpers/fakeSpeaker';
 import { createActionMenu, PER_ZONE } from '../src/ui/actionMenu';
 import { createColourLabels } from '../src/ui/colourLabels';
 import { renderSimpleView, simpleSummary } from '../src/ui/simpleView';
@@ -140,15 +140,7 @@ describe('page tools in the app', () => {
     const container = document.createElement('div');
     host.attachShadow({ mode: 'open' }).appendChild(container);
     document.body.appendChild(host);
-    const speaker: Speaker = {
-      speakOutput: () => undefined,
-      say: () => undefined,
-      sayLines: () => undefined,
-      stop: () => undefined,
-      setRate: () => undefined,
-      speaking: false,
-      onChange: () => () => undefined,
-    };
+    const { speaker } = recordingSpeaker();
     const mic: Mic = {
       listening: false,
       muted: false,

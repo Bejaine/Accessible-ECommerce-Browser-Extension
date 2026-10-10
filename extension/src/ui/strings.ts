@@ -172,6 +172,18 @@ const FALLBACK = {
   'simple.options': 'Options',
   'simple.selected': '(selected)',
   'simple.actions': 'What you can do',
+  'playback.title': 'Playback',
+  'playback.pause': 'Pause',
+  'playback.resume': 'Resume',
+  'playback.repeat': 'Repeat sentence',
+  'playback.repeat_all': 'From the start',
+  'playback.back': 'Back one sentence',
+  'playback.previous': 'Previous section',
+  'playback.next': 'Next section',
+  'playback.stop': 'Stop',
+  'playback.more': 'More',
+  'playback.hint': 'Press Alt+Shift+K to pause or resume. Say repeat to hear it again.',
+  'playback.nothing': 'There is nothing to play yet.',
   'help.examples':
     "What's the price? | What do reviews say? | Add to cart | Slower or faster | Repeat that | Yes or no",
 } as const;

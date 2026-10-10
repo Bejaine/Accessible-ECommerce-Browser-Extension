@@ -10,35 +10,13 @@ import { mountApp, type App } from '../src/core/app';
 import { createMockBackend } from '../src/core/backend';
 import { createBus } from '../src/core/bus';
 import { createProfileStore, type ProfileStore } from '../src/core/profile';
-import type { Speaker } from '../src/render/speaker';
+import { recordingSpeaker } from './helpers/fakeSpeaker';
 
 vi.mock('../src/actuate', () => ({
   performAction: vi.fn(async () => ({ ok: false, reason: 'not implemented' })),
 }));
 
 const targets = turnRequest.page.targets as ActionTarget[];
-
-function recordingSpeaker() {
-  const calls: string[] = [];
-  let speaking = false;
-  const listeners = new Set<(s: boolean) => void>();
-  const set = (s: boolean) => {
-    speaking = s;
-    listeners.forEach((l) => l(s));
-  };
-  const speaker: Speaker = {
-    speakOutput: () => (calls.push('speakOutput'), set(true)),
-    say: (text) => calls.push(`say:${text}`),
-    sayLines: () => calls.push('sayLines'),
-    stop: () => (calls.push('stop'), set(false)),
-    setRate: (r) => calls.push(`rate:${r}`),
-    get speaking() {
-      return speaking;
-    },
-    onChange: (l) => (listeners.add(l), () => listeners.delete(l)),
-  };
-  return { speaker, calls };
-}
 
 function fakeMic(): Mic {
   const utterance: Utterance = {
@@ -219,7 +197,9 @@ describe('every button does something, in every state', () => {
     calls.length = 0;
     host.shadowRoot!.querySelectorAll<HTMLButtonElement>('.asl-phrases button')[0]!.click();
     await vi.waitFor(() =>
-      expect(calls.some((c) => c === 'speakOutput' || c.startsWith('say:'))).toBe(true),
+      expect(
+        calls.some((c) => c === 'speakOutput' || c.startsWith('say:') || c.startsWith('prompt:')),
+      ).toBe(true),
     );
   });
 

@@ -7,6 +7,7 @@ import {
   ASSISTANT_COMMAND,
   isOnboarded,
   OPEN_ONBOARDING,
+  PLAYBACK_COMMAND,
   TOGGLE_ASSISTANT,
 } from '@/src/core/profile';
 
@@ -24,10 +25,16 @@ export default defineBackground(() => {
   });
   // Keyboard shortcut: open or close the assistant in the active tab.
   browser.commands.onCommand.addListener(async (command) => {
-    if (command !== ASSISTANT_COMMAND) return;
+    const type =
+      command === ASSISTANT_COMMAND
+        ? TOGGLE_ASSISTANT
+        : command === PLAYBACK_COMMAND
+          ? PLAYBACK_COMMAND
+          : null;
+    if (!type) return;
     const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
     if (tab?.id !== undefined)
-      await browser.tabs.sendMessage(tab.id, { type: TOGGLE_ASSISTANT }).catch(() => undefined);
+      await browser.tabs.sendMessage(tab.id, { type }).catch(() => undefined);
   });
   browser.runtime.onMessage.addListener(
     (msg: Partial<BackendRequestMessage> | { type?: string }) => {

@@ -1,7 +1,12 @@
 import { mountApp, type App } from '@/src/core/app';
 import { createRuntimeBackend, type BackendReply } from '@/src/core/backend';
 import { bus } from '@/src/core/bus';
-import { createProfileStore, loadDevicePrefs, TOGGLE_ASSISTANT } from '@/src/core/profile';
+import {
+  createProfileStore,
+  loadDevicePrefs,
+  PLAYBACK_COMMAND,
+  TOGGLE_ASSISTANT,
+} from '@/src/core/profile';
 
 export default defineContentScript({
   matches: ['<all_urls>'],
@@ -51,6 +56,7 @@ export default defineContentScript({
     // Keyboard shortcut (Alt+Shift+A, from the background script): open or close from anywhere.
     browser.runtime.onMessage.addListener((msg: { type?: string }) => {
       if (msg?.type === TOGGLE_ASSISTANT) app?.toggleAssistant();
+      if (msg?.type === PLAYBACK_COMMAND) app?.playbackKey();
       return undefined;
     });
   },

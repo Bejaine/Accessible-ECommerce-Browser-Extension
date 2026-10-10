@@ -74,6 +74,8 @@ export const OPEN_ONBOARDING = 'open-onboarding';
 export const TOGGLE_ASSISTANT = 'toggle-assistant';
 /** manifest `commands` name for the shortcut. */
 export const ASSISTANT_COMMAND = 'toggle-assistant';
+/** manifest `commands` name and runtime message for the single playback key. */
+export const PLAYBACK_COMMAND = 'playback-key';
 
 export async function isOnboarded(): Promise<boolean> {
   const stored = await browser.storage.local.get(ONBOARDING_KEY);

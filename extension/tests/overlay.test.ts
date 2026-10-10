@@ -69,3 +69,29 @@ describe('overlay shell', () => {
     expect(root.style.getPropertyValue('--asl-scale')).toBe('1');
   });
 });
+
+describe('overlay stylesheet', () => {
+  it('includes the styles of every overlay component', async () => {
+    const host = document.createElement('div');
+    const container = document.createElement('div');
+    host.attachShadow({ mode: 'open' }).appendChild(container);
+    mountOverlay(container);
+    const css = host.shadowRoot!.querySelector('style')!.textContent!;
+    for (const selector of [
+      '.asl-panel',
+      '.asl-output',
+      '.asl-scanbar',
+      '.asl-suggestion',
+      '.asl-confirm',
+      '.asl-mic',
+      '.asl-settings',
+      '.asl-actions-menu',
+      '.asl-colour-label',
+      '.asl-simple',
+      '.asl-playback',
+    ]) {
+      expect(css, selector).toContain(selector);
+    }
+    resetAnnouncer();
+  });
+});

@@ -17,6 +17,10 @@ export default defineConfig({
         suggested_key: { default: 'Alt+Shift+A' },
         description: 'Open or close the Shopping assistant',
       },
+      'playback-key': {
+        suggested_key: { default: 'Alt+Shift+K' },
+        description: 'Pause or resume reading; wait for the spoken playback menu',
+      },
     },
     host_permissions: ['http://localhost:8000/*'],
     ...(browser === 'firefox' && {

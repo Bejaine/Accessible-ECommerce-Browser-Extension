@@ -7,6 +7,19 @@ type Table = Partial<Record<UiKey, string>>;
 
 const hi: Table = {
   'overlay.title': 'शॉपिंग सहायक',
+  'playback.title': 'सुनना',
+  'playback.pause': 'रोकें',
+  'playback.resume': 'फिर चलाएँ',
+  'playback.repeat': 'वाक्य दोहराएँ',
+  'playback.repeat_all': 'शुरू से',
+  'playback.back': 'एक वाक्य पीछे',
+  'playback.previous': 'पिछला हिस्सा',
+  'playback.next': 'अगला हिस्सा',
+  'playback.stop': 'बंद करें',
+  'playback.more': 'और',
+  'playback.hint':
+    'रोकने या फिर चलाने के लिए Alt+Shift+K दबाएँ। दोबारा सुनने के लिए "फिर से बोलें" कहें।',
+  'playback.nothing': 'अभी चलाने के लिए कुछ नहीं है।',
   'menu.title': 'इस पेज पर क्या कर सकते हैं',
   'menu.toggle': 'इस पेज पर क्या कर सकते हैं ({count})',
   'menu.more': '{count} और दिखाएँ',
@@ -163,6 +176,19 @@ const hi: Table = {
 
 const te: Table = {
   'overlay.title': 'షాపింగ్ సహాయకుడు',
+  'playback.title': 'వినడం',
+  'playback.pause': 'ఆపండి',
+  'playback.resume': 'కొనసాగించండి',
+  'playback.repeat': 'వాక్యం మళ్ళీ',
+  'playback.repeat_all': 'మొదటి నుండి',
+  'playback.back': 'ఒక వాక్యం వెనక్కి',
+  'playback.previous': 'మునుపటి భాగం',
+  'playback.next': 'తదుపరి భాగం',
+  'playback.stop': 'ఆపివేయండి',
+  'playback.more': 'మరిన్ని',
+  'playback.hint':
+    'ఆపడానికి లేదా కొనసాగించడానికి Alt+Shift+K నొక్కండి. మళ్ళీ వినడానికి "మళ్ళీ చెప్పండి" అనండి.',
+  'playback.nothing': 'ఇంకా వినిపించడానికి ఏమీ లేదు.',
   'menu.title': 'ఈ పేజీలో చేయగలిగేవి',
   'menu.toggle': 'ఈ పేజీలో చేయగలిగేవి ({count})',
   'menu.more': 'మరో {count} చూపించండి',

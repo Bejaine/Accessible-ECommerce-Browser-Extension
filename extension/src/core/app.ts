@@ -21,6 +21,13 @@ import { announce, resetAnnouncer, setAnnounceVoice } from '../ui/announce';
 import { createConfirmCard, formatMoney } from '../ui/confirmCard';
 import { createMicButton } from '../ui/micButton';
 import { createSettings } from '../ui/settings';
+import {
+  createPlaybackBar,
+  MINI_MENU,
+  miniMenuLabel,
+  type PlaybackAction,
+} from '../ui/playbackBar';
+import { createScanner } from '../ui/scanner';
 import { createActionMenu } from '../ui/actionMenu';
 import { createColourLabels, type ColourLabels } from '../ui/colourLabels';
 import { renderSimpleView, simpleSummary } from '../ui/simpleView';
@@ -83,6 +90,8 @@ export interface App {
   listen(): Promise<void>;
   /** Open or close the assistant (keyboard shortcut); speaks a short orientation on open. */
   toggleAssistant(): void;
+  /** The single playback key (Alt+Shift+K): pause / resume, or pick from the spoken mini-menu. */
+  playbackKey(): void;
   speaker: Speaker;
   unmount(): void;
 }
@@ -126,7 +135,7 @@ export function mountApp(
   speaker.setRate(profile.prefs.tts_rate);
   const voiceOn = () => assistantVoiceOn(profile, devicePrefs);
   setAnnounceVoice((text) => {
-    if (voiceOn()) speaker.say(text, lang());
+    if (voiceOn()) speaker.prompt(text, lang());
   });
   let view: RenderedOutput | null = null;
   offs.push(speaker.onChange((speaking) => view?.setReading(speaking)));
@@ -152,7 +161,21 @@ export function mountApp(
     // Screen readers get the summary from the live region; the assistant's voice reads the
     // whole answer (summary first, then sections) when it is on.
     announce(output.summary, { speak: false });
-    if (voiceOn()) speaker.speakOutput(output, { verbosity: mode.verbosity });
+    if (voiceOn()) {
+      speaker.speakOutput(output, { verbosity: mode.verbosity });
+      hintOnce();
+    }
+  }
+
+  /** The playback controls are announced once per session. */
+  function hintOnce(): void {
+    try {
+      if (sessionStorage.getItem('asl-playback-hint')) return;
+      sessionStorage.setItem('asl-playback-hint', '1');
+    } catch {
+      return;
+    }
+    announce(label('playback.hint', lang()), { speak: false });
   }
 
   /** Close the answer and go back to the menu (the controls), keeping it for "repeat". */
@@ -340,6 +363,98 @@ export function mountApp(
     }),
   );
 
+  // --- Playback controls (bar, voice words, single key with a spoken mini-menu) ---
+  function playback(action: PlaybackAction): void {
+    switch (action) {
+      case 'toggle':
+        if (speaker.state === 'playing') speaker.pause();
+        else if (speaker.state === 'paused') speaker.resume();
+        else if (lastOutput) speaker.speakOutput(lastOutput, { verbosity: mode.verbosity });
+        else announce(label('playback.nothing', lang()));
+        break;
+      case 'repeat':
+        speaker.repeatSentence();
+        break;
+      case 'repeat_all':
+        if (speaker.state === 'idle' && lastOutput)
+          speaker.speakOutput(lastOutput, { verbosity: mode.verbosity });
+        else speaker.repeatAll();
+        break;
+      case 'back':
+        speaker.back();
+        break;
+      case 'previous':
+        speaker.previousSection();
+        break;
+      case 'next':
+        speaker.nextSection();
+        break;
+      case 'slower':
+        void stepSpeed(-1);
+        break;
+      case 'faster':
+        void stepSpeed(1);
+        break;
+      case 'stop':
+        speaker.stop();
+        break;
+    }
+  }
+  const playbackBar = createPlaybackBar((action) => {
+    closeMiniMenu();
+    playback(action);
+  });
+  overlay.floating.append(playbackBar.element);
+  offs.push(speaker.onChange((_, state, sentence) => playbackBar.update(state, sentence)));
+
+  // Single key: press while playing -> pause; press while paused -> resume; or wait 1.5 s and the
+  // mini-menu is scanned aloud (same model as switch access), and the same key picks an item.
+  const MENU_DELAY_MS = 1500;
+  let menuTimer: ReturnType<typeof setTimeout> | undefined;
+  const miniMenu = createScanner({
+    intervalMs: mode.scan_interval_ms,
+    backLabel: '',
+    pausedLabel: label('scan.paused', lang()),
+    onHighlight: (h) => playbackBar.highlight((h?.item?.id as PlaybackAction | undefined) ?? null),
+    speak: (text) => speaker.prompt(text, lang()),
+  });
+  function closeMiniMenu(): void {
+    clearTimeout(menuTimer);
+    if (miniMenu.level !== 'stopped') miniMenu.stop();
+    playbackBar.highlight(null);
+  }
+  function playbackKey(): void {
+    if (miniMenu.level !== 'stopped') {
+      miniMenu.press(); // picks the highlighted item (or resumes a paused menu)
+      return;
+    }
+    if (speaker.state === 'playing') {
+      speaker.pause();
+      clearTimeout(menuTimer);
+      menuTimer = setTimeout(() => {
+        if (speaker.state !== 'paused') return;
+        miniMenu.start([
+          {
+            id: 'playback',
+            label: label('playback.title', lang()),
+            items: MINI_MENU.map((action) => ({
+              id: action,
+              label: miniMenuLabel(action),
+              activate: () => {
+                closeMiniMenu();
+                playback(action);
+              },
+            })),
+          },
+        ]);
+      }, MENU_DELAY_MS);
+      return;
+    }
+    closeMiniMenu();
+    playback('toggle');
+  }
+  offs.push(closeMiniMenu);
+
   // --- Local commands (no server call) ---
   function runCommand(id: string): boolean {
     switch (id) {
@@ -351,8 +466,30 @@ export function mountApp(
         else suggester.decline();
         return true;
       case 'repeat':
+        if (speaker.state !== 'idle') speaker.repeatSentence();
+        else announce(lastOutput ? lastOutput.summary : label('repeat.nothing', lang()));
+        return true;
       case 'repeat_all':
-        announce(lastOutput ? lastOutput.summary : label('repeat.nothing', lang()));
+        if (speaker.state !== 'idle' || lastOutput) playback('repeat_all');
+        else announce(label('repeat.nothing', lang()));
+        return true;
+      case 'pause':
+        speaker.pause();
+        return true;
+      case 'resume':
+        playback('toggle');
+        return true;
+      case 'stop':
+        speaker.stop();
+        return true;
+      case 'back':
+        speaker.back();
+        return true;
+      case 'next_section':
+        speaker.nextSection();
+        return true;
+      case 'previous_section':
+        speaker.previousSection();
         return true;
       case 'help':
         engine.add('help_use');
@@ -381,7 +518,6 @@ export function mountApp(
         suggester.undo();
         return true;
       default:
-        // Playback commands (pause, stop, next...) belong to the audio player (Track A).
         return false;
     }
   }
@@ -559,6 +695,7 @@ export function mountApp(
     say,
     listen,
     speaker,
+    playbackKey,
     toggleAssistant() {
       if (overlay.isOpen) {
         overlay.close();
