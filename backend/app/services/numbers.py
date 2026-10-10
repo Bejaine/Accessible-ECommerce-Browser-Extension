@@ -336,3 +336,188 @@ def _read_phrase(text: str, toks: list[_Tok], i: int, phrases: list[_Phrase]) ->
     value = total + (current or 0.0)
     phrases.append(_Phrase(used[0].start, used[-1].end, value, used))
     return max(j, i + 1)
+
+
+# --- Speaking numbers (TTS) ------------------------------------------------------------------
+# Live test (2026-10-11): the Hindi and Telugu TTS voices read digits in English ("सेवेंटींथ",
+# "బైవ్ థౌసండ్"), the English voice read "17,999" as "17th, 999th", and ₹ is stripped as a
+# special character. So before TTS, numbers are written out in the listener's language, in the
+# Indian system (lakh, crore). Model names (S24, 5G) are left alone.
+
+_EN_0_19 = (
+    "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen "
+    "fifteen sixteen seventeen eighteen nineteen"
+).split()
+_EN_TENS = "twenty thirty forty fifty sixty seventy eighty ninety".split()
+_HI_0_99 = ["शून्य", *_HI_1_99.replace("पांच", "पाँच").split()]
+_TE_0_19 = (
+    "సున్నా ఒకటి రెండు మూడు నాలుగు ఐదు ఆరు ఏడు ఎనిమిది తొమ్మిది పది పదకొండు పన్నెండు "
+    "పదమూడు పద్నాలుగు పదిహేను పదహారు పదిహేడు పద్దెనిమిది పందొమ్మిది"
+).split()
+_TE_TENS = "ఇరవై ముప్పై నలభై యాభై అరవై డెబ్బై ఎనభై తొంభై".split()
+
+_SPEECH = {
+    "en": {"point": "point", "rupee": ("rupee", "rupees"), "paise": "paise",
+           "crore": "crore", "lakh": "lakh", "thousand": "thousand", "hundred": "hundred"},
+    "hi": {"point": "दशमलव", "rupee": ("रुपया", "रुपये"), "paise": "पैसे",
+           "crore": "करोड़", "lakh": "लाख", "thousand": "हज़ार", "hundred": "सौ"},
+    "te": {"point": "పాయింట్", "rupee": ("రూపాయి", "రూపాయలు"), "paise": "పైసలు"},
+}  # fmt: skip
+
+_UNIT_WORDS = {
+    "mAh": ("milliamp hours", "मिलीएम्पियर आवर", "మిల్లీ ఆంపియర్ అవర్"),
+    "GHz": ("gigahertz", "गीगाहर्ट्ज़", "గిగాహెర్ట్జ్"),
+    "Hz": ("hertz", "हर्ट्ज़", "హెర్ట్జ్"),
+    "TB": ("TB", "टीबी", "టీబీ"),
+    "GB": ("GB", "जीबी", "జీబీ"),
+    "MB": ("MB", "एमबी", "ఎంబీ"),
+    "MP": ("megapixel", "मेगापिक्सल", "మెగాపిక్సెల్"),
+    "W": ("watt", "वॉट", "వాట్"),
+    "mm": ("millimetres", "मिलीमीटर", "మిల్లీమీటర్లు"),
+    "cm": ("centimetres", "सेंटीमीटर", "సెంటీమీటర్లు"),
+    "km": ("kilometres", "किलोमीटर", "కిలోమీటర్లు"),
+    "kg": ("kilograms", "किलो", "కిలోలు"),
+    "g": ("grams", "ग्राम", "గ్రాములు"),
+    "ml": ("millilitres", "मिलीलीटर", "మిల్లీలీటర్లు"),
+    "L": ("litres", "लीटर", "లీటర్లు"),
+    "inch": ("inch", "इंच", "అంగుళాలు"),
+    "inches": ("inches", "इंच", "అంగుళాలు"),
+    '"': ("inch", "इंच", "అంగుళాలు"),
+    "°C": ("degrees Celsius", "डिग्री सेल्सियस", "డిగ్రీల సెల్సియస్"),
+    "%": ("percent", "प्रतिशत", "శాతం"),
+}
+_LANG_INDEX = {"en": 0, "hi": 1, "te": 2}
+
+_AMOUNT = r"\d[\d,]*(?:\.\d+)?"
+_SPEAK_PRICE = re.compile(rf"(?:₹|\bRs\.?|\bINR)\s?({_AMOUNT})|\b({_AMOUNT})/-")
+_SPEAK_UNIT = re.compile(
+    rf"\b({_AMOUNT})\s?("
+    + "|".join(re.escape(u) for u in sorted(_UNIT_WORDS, key=len, reverse=True))
+    + r")(?![\w])"
+)
+_SPEAK_PIN = re.compile(
+    r"(\b(?:PIN|pin|Pin)(?:\s*code)?|\bpincode|पिन(?:\s*कोड)?|పిన్(?:\s*కోడ్)?)(\s*:?\s*)(\d{6})\b"
+)
+_SPEAK_LONG = re.compile(r"(?<![\w.,])(0\d+|\d{10,})(?![\w.,])")
+_SPEAK_NUMBER = re.compile(r"(?<![\w.,])(\d{1,3}(?:,\d{2,3})+(?:\.\d+)?|\d+(?:\.\d+)?)(?![\w])")
+
+
+def number_to_words(n: int, lang: str, *, before_noun: bool = False) -> str:
+    """A whole number in words, Indian system. Telugu takes its oblique form before a noun
+    ("రెండు వేల రూపాయలు", not "రెండు వేలు రూపాయలు")."""
+    if lang == "te":
+        return _te_words(n, before_noun)
+    s = _SPEECH[lang]
+    under_100 = _en_under_100 if lang == "en" else _HI_0_99.__getitem__
+    if n < 100:
+        return under_100(n)
+    crore, rest = divmod(n, 10_000_000)
+    lakh, rest = divmod(rest, 100_000)
+    thousand, rest = divmod(rest, 1000)
+    hundred, last = divmod(rest, 100)
+    parts = []
+    if crore:
+        parts.append(f"{number_to_words(crore, lang)} {s['crore']}")
+    for count, word in ((lakh, "lakh"), (thousand, "thousand"), (hundred, "hundred")):
+        if count:
+            parts.append(f"{under_100(count)} {s[word]}")
+    if last:
+        parts.append(under_100(last))
+    return " ".join(parts)
+
+
+def _en_under_100(n: int) -> str:
+    if n < 20:
+        return _EN_0_19[n]
+    tens, unit = divmod(n, 10)
+    return _EN_TENS[tens - 2] + (f" {_EN_0_19[unit]}" if unit else "")
+
+
+def _te_under_100(n: int) -> str:
+    if n < 20:
+        return _TE_0_19[n]
+    tens, unit = divmod(n, 10)
+    return _TE_TENS[tens - 2] + (f" {_TE_0_19[unit]}" if unit else "")
+
+
+def _te_words(n: int, before_noun: bool) -> str:
+    if n == 1 and before_noun:
+        return "ఒక"
+    if n < 100:
+        return _te_under_100(n)
+    crore, rest = divmod(n, 10_000_000)
+    lakh, rest = divmod(rest, 100_000)
+    thousand, rest = divmod(rest, 1000)
+    hundred, last = divmod(rest, 100)
+    # (count, word for 1, plural, oblique): the oblique form is used when more follows
+    segments = [
+        (crore, "కోటి", "కోట్లు", "కోట్ల"),
+        (lakh, "ఒక లక్ష", "లక్షలు", "లక్షల"),
+        (thousand, "వెయ్యి", "వేలు", "వేల"),
+        (hundred, None, "వందలు", "వందల"),
+    ]
+    present = [i for i, seg in enumerate(segments) if seg[0]]
+    parts = []
+    for i, (count, one, plural, oblique) in enumerate(segments):
+        if not count:
+            continue
+        more = last > 0 or i != present[-1] or before_noun
+        if count == 1 and i == 3:  # 100: "వంద", or "నూట" when more follows
+            parts.append("నూట" if last else "వంద")
+        elif count == 1 and one:
+            parts.append(one)
+        else:
+            head = number_to_words(count, "te") if i == 0 else _te_under_100(count)
+            parts.append(f"{head} {oblique if more else plural}")
+    if last:
+        parts.append(_te_under_100(last))
+    return " ".join(parts)
+
+
+def _digit_words(digits: str, lang: str) -> str:
+    return " ".join(number_to_words(int(d), lang) for d in digits)
+
+
+def _amount_words(amount: str, lang: str, *, before_noun: bool = False) -> str:
+    whole, _, frac = amount.replace(",", "").partition(".")
+    words = number_to_words(int(whole), lang, before_noun=before_noun and not frac)
+    if frac:
+        words += f" {_SPEECH[lang]['point']} {_digit_words(frac, lang)}"
+    return words
+
+
+def _price_words(amount: str, lang: str) -> str:
+    whole, _, frac = amount.replace(",", "").partition(".")
+    rupees, paise = int(whole), int((frac + "00")[:2]) if frac else 0
+    singular, plural = _SPEECH[lang]["rupee"]
+    words = (
+        f"{number_to_words(rupees, lang, before_noun=True)} {singular if rupees == 1 else plural}"
+    )
+    if paise:
+        words += f" {number_to_words(paise, lang, before_noun=True)} {_SPEECH[lang]['paise']}"
+    return words
+
+
+def speakable(text: str, lang: str) -> str:
+    """Text for TTS: prices, numbers, units and decimals in words of `lang` (en, hi, te);
+    PIN codes, long numbers and numbers with a leading zero digit by digit. Other languages
+    are returned unchanged until they have word tables."""
+    if lang not in _LANG_INDEX:
+        return text
+    col = _LANG_INDEX[lang]
+    text = _SPEAK_PRICE.sub(lambda m: _price_words(m.group(1) or m.group(2), lang), text)
+    text = _SPEAK_PIN.sub(lambda m: m.group(1) + m.group(2) + _digit_words(m.group(3), lang), text)
+    text = _SPEAK_UNIT.sub(
+        lambda m: (
+            f"{_amount_words(m.group(1), lang, before_noun=True)} {_UNIT_WORDS[m.group(2)][col]}"
+        ),
+        text,
+    )
+    text = _SPEAK_LONG.sub(lambda m: _digit_words(m.group(1), lang), text)
+    # Telugu: a number followed by a word is before a noun ("యాభై వేల రివ్యూలు")
+    return _SPEAK_NUMBER.sub(
+        lambda m: _amount_words(
+            m.group(1), lang, before_noun=bool(re.match(r"\s+[^\W\d]", text[m.end() :]))
+        ),
+        text,
+    )

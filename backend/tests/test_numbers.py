@@ -126,3 +126,84 @@ def test_parse_number(lang, text, value):
 
 def test_native_digits_become_ascii():
     assert normalise_digits("२ और ౩") == "2 और 3"
+
+
+# --- Speaking numbers (TTS) --------------------------------------------------------------
+# Live test (2026-10-11): the Hindi and Telugu voices read digits in English ("सेवेंटींथ ...",
+# "బైవ్ థౌసండ్ మా") and ₹ is stripped, so numbers are written out in the listener's language.
+
+from app.services.numbers import number_to_words, speakable  # noqa: E402
+
+WORDS = [
+    (0, "zero", "शून्य", "సున్నా"),
+    (7, "seven", "सात", "ఏడు"),
+    (15, "fifteen", "पंद्रह", "పదిహేను"),
+    (21, "twenty one", "इक्कीस", "ఇరవై ఒకటి"),
+    (99, "ninety nine", "निन्यानवे", "తొంభై తొమ్మిది"),
+    (100, "one hundred", "एक सौ", "వంద"),
+    (150, "one hundred fifty", "एक सौ पचास", "నూట యాభై"),
+    (200, "two hundred", "दो सौ", "రెండు వందలు"),
+    (250, "two hundred fifty", "दो सौ पचास", "రెండు వందల యాభై"),
+    (1000, "one thousand", "एक हज़ार", "వెయ్యి"),
+    (1299, "one thousand two hundred ninety nine", "एक हज़ार दो सौ निन्यानवे",
+     "వెయ్యి రెండు వందల తొంభై తొమ్మిది"),
+    (2000, "two thousand", "दो हज़ार", "రెండు వేలు"),
+    (17999, "seventeen thousand nine hundred ninety nine", "सत्रह हज़ार नौ सौ निन्यानवे",
+     "పదిహేడు వేల తొమ్మిది వందల తొంభై తొమ్మిది"),
+    (100000, "one lakh", "एक लाख", "ఒక లక్ష"),
+    (150000, "one lakh fifty thousand", "एक लाख पचास हज़ार", "ఒక లక్ష యాభై వేలు"),
+    (250000, "two lakh fifty thousand", "दो लाख पचास हज़ार", "రెండు లక్షల యాభై వేలు"),
+    (300000, "three lakh", "तीन लाख", "మూడు లక్షలు"),
+    (10000000, "one crore", "एक करोड़", "కోటి"),
+    (25000000, "two crore fifty lakh", "दो करोड़ पचास लाख", "రెండు కోట్ల యాభై లక్షలు"),
+]  # fmt: skip
+
+
+@pytest.mark.parametrize(("n", "en", "hi", "te"), WORDS)
+def test_number_to_words(n, en, hi, te):
+    assert number_to_words(n, "en") == en
+    assert number_to_words(n, "hi") == hi
+    assert number_to_words(n, "te") == te
+
+
+SPEAK = [
+    # prices: amount in words + the currency word (₹ itself is stripped before TTS)
+    ("en", "The price is ₹17,999.",
+     "The price is seventeen thousand nine hundred ninety nine rupees."),
+    ("hi", "कीमत ₹1,299 है", "कीमत एक हज़ार दो सौ निन्यानवे रुपये है"),
+    ("te", "ధర ₹2,000", "ధర రెండు వేల రూపాయలు"),
+    ("en", "Delivery Rs. 49.50", "Delivery forty nine rupees fifty paise"),
+    ("hi", "सिर्फ़ ₹1", "सिर्फ़ एक रुपया"),
+    ("en", "Now 1,299/- only", "Now one thousand two hundred ninety nine rupees only"),
+    # number + unit, units in the listener's script
+    ("hi", "बैटरी 5000 mAh", "बैटरी पाँच हज़ार मिलीएम्पियर आवर"),
+    ("te", "బ్యాటరీ 5000 mAh", "బ్యాటరీ ఐదు వేల మిల్లీ ఆంపియర్ అవర్"),
+    ("en", "Battery 5000 mAh, 45W charging",
+     "Battery five thousand milliamp hours, forty five watt charging"),
+    ("hi", "20% छूट", "बीस प्रतिशत छूट"),
+    ("te", "20% తగ్గింపు", "ఇరవై శాతం తగ్గింపు"),
+    ("en", "a 6.7 inch screen", "a six point seven inch screen"),
+    ("hi", "6.7\" स्क्रीन", "छह दशमलव सात इंच स्क्रीन"),
+    # decimals and plain numbers
+    ("en", "rated 4.3 out of 5", "rated four point three out of five"),
+    ("hi", "रेटिंग 4.3", "रेटिंग चार दशमलव तीन"),
+    ("te", "రేటింగ్ 4.3", "రేటింగ్ నాలుగు పాయింట్ మూడు"),
+    ("en", "1,50,000 reviews", "one lakh fifty thousand reviews"),
+    ("te", "150000 రివ్యూలు", "ఒక లక్ష యాభై వేల రివ్యూలు"),  # before a noun
+    ("te", "1 ఫోన్", "ఒక ఫోన్"),
+    ("te", "మొత్తం 2000", "మొత్తం రెండు వేలు"),  # at the end: plural form
+    # read digit by digit: PIN codes, long numbers, leading zeros
+    ("en", "Deliver to PIN 500032", "Deliver to PIN five zero zero zero three two"),
+    ("hi", "पिन कोड 110001", "पिन कोड एक एक शून्य शून्य शून्य एक"),
+    ("en", "Call 9876543210", "Call nine eight seven six five four three two one zero"),
+    # left alone: numbers that are part of a name
+    ("en", "Samsung Galaxy S24 5G", "Samsung Galaxy S24 5G"),
+    ("hi", "boAt Airdopes 141", "boAt Airdopes एक सौ इकतालीस"),  # a separate number is read
+    ("en", "", ""),
+    ("ml", "₹1,299", "₹1,299"),  # no tables for other languages yet: unchanged
+]  # fmt: skip
+
+
+@pytest.mark.parametrize(("lang", "text", "spoken"), SPEAK)
+def test_speakable(lang, text, spoken):
+    assert speakable(text, lang) == spoken

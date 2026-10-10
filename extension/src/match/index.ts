@@ -32,10 +32,11 @@ export type CommandId =
 
 /** English command phrases. Other languages come from src/i18n (requested from Track A). */
 export const COMMANDS: Record<CommandId, string[]> = {
-  pause: ['pause', 'wait', 'hold on'],
+  // Hindi and Telugu forms from Track A's player.controls_hint.
+  pause: ['pause', 'wait', 'hold on', 'रुको', 'ఆపు'],
   resume: ['resume', 'continue', 'play'],
   stop: ['stop', 'quiet', 'be quiet'],
-  repeat: ['repeat', 'repeat that', 'say again', 'again'],
+  repeat: ['repeat', 'repeat that', 'say again', 'again', 'दोबारा', 'మళ్లీ'],
   repeat_all: ['repeat all', 'start again', 'from the start'],
   back: ['go back', 'back one', 'previous sentence'],
   next_section: ['next', 'next section', 'skip'],
@@ -67,12 +68,15 @@ export type MatchDecision =
 const FILLERS = /\b(please|can you|could you|the|a|an|it|now|um+|uh+)\b/g;
 
 export function normalise(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[^\p{L}\p{N}\s']/gu, ' ')
-    .replace(FILLERS, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
+  return (
+    text
+      .toLowerCase()
+      // Keep marks (\p{M}): Devanagari and Telugu vowel signs are marks, not letters.
+      .replace(/[^\p{L}\p{M}\p{N}\s']/gu, ' ')
+      .replace(FILLERS, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+  );
 }
 
 export function buildCandidates(

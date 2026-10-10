@@ -100,6 +100,22 @@ describe('local matcher: acts only on confident, unambiguous matches', () => {
   });
 });
 
+describe('Hindi and Telugu playback words (Track A)', () => {
+  it.each([
+    ['रुको', 'command:pause'],
+    ['ఆపు', 'command:pause'],
+    ['दोबारा', 'command:repeat'],
+    ['మళ్లీ', 'command:repeat'],
+  ])('"%s" -> %s', (utterance, expected) => {
+    expect(act(utterance)).toBe(expected);
+  });
+
+  it('keeps vowel signs when normalising Indic text', () => {
+    expect(normalise('रुको!')).toBe('रुको');
+    expect(normalise('మళ్లీ.')).toBe('మళ్లీ');
+  });
+});
+
 describe('helpers', () => {
   it('shortName keeps brand + model and drops the variant/specs part', () => {
     expect(shortName('Novix A15 5G (Ocean Blue, 6GB RAM, 128GB Storage)')).toBe('Novix A15 5G');
