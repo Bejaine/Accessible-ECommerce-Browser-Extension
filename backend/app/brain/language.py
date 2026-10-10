@@ -8,6 +8,7 @@ by setting `lang: en`, never pretending a text is translated.
 from __future__ import annotations
 
 import logging
+import re
 from collections.abc import Iterable
 
 from app.errors import ApiError
@@ -36,4 +37,17 @@ async def translate(text: str, src: str, tgt: str, keep: Iterable[str] = ()) -> 
         # A dropped placeholder would lose a name or a price from what the user hears.
         log.warning("translation %s->%s lost %s; keeping %s", src, tgt, lost, src)
         return None
-    return masking.unmask(out, table)
+    return _restore_colons(text, masking.unmask(out, table))
+
+
+# MT renders "Colour: Midnight Black" as "रंगः ..." (Devanagari visarga) or the Telugu visarga.
+_VISARGA_BEFORE_SPACE = re.compile(r"[\u0903\u0c03](?=\s)")
+
+
+def _restore_colons(source: str, out: str) -> str:
+    """Put back the colons MT turned into visargas, never more than the source had (the
+    visarga is also a real letter in some words)."""
+    budget = source.count(":")
+    if not budget:
+        return out
+    return _VISARGA_BEFORE_SPACE.sub(":", out, count=budget)

@@ -226,3 +226,14 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - Refused (nothing offered) without a total, the Place-order target or a selected payment
   method. Warns when the page's payment differs from prefs.preferred_payment. Pressing the
   button directly is refused. Payment details are always entered by the user (secure zone).
+
+## 2026-10-11 — /turn translates an answer's lines in parallel (Track C; affects A)
+- All lines of one answer (summary, headings, items, follow-ups, warnings) are translated
+  concurrently through `bhashini.translate`; one at a time, a 20-line answer cost 20 round trips.
+  Still all-or-nothing: if any line fails, the whole answer stays English (`lang: en`).
+- Track A: a /turn can now send up to ~20 MT requests at once; your per-model limiter queues
+  them. Tell us if the AnuvaadHub sandbox needs a lower burst.
+- The user's words are redacted BEFORE translation (they were translated first, so a card number
+  or OTP said in Hindi reached the MT service); placeholders survive masking and translation.
+- MT turns ": " into a visarga ("रंगः"); we put the colon back, at most as many as the English
+  had. `fixtures/mocks/TurnResponse.json` now has the Hindi prompt equal to the Hindi summary.

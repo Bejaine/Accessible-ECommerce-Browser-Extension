@@ -11,6 +11,7 @@ so a turn never makes more than two.
 
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import re
@@ -172,6 +173,9 @@ async def handle_turn(req: TurnRequest) -> TurnResponse:
     # "पंद्रह से बीस हज़ार" -> "15000 से 20000", "dedh lakh" -> "150000" (Track A's normaliser),
     # before and after translation, so budgets and quantities reach the model as digits.
     text = numbers.normalise_numbers(text, user_lang)
+    # Redact BEFORE translation (docs/safety.md: before any text reaches an LLM or translation):
+    # a card number or OTP said in Hindi must not reach the MT service either.
+    text = redact(text).text
     english = await language.translate(text, user_lang, "en", keep=brands) or text
     said = redact(numbers.normalise_numbers(english, "en")).text
     alternatives = [
@@ -388,13 +392,17 @@ async def _translate_output(
             texts.append((item, "text"))
         if section["table"]:
             texts.append((section["table"], "spoken"))
-    translated = []
-    for container, key in texts:
-        out = await language.translate(container[key], "en", lang, keep=keep or [])
-        if out is None:
-            return output  # all or nothing: never a half-translated answer
-        translated.append((container, key, out))
-    for container, key, out in translated:
+    # In parallel: one at a time, a 20-line answer took 20 round trips (Track A measured
+    # 0.3-1 s+ each). Track A's gateway rate-limits per model, so a burst is safe.
+    results = await asyncio.gather(
+        *(
+            language.translate(container[key], "en", lang, keep=keep or [])
+            for container, key in texts
+        )
+    )
+    if any(out is None for out in results):
+        return output  # all or nothing: never a half-translated answer
+    for (container, key), out in zip(texts, results, strict=True):
         container[key] = out
     data["lang"] = lang
     return AccessibleOutput.model_validate(data)

@@ -322,3 +322,65 @@ def test_spoken_numbers_reach_the_model_as_digits(mock_body, monkeypatch):
     run(orchestrator.handle_turn(TurnRequest.model_validate(data)))
     assert sent["payload"]["utterance"] == "phones under 15000"
     assert sent["key"] == "turn/phones_under_fifteen_thousand", "recordings keyed by what was said"
+
+
+def test_answer_strings_are_translated_in_parallel(req, monkeypatch):
+    """A long answer must not cost one translation round trip per line."""
+    import time
+
+    from app.services import bhashini
+
+    async def slow_translate(text, source, target):
+        await asyncio.sleep(0.05)
+        return f"[{target}] {text}"
+
+    monkeypatch.setattr(bhashini, "translate", slow_translate)
+    ctx = tools.Context(req)
+    long_answer = run(tools.read_section(ctx, "reviews")).output
+    n = 1 + len(long_answer.followups) + sum(1 + len(s.items) for s in long_answer.sections)
+    start = time.perf_counter()
+    out = run(orchestrator._translate_output(long_answer, "hi"))
+    elapsed = time.perf_counter() - start
+    assert out.lang.value == "hi"
+    assert n >= 10 and elapsed < 0.05 * n / 3, f"{n} strings took {elapsed:.2f}s"
+
+
+# --- Track A's re-run findings ---
+
+
+def test_secrets_are_redacted_before_translation(mock_body, monkeypatch):
+    """docs/safety.md: redact before any text reaches an LLM *or translation*."""
+    from app.services import bhashini
+
+    sent_to_mt = []
+
+    async def recording_translate(text, source, target):
+        sent_to_mt.append(text)
+        return text
+
+    async def tool_call(*_a, **_k):
+        return "unclear", {"confidence": 0.3, "alternatives": []}
+
+    monkeypatch.setattr(bhashini, "translate", recording_translate)
+    monkeypatch.setattr(orchestrator, "complete_tool_call", tool_call)
+    data = mock_body("TurnRequest")
+    data["input"].update(text="मेरा कार्ड 4111 1111 1111 1111 है और OTP 482913", lang="hi")
+    run(orchestrator.handle_turn(TurnRequest.model_validate(data)))
+    joined = " ".join(sent_to_mt)
+    assert sent_to_mt, "the Hindi input was translated"
+    assert "4111" not in joined and "482913" not in joined
+
+
+def test_colons_come_back_but_real_visargas_stay():
+    from app.brain.language import _restore_colons
+
+    assert _restore_colons("Colour: Midnight Black", "रंगः Midnight Black") == "रंग: Midnight Black"
+    assert _restore_colons("Colour: Black", "రంగుః Black") == "రంగు: Black"
+    assert _restore_colons("Add it?", "अतः इसे जोड़ें?") == "अतः इसे जोड़ें?"
+
+
+def test_canned_turn_response_speaks_one_language(mock_body):
+    """The MOCK fixture Track D develops against: the confirmation prompt is the summary."""
+    canned = mock_body("TurnResponse")
+    assert canned["confirmation"]["prompt"] == canned["output"]["summary"]
+    assert canned["output"]["lang"] == "hi"
