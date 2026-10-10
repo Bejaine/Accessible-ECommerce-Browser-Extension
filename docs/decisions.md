@@ -329,7 +329,7 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - Verified by TTS → ASR: Hindi and Telugu now say "सत्रह हज़ार नौ सौ निन्यानवे रुपये" /
   "పదిహేడు వేల … రూపాయలు". Telugu TTS took ~16 s for one long sentence: speak short sentences.
 - Text shown on screen keeps the digits; only the audio uses words. Telugu forms were written
-  by us, not a native speaker: please have one review `numbers.py`'s Telugu tables.
+  by us and then reviewed by a native speaker (2026-10-11): no changes needed.
 
 ## 2026-10-11 — UI strings and pre-recorded phrases (Track A; affects D, core)
 - UI strings live in `extension/src/i18n/{en,hi,te}.json`; `t(key, lang)` falls back to English.
@@ -386,3 +386,11 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - Addresses are personal: only `ADDR_n` leaves the device, also in "Deliver to …" labels.
 - Learned adapters: a fallback evidence snippet is located in the page and stored as a selector
   per site (storage.local). Rules only fill empty fields and never read a price.
+
+## 2026-10-11 — ASR on real voices (Track A; affects C)
+- 9 clips of a team member (fixtures/audio, 16 kHz): mean WER en 8%, hi 0%, te 19%; every spoken
+  budget ("twenty thousand", "बीस हज़ार", "ఇరవై వేల") came out as 20000; 0.5–0.7 s per clip.
+  Telugu errors were spellings of English loanwords (cart → "కాట్లో"), not meaning changes.
+- ASR heard "Add this to cart" as "Add this two cart". The number normaliser now leaves a lone
+  small English number word as a word (to/two, for/four), so it can't become "add 2 to cart";
+  "two thousand" etc. still convert. Track C: expect such homophones in English transcripts.

@@ -20,7 +20,14 @@ CASES = [
     ("en", "budget is 15k", "budget is 15000"),
     ("en", "Rs 1,50,000", "Rs 150000"),
     ("en", "costs 1,299", "costs 1299"),
-    ("en", "two three days", "2 3 days"),  # side by side, not added up
+    ("en", "two three lakh", "two 300000"),  # side by side, not added up
+    # Live real-voice test: ASR heard "Add this to cart" as "Add this two cart". A lone small
+    # English number word stays a word (to/two, for/four, won/one, ate/eight).
+    ("en", "Add this two cart.", "Add this two cart."),
+    ("en", "add two of these", "add two of these"),
+    ("en", "is this for me", "is this for me"),
+    ("en", "two thousand", "2000"),  # part of a bigger number: converted
+    ("en", "twenty", "20"),  # not a homophone risk
     # unchanged
     ("en", "show me the cheaper one", "show me the cheaper one"),
     ("en", "add one to cart", "add one to cart"),
@@ -95,7 +102,7 @@ CASES = [
     ("en", "ten to fifteen thousand", "10000 to 15000"),
     ("te", "పది నుంచి పదిహేను వేల", "10000 నుంచి 15000"),
     ("en", "10 to 12", "10 to 12"),  # no multiplier: nothing to share
-    ("en", "two and five thousand", "2 and 5000"),  # "and" is a range only after "between"
+    ("en", "two and five thousand", "two and 5000"),  # "and" is a range only after "between"
     ("en", "twenty to fifteen thousand", "20 to 15000"),  # a range never runs backwards
     # --- nothing to do ----------------------------------------------------------------------
     ("en", "", ""),

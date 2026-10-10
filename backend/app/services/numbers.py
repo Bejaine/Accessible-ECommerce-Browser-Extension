@@ -208,6 +208,11 @@ def _worth_replacing(p: _Phrase) -> bool:
         t = p.tokens[0]
         if t.kind == "digits" or t.kind == MULT or _key(t.text) in _WEAK:
             return False
+        # Live real-voice test: ASR heard "Add this to cart" as "Add this two cart". A lone
+        # small English number word stays a word (to/two, for/four, won/one, ate/eight); the
+        # LLM reads "two" fine, and bigger numbers ("two thousand") still convert.
+        if t.text.lower() in _EN and t.value <= 10:
+            return False
     return True
 
 
