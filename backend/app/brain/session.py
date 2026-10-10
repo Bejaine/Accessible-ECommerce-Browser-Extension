@@ -24,6 +24,7 @@ class Session:
     priorities: dict[str, float] = field(default_factory=dict)  # feature -> weight 0-1
     max_price: float | None = None
     min_rating: float | None = None
+    workflow: dict | None = None  # the order task in progress (brain/workflows.py)
 
     def remember(self, product: ProductJSON) -> None:
         self.seen.pop(product.id, None)
