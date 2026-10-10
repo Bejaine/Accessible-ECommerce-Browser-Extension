@@ -33,6 +33,21 @@ export function targetIdFor(el: Element): string {
   return id;
 }
 
+/**
+ * Gives an element a meaningful id (e.g. "t-cancel-2" for ORDER_2's cancel button, the
+ * convention Track C's workflows use to tie a button to its order). Falls back to the generic
+ * id if another live element already holds that name. The old id keeps resolving.
+ */
+export function assignTargetId(el: Element, preferred: string): string {
+  const r = registry(el.ownerDocument);
+  if (r.byElement.get(el) === preferred) return preferred;
+  const holder = r.byId.get(preferred)?.deref();
+  if (holder && holder !== el && holder.isConnected) return targetIdFor(el);
+  r.byElement.set(el, preferred);
+  r.byId.set(preferred, new WeakRef(el));
+  return preferred;
+}
+
 /** The element behind a target id, or null if it is gone. */
 export function resolveTarget(id: string, doc: Document = document): Element | null {
   const el = registries.get(doc)?.byId.get(id)?.deref() ?? null;

@@ -185,6 +185,18 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   are not added ("two three days"), and digits are never reformatted.
 - Ranges share the multiplier: "पंद्रह से बीस हज़ार" → "15000 से 20000", never backwards.
 
+## 2026-10-11 — Actuator safety, secure zone and orders (Track B; affects A, C, core)
+- `performAction` refuses to click controls labelled place order / pay / buy now / confirm
+  purchase unless called with `{ confirmed: true }` (only for Confirmation.pending_actions after
+  the user's yes), never fills a secure field, and returns {ok, performed, verified, reason}.
+- Secure zone = password/cc-*/one-time-code fields, card/CVV/expiry/OTP/UPI-PIN wording, and
+  payment-gateway/3-D Secure iframes. "PIN code" (postal) is not secure. While focus is inside,
+  `extractPageContext` returns no products or targets and `secure_zone_active: true`.
+- Order numbers become ORDER_n everywhere they could leave the device (OrderJSON.id, target
+  labels, LLM text); `resolveOrderId()` maps back locally for reading aloud.
+- Mock store (MockMart) runs on localhost with `<meta name="asl-mock-store">`; a "Return
+  requested" status maps to OrderStatus `returned` (the enum has no requested state).
+
 ## 2026-10-11 — Order workflows: track, cancel, return (Track C; affects B, D, core)
 - Step machines in `brain/workflows.py`, state per session_id; `TurnResponse.workflow` =
   {name, step, total_steps}. Track: choose order → status. Cancel: choose → confirm → verify.
@@ -341,3 +353,15 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   stayed whole and in order (en→hi, en→te). Every packed reply is still verified (markers 1…n
   in order, each item keeps its placeholders); a failed batch is re-translated line by line.
 - Live: a 14-line reviews answer took 2 calls per language (was 14), 0.4 s hi / 1.1 s te.
+
+## 2026-10-11 — Player, audio sources and barge-in (Track A; affects D, core, C)
+- `player.ts` plays an AccessibleOutput segment by segment (summary, headings, items, spoken
+  tables), prefetching the next segment's audio: this is the sentence-by-sentence streaming
+  (Track C decided /turn itself does not stream). Replays come from cache, never a new TTS call.
+- Audio per segment (`sources.ts`): pre-recorded phrase → cache → device voice in lite mode →
+  server TTS (25 s) → device voice on failure (announced once; device-only for 1 min after two
+  failures) → text only if the device has no voice for the language. Never an English voice for
+  Hindi/Telugu.
+- Barge-in (`bargeIn.ts`): speech pauses playback; the utterance goes to the matcher or /turn.
+  Not during device-voice segments: the OS plays them, so echo cancellation may not remove them
+  and the mic could hear our own voice. Keys/taps always work.
