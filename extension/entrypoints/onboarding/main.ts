@@ -1,7 +1,10 @@
 import { createMic, toAsrRequest } from '@/src/audio/mic';
 import { createRuntimeBackend, type BackendReply } from '@/src/core/backend';
 import { createProfileStore } from '@/src/core/profile';
-import { createSpeaker } from '@/src/render/speaker';
+import { phraseAudioUrl } from '@/src/audio/phrases';
+import { createPlayer } from '@/src/audio/player';
+import { createSpeechSources } from '@/src/audio/sources';
+import { createPlayerSpeaker } from '@/src/core/voice';
 import { startOnboarding } from '@/src/ui/onboarding';
 
 // First-run setup page, opened once by the background script on install (or from Settings).
@@ -11,8 +14,14 @@ void (async () => {
     (message) => browser.runtime.sendMessage(message) as Promise<BackendReply>,
   );
   const mic = createMic();
-  const speaker = createSpeaker();
-  speaker.setRate(store.get().prefs.tts_rate);
+  // The setup page talks through Track A's player too (rule 12), with pre-recorded prompts.
+  const demo = (import.meta.env.VITE_BACKEND ?? 'mock') === 'mock';
+  const sources = createSpeechSources({
+    tts: (text, lang) => backend.tts({ schema_version: '1.0', text, lang }),
+    lite: () => demo || store.get().prefs.lite_mode,
+    phraseUrl: phraseAudioUrl,
+  });
+  const speaker = createPlayerSpeaker(createPlayer({ sources, rate: store.get().prefs.tts_rate }));
   startOnboarding({
     root: document.getElementById('app')!,
     store,

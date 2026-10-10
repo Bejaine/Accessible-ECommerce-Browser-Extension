@@ -1,4 +1,4 @@
-import type { PlaybackState, Speaker } from '../../src/render/speaker';
+import type { PlaybackState, Speaker } from '../../src/core/voice';
 
 /** A Speaker that records calls and tracks state like the real one, without audio. */
 export function recordingSpeaker() {

@@ -366,3 +366,14 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - Barge-in (`bargeIn.ts`): speech pauses playback; the utterance goes to the matcher or /turn.
   Not during device-voice segments: the OS plays them, so echo cancellation may not remove them
   and the mic could hear our own voice. Keys/taps always work.
+
+## 2026-10-11 — Core now uses Track A's player; speed steps 0.25 (Track D; affects A, B)
+- All speech goes through `src/audio/player.ts` (rule 12) via `src/core/voice.ts`, an adapter
+  that adds prompts over a paused/playing answer (snapshot/restore), multilingual line queues
+  (setup page) and following `prefs.tts_rate`. Track D's interim speaker is removed.
+- Speech speed moves in 0.25 steps (the player's), 0.5–2; simple mode starts at 0.75× (was 0.85×).
+- Secure zone: `muteMicInSecureZone(document, mic, …)` mutes the mic and announces it.
+- Extraction fallback runs only against a real backend: the mock describes the fixture phone,
+  and merging it into a real product would invent facts (rule 1).
+- Barge-in starts only after the user has used Speak once, so the mic permission prompt never
+  appears unexpectedly during playback.

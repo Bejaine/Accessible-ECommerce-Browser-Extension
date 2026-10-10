@@ -14,15 +14,24 @@ import type {
 } from '@shared/index';
 import { browser } from 'wxt/browser';
 import { performAction } from '../actuate';
-import { createMic, MicError, toAsrRequest, type Mic } from '../audio/mic';
-import { extractPageContext, resolveTarget } from '../extract';
+import { createBargeIn, type BargeIn } from '../audio/bargeIn';
+import { createMic, MicError, toAsrRequest, type Mic, type Utterance } from '../audio/mic';
+import { phraseAudioUrl } from '../audio/phrases';
+import { createPlayer, type Player } from '../audio/player';
+import { createSpeechSources } from '../audio/sources';
+import {
+  applyFallback,
+  buildFallbackRequest,
+  extractPageContext,
+  muteMicInSecureZone,
+  resolveTarget,
+} from '../extract';
 import { t } from '../i18n';
 import { attachCollectors } from '../infer/collectors';
 import { createScoreEngine, type InferredCondition, type ScoreEngine } from '../infer/scores';
 import { createSuggester, type Suggester } from '../infer/suggest';
 import { buildCandidates, createMatcher } from '../match';
 import { renderOutput, type RenderedOutput } from '../render';
-import { createSpeaker, type Speaker } from '../render/speaker';
 import { announce, resetAnnouncer, setAnnounceVoice } from '../ui/announce';
 import { createConfirmCard, formatMoney } from '../ui/confirmCard';
 import { createMicButton } from '../ui/micButton';
@@ -61,6 +70,7 @@ import {
 } from './profile';
 import { createInputFallback } from './fallback';
 import { createSession } from './session';
+import { createPlayerSpeaker, type Speaker } from './voice';
 import { createTurnPipeline, localOutput, type PerformFn, type TurnPipeline } from './turn';
 
 export const SUGGEST_CHECK_MS = 2000;
@@ -138,13 +148,26 @@ export function mountApp(
   const lang = () => profile.prefs.lang;
 
   // --- The assistant's own voice (users without a screen reader) ---
-  const speaker =
+  // All audio goes through Track A's player (rule 12): server TTS (Bhashini) with a per-text
+  // cache and pre-recorded UI phrases, or the device voice in demo/lite mode or as a fallback.
+  let player: Player | null = null;
+  if (!options.speaker) {
+    const sources = createSpeechSources({
+      tts: (text, l) => backend.tts({ schema_version: '1.0', text, lang: l }),
+      lite: () => demo || profile.prefs.lite_mode,
+      phraseUrl: phraseAudioUrl,
+      onFallback: () => announce(t('lite.device_voice', lang()), { speak: false }),
+    });
+    player = createPlayer({ sources, rate: profile.prefs.tts_rate });
+  }
+  const speaker: Speaker =
     options.speaker ??
-    createSpeaker({
-      tts: demo ? undefined : (text, l) => backend.tts({ schema_version: '1.0', text, lang: l }),
-      // Say once (as text, and through any voice we do have) that a language has no voice here.
+    createPlayerSpeaker(player!, {
+      // Say once (as text) that a language has no voice here; the text stays on screen.
       onNoVoice: (l) =>
-        announce(label('voice.missing', lang()).replaceAll('{language}', LANGUAGE_NAMES[l])),
+        announce(label('voice.missing', lang()).replaceAll('{language}', LANGUAGE_NAMES[l]), {
+          speak: false,
+        }),
     });
   speaker.setRate(profile.prefs.tts_rate);
   const voiceOn = () => assistantVoiceOn(profile, devicePrefs);
@@ -601,19 +624,45 @@ export function mountApp(
     return sections?.[SECTION_FOR_PHRASE[phraseId as keyof typeof SECTION_FOR_PHRASE]] ?? null;
   }
 
+  const preparing = new Set<string>();
+
   function preparePage(): void {
     const product =
       page.page_type === 'product' && !page.secure_zone_active ? page.products[0] : undefined;
-    if (!product || prepared.has(product.id)) return;
+    if (!product || prepared.has(product.id) || preparing.has(product.id)) return;
+    preparing.add(product.id);
     // Read-aloud users hear title and price from the page at once (grounded in ProductJSON).
     if (profile.conditions.visual.active && product.title) {
       const price = product.price ? formatMoney(product.price, lang()) : null;
       announce(price ? `${product.title}. ${price}.` : product.title);
     }
-    backend
-      .prepareProduct({ schema_version: '1.0', product, prefs: profile.prefs })
-      .then((res) => prepared.set(product.id, res.sections))
-      .catch(() => undefined); // phrases fall back to a turn
+    void (async () => {
+      let full = product;
+      // Track B's tier 3: ask /extract/fallback for fields the page's own tiers missed. Never in
+      // demo mode: the mock answers for the fixture phone, not this page (rule 1).
+      const request = demo ? null : buildFallbackRequest(document, product);
+      if (request) {
+        try {
+          full = applyFallback(product, await backend.extractFallback(request));
+          const i = page.products.findIndex((p) => p.id === product.id);
+          if (i >= 0) page.products[i] = full;
+        } catch {
+          // Keep what the page gave us; the fields stay listed in `missing`.
+        }
+      }
+      try {
+        const res = await backend.prepareProduct({
+          schema_version: '1.0',
+          product: full,
+          prefs: profile.prefs,
+        });
+        prepared.set(product.id, res.sections);
+      } catch {
+        // Section phrases fall back to a turn.
+      } finally {
+        preparing.delete(product.id);
+      }
+    })();
   }
 
   let lastUrl = location.href;
@@ -645,6 +694,48 @@ export function mountApp(
     }
   }
 
+  /** ASR, then the local matcher or a turn. False if nothing usable was heard. */
+  async function handleUtterance(utterance: Utterance): Promise<boolean> {
+    const asr = await backend.asr(toAsrRequest(utterance, lang()));
+    if (!asr.text.trim()) {
+      if (utterance.micLevel > 0.1) engine.add('unheard_speech');
+      notUnderstood();
+      return false;
+    }
+    fallback.recordSuccess();
+    await say(asr.text, 'voice', asr.asr_meta);
+    return true;
+  }
+
+  // Barge-in (Track A): speaking during playback pauses it and the words are handled like any
+  // utterance. Only after the user has used Speak once, so the mic permission prompt never
+  // appears out of the blue while an answer is being read.
+  let bargeIn: BargeIn | null = null;
+  function enableBargeIn(): void {
+    if (bargeIn || !player || demo) return;
+    bargeIn = createBargeIn({
+      mic,
+      player,
+      mode: () => (profile.conditions.speech.active ? 'speech' : 'default'),
+      onUtterance: (utterance) => {
+        if (!utterance.audioBase64) return;
+        void handleUtterance(utterance)
+          .then((heard) => heard || bargeIn?.resumeAfterBargeIn())
+          .catch(() => bargeIn?.resumeAfterBargeIn());
+      },
+    });
+    offs.push(() => bargeIn?.dispose());
+  }
+
+  // Secure zone (Track B detects, Track A mutes): in password, card, CVV, OTP or UPI fields the
+  // mic is off and nothing is extracted; listening resumes when focus leaves (docs/safety.md).
+  const secureZone = muteMicInSecureZone(document, mic, (event) =>
+    announce(t(event === 'entered' ? 'mic.secure_zone' : 'listening.resumed', lang()), {
+      assertive: event === 'entered',
+    }),
+  );
+  offs.push(() => secureZone.stop());
+
   async function listen(): Promise<void> {
     if (mic.listening) {
       mic.stop();
@@ -670,14 +761,7 @@ export function mountApp(
         announce(t('mic.no_speech', lang()));
         return;
       }
-      const asr = await backend.asr(toAsrRequest(utterance, lang()));
-      if (!asr.text.trim()) {
-        if (utterance.micLevel > 0.1) engine.add('unheard_speech');
-        notUnderstood();
-        return;
-      }
-      fallback.recordSuccess();
-      await say(asr.text, 'voice', asr.asr_meta);
+      if (await handleUtterance(utterance)) enableBargeIn();
     } catch (error) {
       micButton.setListening(false);
       const message =

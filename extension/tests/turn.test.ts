@@ -133,22 +133,22 @@ describe('turns from the overlay buttons', () => {
 
   it('"slower" / "faster" and the speed buttons change speech speed and save it', async () => {
     await app.say('slower');
-    await vi.waitFor(() => expect(store.get().prefs.tts_rate).toBe(0.9));
+    await vi.waitFor(() => expect(store.get().prefs.tts_rate).toBe(0.75));
     buttonNamed('.asl-speed', 'Faster')!.click();
     buttonNamed('.asl-speed', 'Faster')!.click();
-    await vi.waitFor(() => expect(store.get().prefs.tts_rate).toBe(1.1));
-    expect(q('.asl-speed-value')?.textContent).toBe('Speech speed 1.1×');
+    await vi.waitFor(() => expect(store.get().prefs.tts_rate).toBe(1.25));
+    expect(q('.asl-speed-value')?.textContent).toBe('Speech speed 1.25×');
     expect(
       ((await fakeBrowser.storage.local.get('profile')).profile as { prefs: { tts_rate: number } })
         .prefs.tts_rate,
-    ).toBe(1.1);
+    ).toBe(1.25);
   });
 
   it('ageing starts slower but the user can speed it up afterwards', async () => {
     await store.update((d) => setConditionActive(d, 'ageing', true, 'user'));
-    expect(store.get().prefs.tts_rate).toBe(0.85);
+    expect(store.get().prefs.tts_rate).toBe(0.75);
     await app.say('faster');
-    await vi.waitFor(() => expect(store.get().prefs.tts_rate).toBe(0.95));
+    await vi.waitFor(() => expect(store.get().prefs.tts_rate).toBe(1));
   });
 
   it('with ageing on, even a safe action is confirmed first', async () => {

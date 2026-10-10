@@ -3,7 +3,7 @@
 // large and highlighted (helps low vision and ageing); a big Pause / Resume button doubles as the
 // phone's floating play button (TalkBack: double-tap). The single-key mini-menu highlights its
 // items here too.
-import type { PlaybackState } from '../render/speaker';
+import type { PlaybackState } from '../core/voice';
 import { label, type UiKey } from './strings';
 
 export const PLAYBACK_CSS = `
