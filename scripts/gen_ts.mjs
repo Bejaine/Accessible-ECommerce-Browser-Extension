@@ -1,6 +1,6 @@
 // Regenerate shared/generated/ts/index.ts from shared/schemas/ (json-schema-to-typescript).
 // All schemas compile through one bundled root so shared types are emitted once.
-import { mkdir, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { compile } from 'json-schema-to-typescript';
@@ -9,9 +9,14 @@ const root = fileURLToPath(new URL('..', import.meta.url));
 const schemaDir = join(root, 'shared/schemas');
 const outDir = join(root, 'shared/generated/ts');
 
-const files = (await readdir(schemaDir, { recursive: true }))
-  .filter((f) => f.endsWith('.schema.json'))
-  .sort();
+const files = [];
+for (const f of (await readdir(schemaDir, { recursive: true })).sort()) {
+  if (!f.endsWith('.schema.json')) continue;
+  // Definition-only files (common.schema.json) have no root type; their $defs are emitted
+  // wherever they are referenced.
+  const schema = JSON.parse(await readFile(join(schemaDir, f), 'utf8'));
+  if (schema.type !== undefined) files.push(f);
+}
 
 const bundle = {
   title: 'Contracts',

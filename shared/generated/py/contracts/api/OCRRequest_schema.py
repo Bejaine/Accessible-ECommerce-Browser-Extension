@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, RootModel
+
+from .. import common_schema
 
 
-class OCRRequest(BaseModel):
+class OCRRequest1(BaseModel):
     """
     Exactly one of image_url or image_base64.
     """
@@ -13,6 +15,27 @@ class OCRRequest(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    image_url: str | None = None
+    schema_version: common_schema.SchemaVersion
+    image_url: str
     image_base64: str | None = None
-    lang: str
+    lang: common_schema.Lang
+
+
+class OCRRequest2(BaseModel):
+    """
+    Exactly one of image_url or image_base64.
+    """
+
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    schema_version: common_schema.SchemaVersion
+    image_url: str | None = None
+    image_base64: str
+    lang: common_schema.Lang
+
+
+class OCRRequest(RootModel[OCRRequest1 | OCRRequest2]):
+    root: OCRRequest1 | OCRRequest2 = Field(
+        ..., description="Exactly one of image_url or image_base64.", title="OCRRequest"
+    )

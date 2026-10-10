@@ -1,11 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Profile",
-  "description": "Stays on the device (browser.storage.local). Only `prefs` is sent to the backend.",
+  "description": "Stays on the device (browser.storage.local). Only `prefs` leaves the device.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["conditions", "prefs"],
+  "required": ["schema_version", "conditions", "prefs"],
   "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/SchemaVersion" },
     "conditions": {
       "title": "Conditions",
       "type": "object",
@@ -30,7 +31,7 @@
       "properties": {
         "score": { "type": "number", "minimum": 0, "maximum": 1 },
         "active": { "type": "boolean" },
-        "source": { "type": "string", "enum": ["inferred", "user"] }
+        "source": { "title": "ConditionSource", "type": "string", "enum": ["inferred", "user"] }
       }
     },
     "ColourConditionState": {
@@ -49,15 +50,41 @@
       "title": "Prefs",
       "type": "object",
       "additionalProperties": false,
-      "required": ["lang", "tts_rate", "text_scale", "verbosity", "lite_mode"],
+      "required": [
+        "lang",
+        "tts_rate",
+        "text_scale",
+        "verbosity",
+        "lite_mode",
+        "text_first",
+        "switch_key",
+        "preferred_payment"
+      ],
       "properties": {
-        "lang": { "type": "string", "description": "BCP-47-ish code, e.g. en, hi, te." },
-        "tts_rate": { "type": "number", "minimum": 0.5, "maximum": 2 },
-        "text_scale": { "type": "number", "minimum": 1, "maximum": 3 },
+        "lang": { "$ref": "common.schema.json#/$defs/Lang" },
+        "tts_rate": { "type": "number", "minimum": 0.5, "maximum": 2.0 },
+        "text_scale": { "type": "number", "minimum": 1.0, "maximum": 3.0 },
         "verbosity": { "$ref": "#/$defs/Verbosity" },
-        "lite_mode": { "type": "boolean" }
+        "lite_mode": { "type": "boolean" },
+        "text_first": {
+          "type": "boolean",
+          "description": "Prefer text over voice (a preference, not an impairment signal)."
+        },
+        "switch_key": {
+          "type": "string",
+          "minLength": 1,
+          "description": "KeyboardEvent.code used as the single switch, e.g. Space."
+        },
+        "preferred_payment": {
+          "anyOf": [{ "$ref": "#/$defs/PaymentMethod" }, { "type": "null" }]
+        }
       }
     },
-    "Verbosity": { "title": "Verbosity", "type": "string", "enum": ["short", "normal"] }
+    "Verbosity": { "title": "Verbosity", "type": "string", "enum": ["short", "normal"] },
+    "PaymentMethod": {
+      "title": "PaymentMethod",
+      "type": "string",
+      "enum": ["upi", "saved_card", "cod"]
+    }
   }
 }

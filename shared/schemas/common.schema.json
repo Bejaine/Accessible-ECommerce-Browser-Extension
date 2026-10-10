@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Common",
+  "description": "Shared definitions referenced by every other schema. Has no root object.",
+  "$defs": {
+    "SchemaVersion": {
+      "title": "SchemaVersion",
+      "description": "Contract version. Frozen at 1.0; see shared/README.md for change rules.",
+      "type": "string",
+      "const": "1.0"
+    },
+    "Lang": {
+      "title": "Lang",
+      "description": "Supported languages. Add more via a schema PR.",
+      "type": "string",
+      "enum": ["en", "hi", "te"]
+    },
+    "Money": {
+      "title": "Money",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["amount", "currency"],
+      "properties": {
+        "amount": { "type": "number", "minimum": 0 },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" }
+      }
+    },
+    "AsrMeta": {
+      "title": "AsrMeta",
+      "description": "What the ASR returned, plus our own mic level (to tell silence from unclear speech).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["confidence", "mic_level", "alternatives"],
+      "properties": {
+        "confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "mic_level": { "type": ["number", "null"], "minimum": 0, "maximum": 1 },
+        "alternatives": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

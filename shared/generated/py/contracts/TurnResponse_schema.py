@@ -2,27 +2,74 @@
 
 from __future__ import annotations
 
+from enum import StrEnum
+
 from pydantic import BaseModel, ConfigDict, Field
 
-from . import AccessibleOutput_schema, ClientAction_schema, Confirmation_schema
+from . import (
+    AccessibleOutput_schema,
+    ClientAction_schema,
+    Confirmation_schema,
+    common_schema,
+)
+
+
+class WorkflowName(StrEnum):
+    place_order = "place_order"
+    track_order = "track_order"
+    return_order = "return_order"
+    cancel_order = "cancel_order"
+
+
+class Workflow(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    name: WorkflowName = Field(..., title="WorkflowName")
+    step: int = Field(..., ge=1)
+    total_steps: int = Field(..., ge=1)
+
+
+class IntentAlternative(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    label: str
+    intent: str
+    actions: list[ClientAction_schema.ClientAction]
+
+
+class Intent(BaseModel):
+    """
+    confidence >= 0.8 act; 0.5-0.8 ask 'Did you mean X or Y?'; < 0.5 offer phrase chips.
+    """
+
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    name: str
+    confidence: float = Field(..., ge=0.0, le=1.0)
+    alternatives: list[IntentAlternative] = Field(..., max_length=2)
 
 
 class TurnResponse(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    intent: str
-    confidence: float | None = Field(
-        None,
-        description=">= 0.8 act; 0.5-0.8 ask 'Did you mean X or Y?'; < 0.5 offer phrase chips.",
-        ge=0.0,
-        le=1.0,
+    schema_version: common_schema.SchemaVersion
+    intent: Intent = Field(
+        ...,
+        description="confidence >= 0.8 act; 0.5-0.8 ask 'Did you mean X or Y?'; < 0.5 offer phrase chips.",
+        title="Intent",
     )
-    alternatives: list[str] | None = Field(
-        None,
-        description="Top two alternative intents for disambiguation.",
-        max_length=2,
+    actions: list[ClientAction_schema.ClientAction] = Field(
+        ...,
+        description="Safe to run now. Consequential actions go in confirmation.pending_actions instead.",
     )
-    actions: list[ClientAction_schema.ClientAction]
-    output: AccessibleOutput_schema.AccessibleOutput
-    confirmation: Confirmation_schema.Confirmation | None = None
+    confirmation: Confirmation_schema.Confirmation | None
+    workflow: Workflow | None = Field(
+        ..., description="Workflow state is kept by the backend per session_id."
+    )
+    output: AccessibleOutput_schema.AccessibleOutput = Field(
+        ..., description="In the user's language."
+    )

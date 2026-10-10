@@ -2,15 +2,16 @@
 
 from __future__ import annotations
 
-from typing import Any
-
 from pydantic import BaseModel, ConfigDict
+
+from .. import common_schema
 
 
 class ASRResponse(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
+    schema_version: common_schema.SchemaVersion
     text: str
-    lang: str
-    asr_meta: dict[str, Any]
+    lang: common_schema.Lang
+    asr_meta: common_schema.AsrMeta

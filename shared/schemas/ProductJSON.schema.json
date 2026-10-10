@@ -5,31 +5,44 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
+    "schema_version",
     "id",
     "url",
     "site",
     "title",
     "brand",
     "price",
+    "rating",
     "availability",
     "category",
     "specs",
+    "variants",
     "images",
+    "delivery",
+    "seller",
+    "sponsored",
+    "reviews",
     "source",
     "missing"
   ],
   "properties": {
-    "id": { "type": "string", "minLength": 1 },
+    "schema_version": { "$ref": "common.schema.json#/$defs/SchemaVersion" },
+    "id": {
+      "type": "string",
+      "pattern": "^[a-z0-9.-]+:.+$",
+      "description": "site:native_id, e.g. amazon.in:B0XXXXXXXX."
+    },
     "url": { "type": "string", "format": "uri" },
     "site": { "type": "string" },
     "title": { "type": ["string", "null"] },
     "brand": { "type": ["string", "null"] },
     "price": { "anyOf": [{ "$ref": "#/$defs/Price" }, { "type": "null" }] },
     "rating": { "anyOf": [{ "$ref": "#/$defs/Rating" }, { "type": "null" }] },
-    "availability": { "type": ["string", "null"] },
+    "availability": { "anyOf": [{ "$ref": "#/$defs/Availability" }, { "type": "null" }] },
     "category": { "type": ["string", "null"] },
     "specs": {
       "type": "object",
+      "propertyNames": { "pattern": "^[a-z0-9_]+$" },
       "additionalProperties": { "$ref": "#/$defs/SpecValue" }
     },
     "variants": {
@@ -38,8 +51,17 @@
     "images": { "type": "array", "items": { "$ref": "#/$defs/ProductImage" } },
     "delivery": { "anyOf": [{ "$ref": "#/$defs/Delivery" }, { "type": "null" }] },
     "seller": { "type": ["string", "null"] },
+    "sponsored": {
+      "type": ["boolean", "null"],
+      "description": "Sponsored listing (search results)."
+    },
+    "reviews": { "anyOf": [{ "$ref": "#/$defs/Reviews" }, { "type": "null" }] },
     "source": { "$ref": "#/$defs/ProductSource" },
-    "missing": { "type": "array", "items": { "type": "string" } }
+    "missing": {
+      "type": "array",
+      "description": "Dot paths of fields the page doesn't list, e.g. rating, specs.battery.",
+      "items": { "type": "string" }
+    }
   },
   "$defs": {
     "SourceMethod": {
@@ -51,11 +73,15 @@
       "title": "Price",
       "type": "object",
       "additionalProperties": false,
-      "required": ["amount", "currency"],
+      "required": ["amount", "currency", "mrp"],
       "properties": {
         "amount": { "type": "number", "minimum": 0 },
-        "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
-        "mrp": { "type": ["number", "null"], "minimum": 0 }
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "mrp": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "description": "Maximum retail price, in the same currency as amount."
+        }
       }
     },
     "Rating": {
@@ -64,16 +90,37 @@
       "additionalProperties": false,
       "required": ["value", "count"],
       "properties": {
-        "value": { "type": "number", "minimum": 0, "maximum": 5 },
+        "value": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 5,
+          "description": "Normalised to 0-5."
+        },
         "count": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "Availability": {
+      "title": "Availability",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "text"],
+      "properties": {
+        "status": {
+          "title": "AvailabilityStatus",
+          "type": "string",
+          "enum": ["in_stock", "low_stock", "out_of_stock", "preorder", "unknown"]
+        },
+        "text": { "type": ["string", "null"], "description": "The page's own wording." }
       }
     },
     "SpecValue": {
       "title": "SpecValue",
+      "description": "Numbers are parsed: \"5000 mAh\" -> value 5000, unit \"mAh\".",
       "type": "object",
       "additionalProperties": false,
-      "required": ["value"],
+      "required": ["label", "value", "unit"],
       "properties": {
+        "label": { "type": "string", "description": "Human label as shown on the page." },
         "value": { "type": ["string", "number", "boolean"] },
         "unit": { "type": ["string", "null"] }
       }
@@ -82,7 +129,7 @@
       "title": "Variant",
       "type": "object",
       "additionalProperties": false,
-      "required": ["name", "value", "selected"],
+      "required": ["name", "value", "selected", "available", "target_id"],
       "properties": {
         "name": { "type": "string", "description": "Dimension, e.g. colour or size." },
         "value": { "type": "string" },
@@ -98,35 +145,106 @@
       "title": "ProductImage",
       "type": "object",
       "additionalProperties": false,
-      "required": ["url"],
+      "required": ["url", "alt", "description", "ocr_text"],
       "properties": {
         "url": { "type": "string" },
         "alt": { "type": ["string", "null"] },
-        "description": { "type": ["string", "null"] }
+        "description": { "type": ["string", "null"] },
+        "ocr_text": { "type": ["string", "null"] }
       }
     },
     "Delivery": {
       "title": "Delivery",
       "type": "object",
       "additionalProperties": false,
-      "required": ["text"],
+      "required": ["text", "cost", "date"],
       "properties": {
         "text": { "type": "string" },
-        "cost": { "type": ["number", "null"], "minimum": 0 },
-        "date": { "type": ["string", "null"] }
+        "cost": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Money" }, { "type": "null" }] },
+        "date": { "type": ["string", "null"], "format": "date" }
+      }
+    },
+    "Reviews": {
+      "title": "Reviews",
+      "description": "What review summaries are based on; never claim more than basis_count.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["basis_count", "summary_text", "insights", "histogram", "items"],
+      "properties": {
+        "basis_count": { "type": "integer", "minimum": 0 },
+        "summary_text": {
+          "type": ["string", "null"],
+          "description": "The page's own summary, e.g. Amazon's \"Customers say\"."
+        },
+        "insights": { "type": "array", "items": { "$ref": "#/$defs/ReviewInsight" } },
+        "histogram": { "anyOf": [{ "$ref": "#/$defs/ReviewHistogram" }, { "type": "null" }] },
+        "items": { "type": "array", "items": { "$ref": "#/$defs/ReviewItem" } }
+      }
+    },
+    "ReviewInsight": {
+      "title": "ReviewInsight",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["topic", "sentiment", "mentions"],
+      "properties": {
+        "topic": { "type": "string" },
+        "sentiment": {
+          "title": "Sentiment",
+          "type": "string",
+          "enum": ["positive", "negative", "mixed"]
+        },
+        "mentions": { "$ref": "#/$defs/Mentions" }
+      }
+    },
+    "Mentions": {
+      "title": "Mentions",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["total", "positive", "negative"],
+      "properties": {
+        "total": { "type": "integer", "minimum": 0 },
+        "positive": { "type": "integer", "minimum": 0 },
+        "negative": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "ReviewHistogram": {
+      "title": "ReviewHistogram",
+      "description": "Count of ratings per star.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["1", "2", "3", "4", "5"],
+      "properties": {
+        "1": { "type": "integer", "minimum": 0 },
+        "2": { "type": "integer", "minimum": 0 },
+        "3": { "type": "integer", "minimum": 0 },
+        "4": { "type": "integer", "minimum": 0 },
+        "5": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "ReviewItem": {
+      "title": "ReviewItem",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rating", "title", "text", "date", "verified"],
+      "properties": {
+        "rating": { "type": ["number", "null"] },
+        "title": { "type": ["string", "null"] },
+        "text": { "type": "string" },
+        "date": { "type": ["string", "null"], "format": "date" },
+        "verified": { "type": ["boolean", "null"] }
       }
     },
     "ProductSource": {
       "title": "ProductSource",
       "type": "object",
       "additionalProperties": false,
-      "required": ["method", "extracted_at"],
+      "required": ["method", "extracted_at", "fields"],
       "properties": {
         "method": { "$ref": "#/$defs/SourceMethod" },
         "extracted_at": { "type": "string", "format": "date-time" },
         "fields": {
           "type": "object",
-          "description": "Per-field source when data from several methods was merged.",
+          "description": "Per-field source (dot path -> method) when several methods were merged.",
           "additionalProperties": { "$ref": "#/$defs/SourceMethod" }
         }
       }

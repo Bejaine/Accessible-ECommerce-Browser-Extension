@@ -4,10 +4,33 @@
   "description": "Required before any consequential action. The client asks; the user answers.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["prompt", "action_ref", "risk"],
+  "required": ["schema_version", "id", "prompt", "risk", "pending_actions", "read_back"],
   "properties": {
+    "schema_version": { "$ref": "common.schema.json#/$defs/SchemaVersion" },
+    "id": { "type": "string", "minLength": 1 },
     "prompt": { "type": "string" },
-    "action_ref": { "type": "string", "description": "Which pending action this confirms." },
-    "risk": { "type": "string", "enum": ["low", "high"] }
+    "risk": { "type": "string", "enum": ["low", "high"] },
+    "pending_actions": {
+      "type": "array",
+      "description": "Run only after the user confirms. Never also listed in TurnResponse.actions.",
+      "items": { "$ref": "ClientAction.schema.json" }
+    },
+    "read_back": {
+      "description": "Critical numbers read back before acting.",
+      "anyOf": [{ "$ref": "#/$defs/ReadBack" }, { "type": "null" }]
+    }
+  },
+  "$defs": {
+    "ReadBack": {
+      "title": "ReadBack",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["quantity", "total", "pin_code"],
+      "properties": {
+        "quantity": { "type": ["integer", "null"], "minimum": 1 },
+        "total": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Money" }, { "type": "null" }] },
+        "pin_code": { "type": ["string", "null"], "description": "Delivery PIN code." }
+      }
+    }
   }
 }

@@ -8,7 +8,7 @@ from contracts.AccessibleOutput_schema import AccessibleOutput, Grounding, Secti
 from contracts.ActionTarget_schema import ActionTarget
 from contracts.api.ASRRequest_schema import ASRRequest
 from contracts.api.ASRResponse_schema import ASRResponse
-from contracts.api.ErrorResponse_schema import ErrorResponse
+from contracts.api.ErrorResponse_schema import ErrorCode, ErrorResponse
 from contracts.api.HealthResponse_schema import HealthResponse
 from contracts.api.OCRRequest_schema import OCRRequest
 from contracts.api.OCRResponse_schema import OCRResponse
@@ -22,6 +22,7 @@ from contracts.api.TTSResponse_schema import TTSResponse
 from contracts.api.VisionDescribeRequest_schema import VisionDescribeRequest
 from contracts.api.VisionDescribeResponse_schema import VisionDescribeResponse
 from contracts.ClientAction_schema import ClientAction
+from contracts.common_schema import AsrMeta, Lang, Money
 from contracts.Confirmation_schema import Confirmation
 from contracts.OrderJSON_schema import OrderJSON
 from contracts.PageContext_schema import PageContext
@@ -31,7 +32,14 @@ from contracts.ResolvedMode_schema import ResolvedMode
 from contracts.TurnRequest_schema import TurnRequest
 from contracts.TurnResponse_schema import TurnResponse
 
+SCHEMA_VERSION = "1.0"
+
 __all__ = [
+    "AsrMeta",
+    "ErrorCode",
+    "Lang",
+    "Money",
+    "SCHEMA_VERSION",
     "ASRRequest",
     "ASRResponse",
     "AccessibleOutput",

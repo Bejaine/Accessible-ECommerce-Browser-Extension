@@ -6,11 +6,14 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
+from .. import common_schema
+
 
 class HealthResponse(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
+    schema_version: common_schema.SchemaVersion
     status: Literal["ok"]
     mock: bool
     version: str

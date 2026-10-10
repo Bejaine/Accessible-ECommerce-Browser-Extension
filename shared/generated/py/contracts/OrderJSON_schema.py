@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+from datetime import date
 from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from . import ProductJSON_schema
+from . import common_schema
 
 
 class OrderStatus(StrEnum):
@@ -23,9 +24,9 @@ class OrderDates(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    ordered: str | None = None
-    expected_delivery: str | None = None
-    delivered: str | None = None
+    ordered: date | None
+    expected_delivery: date | None
+    delivered: date | None
 
 
 class AvailableAction(StrEnum):
@@ -40,15 +41,20 @@ class OrderItem(BaseModel):
     )
     title: str
     quantity: int = Field(..., ge=1)
-    price: ProductJSON_schema.Price | None = None
-    product_url: str | None = None
+    price: common_schema.Money | None
+    product_url: str | None
 
 
 class OrderJSON(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    id: str = Field(..., description="Placeholder (ORDER_1), never the real order id.")
+    schema_version: common_schema.SchemaVersion
+    id: str = Field(
+        ...,
+        description="Placeholder (ORDER_n), never the real order id.",
+        pattern="^ORDER_[0-9]+$",
+    )
     items: list[OrderItem]
     status: OrderStatus = Field(..., title="OrderStatus")
     dates: OrderDates = Field(..., title="OrderDates")

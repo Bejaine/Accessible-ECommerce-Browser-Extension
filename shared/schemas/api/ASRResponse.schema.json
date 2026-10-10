@@ -3,10 +3,19 @@
   "title": "ASRResponse",
   "type": "object",
   "additionalProperties": false,
-  "required": ["text", "lang", "asr_meta"],
+  "required": ["schema_version", "text", "lang", "asr_meta"],
   "properties": {
-    "text": { "type": "string" },
-    "lang": { "type": "string" },
-    "asr_meta": { "type": "object" }
+    "schema_version": {
+      "$ref": "../common.schema.json#/$defs/SchemaVersion"
+    },
+    "text": {
+      "type": "string"
+    },
+    "lang": {
+      "$ref": "../common.schema.json#/$defs/Lang"
+    },
+    "asr_meta": {
+      "$ref": "../common.schema.json#/$defs/AsrMeta"
+    }
   }
 }

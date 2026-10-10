@@ -1,5 +1,6 @@
 {
-  "text": "Battery life: 30 hours",
+  "schema_version": "1.0",
+  "text": "Battery capacity: 5000 mAh",
   "source_lang": "en",
   "target_lang": "hi"
 }

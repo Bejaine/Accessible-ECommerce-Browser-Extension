@@ -17,6 +17,7 @@ from referencing import Registry, Resource
 ROOT = Path(__file__).resolve().parent.parent
 SCHEMAS = ROOT / "shared" / "schemas"
 FIXTURES = ROOT / "fixtures" / "mocks"
+SCHEMA_VERSION = "1.0"
 
 
 def load_schemas() -> tuple[dict[str, dict], Registry]:
@@ -26,7 +27,8 @@ def load_schemas() -> tuple[dict[str, dict], Registry]:
         schema = json.loads(path.read_text())
         # No $id in the schemas: each one is addressed by its file URI so relative $refs resolve.
         schema = {"$id": path.as_uri(), **schema}
-        by_title[schema["title"]] = schema
+        if "type" in schema:  # definition-only files (common.schema.json) have no fixtures
+            by_title[schema["title"]] = schema
         resources.append((path.as_uri(), Resource.from_contents(schema)))
     return by_title, Registry().with_resources(resources)
 
@@ -43,10 +45,15 @@ def main() -> int:
             errors += 1
             continue
         validator = Draft202012Validator(schema, registry=registry, format_checker=FormatChecker())
-        problems = list(validator.iter_errors(json.loads(path.read_text())))
-        for err in problems:
-            loc = "/".join(str(p) for p in err.absolute_path) or "(root)"
-            print(f"FAIL {path.relative_to(ROOT)} at {loc}: {err.message}")
+        data = json.loads(path.read_text())
+        problems = [
+            ("/".join(str(p) for p in err.absolute_path) or "(root)", err.message)
+            for err in validator.iter_errors(data)
+        ]
+        if isinstance(data, dict) and data.get("schema_version") != SCHEMA_VERSION:
+            problems.append(("schema_version", f"must be {SCHEMA_VERSION!r}"))
+        for loc, message in problems:
+            print(f"FAIL {path.relative_to(ROOT)} at {loc}: {message}")
         errors += len(problems)
     missing = sorted(set(by_title) - {p.name.split(".")[0] for p in fixtures})
     for title in missing:

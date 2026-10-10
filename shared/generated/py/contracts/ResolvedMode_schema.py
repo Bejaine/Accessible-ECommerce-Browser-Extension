@@ -6,7 +6,7 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from . import Profile_schema
+from . import Profile_schema, common_schema
 
 
 class OutputChannel(StrEnum):
@@ -34,10 +34,11 @@ class ResolvedMode(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
+    schema_version: common_schema.SchemaVersion
     input_channels: list[InputRung] = Field(..., min_length=1)
     input_rung: InputRung
     output_channels: list[OutputChannel] = Field(..., min_length=1)
     tts_rate: float = Field(..., ge=0.5, le=2.0)
-    scan_interval_ms: int = Field(..., ge=0)
-    max_options: int = Field(..., ge=1)
+    scan_interval_ms: int = Field(..., ge=500, le=5000)
+    max_options: int = Field(..., ge=1, le=10)
     verbosity: Profile_schema.Verbosity

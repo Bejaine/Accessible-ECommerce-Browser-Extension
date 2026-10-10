@@ -1,5 +1,6 @@
 {
-  "image_url": "https://mock-store.local/img/x1-main.jpg",
-  "product_id": "mock-B0MOCK0001",
+  "schema_version": "1.0",
+  "image_url": "https://m.media-amazon.com/images/I/zentra-pulse-5g-box.jpg",
+  "product_id": "amazon.in:B0ZNTRA5G1",
   "lang": "en"
 }

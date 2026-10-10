@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from pydantic import BaseModel, ConfigDict
 
-from .. import AccessibleOutput_schema
+from .. import AccessibleOutput_schema, common_schema
 
 
 class VisionDescribeResponse(BaseModel):
@@ -15,6 +15,7 @@ class VisionDescribeResponse(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
+    schema_version: common_schema.SchemaVersion
     image_url: str
     output: AccessibleOutput_schema.AccessibleOutput
     cached: bool

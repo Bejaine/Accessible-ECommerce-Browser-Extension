@@ -2,19 +2,19 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
-from .. import ProductJSON_schema, Profile_schema
+from .. import ProductJSON_schema, Profile_schema, common_schema
 
 
 class ProductPrepareRequest(BaseModel):
     """
-    Sent when a product page opens. Triggers one data fetch and parallel precompute.
+    Sent when a product page opens. Reviews travel inside ProductJSON.reviews.
     """
 
     model_config = ConfigDict(
         extra="forbid",
     )
+    schema_version: common_schema.SchemaVersion
     product: ProductJSON_schema.ProductJSON
     prefs: Profile_schema.Prefs
-    review_texts: list[str] | None = Field(None, description="Visible reviews from the page.")

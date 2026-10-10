@@ -2,9 +2,12 @@
 
 from __future__ import annotations
 
+from datetime import date as date_aliased
 from enum import StrEnum
 
-from pydantic import AnyUrl, AwareDatetime, BaseModel, ConfigDict, Field
+from pydantic import AnyUrl, AwareDatetime, BaseModel, ConfigDict, Field, constr
+
+from . import common_schema
 
 
 class SourceMethod(StrEnum):
@@ -19,24 +22,47 @@ class Price(BaseModel):
         extra="forbid",
     )
     amount: float = Field(..., ge=0.0)
-    currency: str = Field(..., max_length=3, min_length=3)
-    mrp: float | None = Field(None, ge=0.0)
+    currency: str = Field(..., pattern="^[A-Z]{3}$")
+    mrp: float | None = Field(
+        ..., description="Maximum retail price, in the same currency as amount.", ge=0.0
+    )
 
 
 class Rating(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    value: float = Field(..., ge=0.0, le=5.0)
+    value: float = Field(..., description="Normalised to 0-5.", ge=0.0, le=5.0)
     count: int = Field(..., ge=0)
 
 
-class SpecValue(BaseModel):
+class AvailabilityStatus(StrEnum):
+    in_stock = "in_stock"
+    low_stock = "low_stock"
+    out_of_stock = "out_of_stock"
+    preorder = "preorder"
+    unknown = "unknown"
+
+
+class Availability(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
+    status: AvailabilityStatus = Field(..., title="AvailabilityStatus")
+    text: str | None = Field(..., description="The page's own wording.")
+
+
+class SpecValue(BaseModel):
+    """
+    Numbers are parsed: "5000 mAh" -> value 5000, unit "mAh".
+    """
+
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    label: str = Field(..., description="Human label as shown on the page.")
     value: str | float | bool
-    unit: str | None = None
+    unit: str | None
 
 
 class Variant(BaseModel):
@@ -46,8 +72,8 @@ class Variant(BaseModel):
     name: str = Field(..., description="Dimension, e.g. colour or size.")
     value: str
     selected: bool
-    available: bool | None = None
-    target_id: str | None = Field(None, description="ActionTarget id that selects this variant.")
+    available: bool | None
+    target_id: str | None = Field(..., description="ActionTarget id that selects this variant.")
 
 
 class ProductImage(BaseModel):
@@ -55,17 +81,50 @@ class ProductImage(BaseModel):
         extra="forbid",
     )
     url: str
-    alt: str | None = None
-    description: str | None = None
+    alt: str | None
+    description: str | None
+    ocr_text: str | None
 
 
-class Delivery(BaseModel):
+class Sentiment(StrEnum):
+    positive = "positive"
+    negative = "negative"
+    mixed = "mixed"
+
+
+class Mentions(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
+    total: int = Field(..., ge=0)
+    positive: int = Field(..., ge=0)
+    negative: int = Field(..., ge=0)
+
+
+class ReviewHistogram(BaseModel):
+    """
+    Count of ratings per star.
+    """
+
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    field_1: int = Field(..., alias="1", ge=0)
+    field_2: int = Field(..., alias="2", ge=0)
+    field_3: int = Field(..., alias="3", ge=0)
+    field_4: int = Field(..., alias="4", ge=0)
+    field_5: int = Field(..., alias="5", ge=0)
+
+
+class ReviewItem(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    rating: float | None
+    title: str | None
     text: str
-    cost: float | None = Field(None, ge=0.0)
-    date: str | None = None
+    date: date_aliased | None
+    verified: bool | None
 
 
 class ProductSource(BaseModel):
@@ -74,9 +133,45 @@ class ProductSource(BaseModel):
     )
     method: SourceMethod
     extracted_at: AwareDatetime
-    fields: dict[str, SourceMethod] | None = Field(
-        None, description="Per-field source when data from several methods was merged."
+    fields: dict[str, SourceMethod] = Field(
+        ...,
+        description="Per-field source (dot path -> method) when several methods were merged.",
     )
+
+
+class Delivery(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    text: str
+    cost: common_schema.Money | None
+    date: date_aliased | None
+
+
+class ReviewInsight(BaseModel):
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    topic: str
+    sentiment: Sentiment = Field(..., title="Sentiment")
+    mentions: Mentions
+
+
+class Reviews(BaseModel):
+    """
+    What review summaries are based on; never claim more than basis_count.
+    """
+
+    model_config = ConfigDict(
+        extra="forbid",
+    )
+    basis_count: int = Field(..., ge=0)
+    summary_text: str | None = Field(
+        ..., description="The page's own summary, e.g. Amazon's \"Customers say\"."
+    )
+    insights: list[ReviewInsight]
+    histogram: ReviewHistogram | None
+    items: list[ReviewItem]
 
 
 class ProductJSON(BaseModel):
@@ -87,19 +182,29 @@ class ProductJSON(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
-    id: str = Field(..., min_length=1)
+    schema_version: common_schema.SchemaVersion
+    id: str = Field(
+        ...,
+        description="site:native_id, e.g. amazon.in:B0XXXXXXXX.",
+        pattern="^[a-z0-9.-]+:.+$",
+    )
     url: AnyUrl
     site: str
     title: str | None
     brand: str | None
     price: Price | None
-    rating: Rating | None = None
-    availability: str | None
+    rating: Rating | None
+    availability: Availability | None
     category: str | None
-    specs: dict[str, SpecValue]
-    variants: list[Variant] | None = None
+    specs: dict[constr(pattern=r"^[a-z0-9_]+$"), SpecValue]
+    variants: list[Variant] | None
     images: list[ProductImage]
-    delivery: Delivery | None = None
-    seller: str | None = None
+    delivery: Delivery | None
+    seller: str | None
+    sponsored: bool | None = Field(..., description="Sponsored listing (search results).")
+    reviews: Reviews | None
     source: ProductSource
-    missing: list[str]
+    missing: list[str] = Field(
+        ...,
+        description="Dot paths of fields the page doesn't list, e.g. rating, specs.battery.",
+    )

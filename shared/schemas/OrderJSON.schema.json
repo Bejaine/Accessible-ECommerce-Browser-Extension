@@ -3,22 +3,25 @@
   "title": "OrderJSON",
   "type": "object",
   "additionalProperties": false,
-  "required": ["id", "items", "status", "dates", "available_actions"],
+  "required": ["schema_version", "id", "items", "status", "dates", "available_actions"],
   "properties": {
-    "id": { "type": "string", "description": "Placeholder (ORDER_1), never the real order id." },
+    "schema_version": { "$ref": "common.schema.json#/$defs/SchemaVersion" },
+    "id": {
+      "type": "string",
+      "pattern": "^ORDER_[0-9]+$",
+      "description": "Placeholder (ORDER_n), never the real order id."
+    },
     "items": {
       "type": "array",
       "items": {
         "title": "OrderItem",
         "type": "object",
         "additionalProperties": false,
-        "required": ["title", "quantity"],
+        "required": ["title", "quantity", "price", "product_url"],
         "properties": {
           "title": { "type": "string" },
           "quantity": { "type": "integer", "minimum": 1 },
-          "price": {
-            "anyOf": [{ "$ref": "ProductJSON.schema.json#/$defs/Price" }, { "type": "null" }]
-          },
+          "price": { "anyOf": [{ "$ref": "common.schema.json#/$defs/Money" }, { "type": "null" }] },
           "product_url": { "type": ["string", "null"] }
         }
       }
@@ -40,10 +43,11 @@
       "title": "OrderDates",
       "type": "object",
       "additionalProperties": false,
+      "required": ["ordered", "expected_delivery", "delivered"],
       "properties": {
-        "ordered": { "type": ["string", "null"] },
-        "expected_delivery": { "type": ["string", "null"] },
-        "delivered": { "type": ["string", "null"] }
+        "ordered": { "type": ["string", "null"], "format": "date" },
+        "expected_delivery": { "type": ["string", "null"], "format": "date" },
+        "delivered": { "type": ["string", "null"], "format": "date" }
       }
     },
     "available_actions": {

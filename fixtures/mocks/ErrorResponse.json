@@ -1,4 +1,5 @@
 {
+  "schema_version": "1.0",
   "error": "The language service is busy. Please try again in a moment.",
   "code": "rate_limited",
   "retryable": true

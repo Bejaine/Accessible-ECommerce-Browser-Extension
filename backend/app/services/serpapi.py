@@ -10,6 +10,7 @@ from typing import Any
 
 from app.config import get_settings
 from app.errors import ApiError
+from app.models import ErrorCode
 from app.services.cache import TTLCache
 
 _cache = TTLCache(ttl_seconds=24 * 3600)
@@ -23,9 +24,11 @@ async def amazon_product(asin: str) -> dict[str, Any]:
     if settings.mock:
         path = settings.fixtures_dir / "serpapi" / f"amazon_product.{asin}.json"
         if not path.exists():
-            raise ApiError("not_found", f"No recorded SerpApi response for {asin}.", status=404)
+            raise ApiError(
+                ErrorCode.not_found, f"No recorded SerpApi response for {asin}.", status=404
+            )
         result = json.loads(path.read_text())
     else:
-        raise ApiError("not_implemented", "Live SerpApi calls are not wired up yet.", status=501)
+        raise ApiError(ErrorCode.internal, "Live SerpApi calls are not wired up yet.", status=501)
     _cache.set(asin, result)
     return result

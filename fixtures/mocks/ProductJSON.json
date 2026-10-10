@@ -1,68 +1,190 @@
 {
-  "id": "mock-B0MOCK0001",
-  "url": "https://mock-store.local/product/B0MOCK0001",
-  "site": "mock-store",
-  "title": "Example Wireless Earbuds X1",
-  "brand": "ExampleBrand",
+  "schema_version": "1.0",
+  "id": "amazon.in:B0ZNTRA5G1",
+  "url": "https://www.amazon.in/dp/B0ZNTRA5G1",
+  "site": "amazon.in",
+  "title": "Zentra Pulse 5G (Midnight Black, 8GB RAM, 128GB Storage)",
+  "brand": "Zentra",
   "price": {
-    "amount": 1999,
+    "amount": 17999,
     "currency": "INR",
-    "mrp": 3999
+    "mrp": 24999
   },
   "rating": {
-    "value": 4.1,
-    "count": 1250
+    "value": 4.2,
+    "count": 3418
   },
-  "availability": "In stock",
-  "category": "Headphones",
+  "availability": {
+    "status": "in_stock",
+    "text": "In stock"
+  },
+  "category": "Smartphones",
   "specs": {
-    "battery_life": {
-      "value": 30,
-      "unit": "hours"
+    "battery": {
+      "label": "Battery Capacity",
+      "value": 5000,
+      "unit": "mAh"
     },
-    "bluetooth_version": {
-      "value": "5.3",
-      "unit": null
+    "ram": {
+      "label": "RAM",
+      "value": 8,
+      "unit": "GB"
     },
-    "water_resistance": {
-      "value": "IPX5",
+    "storage": {
+      "label": "Internal Storage",
+      "value": 128,
+      "unit": "GB"
+    },
+    "display_size": {
+      "label": "Screen Size",
+      "value": 6.67,
+      "unit": "inches"
+    },
+    "refresh_rate": {
+      "label": "Refresh Rate",
+      "value": 120,
+      "unit": "Hz"
+    },
+    "os": {
+      "label": "Operating System",
+      "value": "Android 15",
       "unit": null
     }
   },
   "variants": [
     {
       "name": "colour",
-      "value": "Black",
+      "value": "Midnight Black",
       "selected": true,
       "available": true,
       "target_id": "t-swatch-black"
     },
     {
       "name": "colour",
-      "value": "White",
+      "value": "Sage Green",
       "selected": false,
       "available": true,
-      "target_id": "t-swatch-white"
+      "target_id": "t-swatch-green"
     }
   ],
   "images": [
     {
-      "url": "https://mock-store.local/img/x1-main.jpg",
-      "alt": "Earbuds in open charging case",
-      "description": null
+      "url": "https://m.media-amazon.com/images/I/zentra-pulse-5g-front.jpg",
+      "alt": "Zentra Pulse 5G front and back, Midnight Black",
+      "description": null,
+      "ocr_text": null
+    },
+    {
+      "url": "https://m.media-amazon.com/images/I/zentra-pulse-5g-box.jpg",
+      "alt": "What's in the box",
+      "description": null,
+      "ocr_text": "Handset, 33W charger, USB-C cable, SIM ejector, protective case"
     }
   ],
   "delivery": {
-    "text": "Free delivery by Tuesday",
-    "cost": 0,
+    "text": "FREE delivery Tuesday, 14 October",
+    "cost": {
+      "amount": 0,
+      "currency": "INR"
+    },
     "date": "2026-10-14"
   },
-  "seller": "Mock Retail",
+  "seller": "Zentra Official Store",
+  "sponsored": false,
+  "reviews": {
+    "basis_count": 690,
+    "summary_text": "Customers like the battery life and display. Some mention the camera struggles in low light, and opinions on heating while gaming are mixed.",
+    "insights": [
+      {
+        "topic": "Battery life",
+        "sentiment": "positive",
+        "mentions": {
+          "total": 212,
+          "positive": 189,
+          "negative": 23
+        }
+      },
+      {
+        "topic": "Display",
+        "sentiment": "positive",
+        "mentions": {
+          "total": 148,
+          "positive": 131,
+          "negative": 17
+        }
+      },
+      {
+        "topic": "Low-light camera",
+        "sentiment": "negative",
+        "mentions": {
+          "total": 96,
+          "positive": 28,
+          "negative": 68
+        }
+      },
+      {
+        "topic": "Heating",
+        "sentiment": "mixed",
+        "mentions": {
+          "total": 54,
+          "positive": 25,
+          "negative": 29
+        }
+      }
+    ],
+    "histogram": {
+      "1": 274,
+      "2": 137,
+      "3": 307,
+      "4": 820,
+      "5": 1880
+    },
+    "items": [
+      {
+        "rating": 5,
+        "title": "Battery lasts two days",
+        "text": "With normal use I charge it every second day. The screen is bright outdoors.",
+        "date": "2026-09-21",
+        "verified": true
+      },
+      {
+        "rating": 4,
+        "title": "Good value",
+        "text": "Smooth for daily apps and the 120Hz screen feels fast. Night photos are average.",
+        "date": "2026-09-18",
+        "verified": true
+      },
+      {
+        "rating": 2,
+        "title": "Camera disappointing at night",
+        "text": "Daylight photos are fine but indoor and night photos are noisy.",
+        "date": "2026-09-12",
+        "verified": true
+      },
+      {
+        "rating": 4,
+        "title": null,
+        "text": "Gets a little warm during long games, otherwise no complaints.",
+        "date": "2026-09-05",
+        "verified": false
+      },
+      {
+        "rating": 5,
+        "title": "Easy for my father to use",
+        "text": "Large text and loud speaker. He uses it for calls and UPI without help.",
+        "date": "2026-08-30",
+        "verified": true
+      }
+    ]
+  },
   "source": {
-    "method": "jsonld",
+    "method": "adapter",
     "extracted_at": "2026-10-10T10:00:00Z",
     "fields": {
-      "specs": "adapter"
+      "title": "jsonld",
+      "price": "adapter",
+      "specs": "adapter",
+      "reviews.insights": "serpapi"
     }
   },
   "missing": []

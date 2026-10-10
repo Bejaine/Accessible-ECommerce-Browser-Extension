@@ -1,9 +1,10 @@
 {
+  "schema_version": "1.0",
   "input_channels": ["voice", "keyboard", "phrase", "switch"],
   "input_rung": "voice",
-  "output_channels": ["audio", "visual"],
-  "tts_rate": 1,
-  "scan_interval_ms": 1500,
-  "max_options": 5,
-  "verbosity": "normal"
+  "output_channels": ["audio", "large_text"],
+  "tts_rate": 0.85,
+  "scan_interval_ms": 2000,
+  "max_options": 3,
+  "verbosity": "short"
 }

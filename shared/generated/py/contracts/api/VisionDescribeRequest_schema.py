@@ -2,13 +2,16 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+
+from .. import common_schema
 
 
 class VisionDescribeRequest(BaseModel):
     model_config = ConfigDict(
         extra="forbid",
     )
+    schema_version: common_schema.SchemaVersion
     image_url: str
-    product_id: str | None = None
-    lang: str
+    product_id: str | None = Field(None, description="Request option: ProductJSON id for context.")
+    lang: common_schema.Lang

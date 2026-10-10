@@ -19,6 +19,7 @@ from typing import Any, Literal
 
 from app.config import REPO_ROOT, get_settings
 from app.errors import ApiError
+from app.models import ErrorCode
 
 Task = Literal["asr", "mt", "tts", "ocr"]
 TASKS: tuple[Task, ...] = ("asr", "mt", "tts", "ocr")
@@ -71,7 +72,7 @@ class Registry:
         entry = self._entries.get((task, key))
         if entry is None:
             raise ApiError(
-                "model_not_configured",
+                ErrorCode.validation,
                 f"No {task} model for {key}.",
                 status=400,
                 retryable=False,
@@ -130,7 +131,7 @@ class Limiter:
         wait = bucket.wait_time()
         if wait > self._max_wait:
             raise ApiError(
-                "rate_limited",
+                ErrorCode.rate_limited,
                 "The language service is busy. Please try again in a moment.",
                 status=429,
                 retryable=True,
@@ -138,7 +139,7 @@ class Limiter:
         await asyncio.sleep(wait)
         if not bucket.try_acquire():
             raise ApiError(
-                "rate_limited", "The language service is busy.", status=429, retryable=True
+                ErrorCode.rate_limited, "The language service is busy.", status=429, retryable=True
             )
 
 
@@ -161,8 +162,10 @@ async def call_model(task: Task, key: str, payload: dict[str, Any]) -> dict[str,
     if get_settings().mock:
         return _mock_response(task, key)
     if not entry.configured:
-        raise ApiError("model_not_configured", f"{task} {key} has no token yet.", status=503)
-    raise ApiError("not_implemented", "Live language API calls are not wired up yet.", status=501)
+        raise ApiError(
+            ErrorCode.upstream_unavailable, f"{task} {key} has no token yet.", status=503
+        )
+    raise ApiError(ErrorCode.internal, "Live language API calls are not wired up yet.", status=501)
 
 
 def _mock_response(task: Task, key: str) -> dict[str, Any]:

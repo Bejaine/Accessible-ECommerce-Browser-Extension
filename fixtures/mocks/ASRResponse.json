@@ -1,7 +1,10 @@
 {
-  "text": "add this to my cart",
-  "lang": "en",
+  "schema_version": "1.0",
+  "text": "isse cart mein daal do",
+  "lang": "hi",
   "asr_meta": {
-    "mock": true
+    "confidence": 0.82,
+    "mic_level": 0.46,
+    "alternatives": ["isse cart mein daal do", "ise kart mein dal do"]
   }
 }

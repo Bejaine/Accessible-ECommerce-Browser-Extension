@@ -1,0 +1,95 @@
+{
+  "schema_version": "1.0",
+  "page_type": "orders",
+  "url": "https://www.amazon.in/gp/your-account/order-history",
+  "site": "amazon.in",
+  "products": [],
+  "orders": [
+    {
+      "schema_version": "1.0",
+      "id": "ORDER_1",
+      "items": [
+        {
+          "title": "Zentra Buds Air (White)",
+          "quantity": 1,
+          "price": {
+            "amount": 1999,
+            "currency": "INR"
+          },
+          "product_url": "https://www.amazon.in/dp/B0ZNTRBDS1"
+        }
+      ],
+      "status": "shipped",
+      "dates": {
+        "ordered": "2026-10-07",
+        "expected_delivery": "2026-10-12",
+        "delivered": null
+      },
+      "available_actions": ["track", "cancel"]
+    },
+    {
+      "schema_version": "1.0",
+      "id": "ORDER_2",
+      "items": [
+        {
+          "title": "Silicone Back Cover for Zentra Pulse 5G",
+          "quantity": 2,
+          "price": {
+            "amount": 598,
+            "currency": "INR"
+          },
+          "product_url": null
+        }
+      ],
+      "status": "delivered",
+      "dates": {
+        "ordered": "2026-09-25",
+        "expected_delivery": "2026-09-28",
+        "delivered": "2026-09-27"
+      },
+      "available_actions": ["return"]
+    }
+  ],
+  "targets": [
+    {
+      "schema_version": "1.0",
+      "id": "t-track-1",
+      "kind": "button",
+      "label": "Track package",
+      "zone": "orders",
+      "state": {
+        "disabled": false,
+        "selected": false,
+        "expanded": false
+      },
+      "colour_name": null
+    },
+    {
+      "schema_version": "1.0",
+      "id": "t-cancel-1",
+      "kind": "button",
+      "label": "Cancel items",
+      "zone": "orders",
+      "state": {
+        "disabled": false,
+        "selected": false,
+        "expanded": false
+      },
+      "colour_name": null
+    },
+    {
+      "schema_version": "1.0",
+      "id": "t-return-2",
+      "kind": "button",
+      "label": "Return or replace items",
+      "zone": "orders",
+      "state": {
+        "disabled": false,
+        "selected": false,
+        "expanded": false
+      },
+      "colour_name": null
+    }
+  ],
+  "secure_zone_active": false
+}

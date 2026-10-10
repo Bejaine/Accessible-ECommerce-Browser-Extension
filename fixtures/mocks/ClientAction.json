@@ -1,5 +1,11 @@
 {
+  "schema_version": "1.0",
+  "id": "act-1",
   "type": "click",
   "target_id": "t-add-to-cart",
-  "value": null
+  "value": null,
+  "expected_effect": {
+    "kind": "cart_count_increase",
+    "detail": "Cart count goes up by 1"
+  }
 }

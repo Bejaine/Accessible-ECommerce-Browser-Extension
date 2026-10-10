@@ -3,17 +3,31 @@
   "title": "ASRRequest",
   "type": "object",
   "additionalProperties": false,
-  "required": ["lang", "audio_base64", "encoding"],
+  "required": ["schema_version", "lang", "audio_base64", "encoding"],
   "properties": {
-    "lang": { "type": "string" },
-    "audio_base64": { "type": "string" },
-    "encoding": { "type": "string", "enum": ["opus", "webm", "wav"] },
-    "sample_rate": { "type": ["integer", "null"], "minimum": 8000 },
+    "schema_version": {
+      "$ref": "../common.schema.json#/$defs/SchemaVersion"
+    },
+    "lang": {
+      "$ref": "../common.schema.json#/$defs/Lang"
+    },
+    "audio_base64": {
+      "type": "string"
+    },
+    "encoding": {
+      "type": "string",
+      "enum": ["opus", "webm", "wav"]
+    },
+    "sample_rate": {
+      "type": "integer",
+      "minimum": 8000,
+      "description": "Request option."
+    },
     "mic_level": {
-      "type": ["number", "null"],
+      "type": "number",
       "minimum": 0,
       "maximum": 1,
-      "description": "Our own RMS level, to tell silence from unclear speech."
+      "description": "Request option: our own RMS level, to tell silence from unclear speech."
     }
   }
 }

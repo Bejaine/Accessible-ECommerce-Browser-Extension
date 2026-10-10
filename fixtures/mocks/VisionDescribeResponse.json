@@ -1,18 +1,54 @@
 {
-  "image_url": "https://mock-store.local/img/x1-main.jpg",
-  "cached": false,
+  "schema_version": "1.0",
+  "image_url": "https://m.media-amazon.com/images/I/zentra-pulse-5g-box.jpg",
   "output": {
+    "schema_version": "1.0",
     "lang": "en",
-    "summary": "Mock description: two black earbuds in an open charging case.",
-    "sections": [],
-    "simpler": null,
-    "followups": ["Describe the next image"],
-    "grounding": [
+    "summary": "The box image lists the handset, a 33W charger, a USB-C cable, a SIM ejector and a protective case.",
+    "sections": [
       {
-        "claim": "black",
-        "field_path": "images[0]"
+        "heading": "In the box",
+        "items": [
+          {
+            "text": "Handset",
+            "kind": "text",
+            "grounding_index": 0
+          },
+          {
+            "text": "33W charger",
+            "kind": "text",
+            "grounding_index": 0
+          },
+          {
+            "text": "USB-C cable",
+            "kind": "text",
+            "grounding_index": 0
+          },
+          {
+            "text": "SIM ejector",
+            "kind": "text",
+            "grounding_index": 0
+          },
+          {
+            "text": "Protective case",
+            "kind": "text",
+            "grounding_index": 0
+          }
+        ],
+        "table": null,
+        "simpler": null
       }
     ],
-    "warnings": ["Mock image description; not generated from the real image."]
-  }
+    "simpler": null,
+    "followups": ["Describe the front image"],
+    "grounding": [
+      {
+        "claim": "box contents",
+        "subject_id": "amazon.in:B0ZNTRA5G1",
+        "field_path": "images[1].ocr_text"
+      }
+    ],
+    "warnings": []
+  },
+  "cached": false
 }

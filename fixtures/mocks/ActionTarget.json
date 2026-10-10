@@ -1,5 +1,13 @@
 {
-  "id": "t-add-to-cart",
-  "kind": "button",
-  "label": "Add to Cart"
+  "schema_version": "1.0",
+  "id": "t-swatch-black",
+  "kind": "swatch",
+  "label": "Midnight Black",
+  "zone": "product",
+  "state": {
+    "disabled": false,
+    "selected": true,
+    "expanded": false
+  },
+  "colour_name": "Midnight Black"
 }
