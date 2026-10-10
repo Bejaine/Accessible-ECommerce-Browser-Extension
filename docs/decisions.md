@@ -110,3 +110,12 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   Availability/SpecValue/Delivery; `evidence` gives per field the snippet it came from,
   copied verbatim from the request text (the backend drops any value it can't find there).
 - New endpoint schemas only; no existing contract changes, so schema_version stays "1.0".
+
+## 2026-10-11 — /extract/fallback never returns a price (Track C; affects B, core)
+- Tested live on Track B's 5 saved pages: title, rating, stock, delivery, seller and some specs
+  came back right, but on the Flipkart phone the model returned the bank-offer price (₹11,999)
+  as the price (₹12,999), and every text check passed because that amount is on the page.
+- So `found.price` is always null: price and MRP come only from JSON-LD and the site adapters.
+  If they miss it, say the price couldn't be read and point to the page; never guess it.
+- A value is kept only if its snippet is verbatim in the request text and the value is in that
+  snippet; "name = value" highlight lines are not specs. Requests are redacted again server-side.

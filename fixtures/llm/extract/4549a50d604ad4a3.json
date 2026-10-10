@@ -1,0 +1,39 @@
+{
+  "model": "openai/gpt-oss-20b",
+  "response": {
+    "id": "chatcmpl-5fd933b5-8429-480c-aee8-9c9f4fe0370c",
+    "object": "chat.completion",
+    "created": 1791658889,
+    "model": "openai/gpt-oss-20b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "content": "{\"items\":[{\"field\":\"rating\",\"label\":null,\"value\":\"4.1\",\"snippet\":\"4.1\"},{\"field\":\"rating_count\",\"label\":null,\"value\":\"8,263\",\"snippet\":\"4.1\\n| 8,263\"},{\"field\":\"seller\",\"label\":null,\"value\":\"SuperComNet\",\"snippet\":\"Seller: SuperComNet\"},{\"field\":\"delivery\",\"label\":null,\"value\":\"Wednesday, 14 Oct\",\"snippet\":\"Delivery by\\nWednesday, 14 Oct\"}]}"
+        },
+        "logprobs": null,
+        "finish_reason": "stop"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.386163942,
+      "prompt_tokens": 1740,
+      "prompt_time": 0.205268126,
+      "completion_tokens": 156,
+      "completion_time": 0.172791495,
+      "total_tokens": 1896,
+      "total_time": 0.378059621,
+      "completion_tokens_details": {
+        "reasoning_tokens": 41
+      }
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_f102a3179c",
+    "x_groq": {
+      "id": "req_01m4kk240aebwbgwmseefhxv88",
+      "seed": 762142753
+    },
+    "service_tier": "on_demand"
+  }
+}
