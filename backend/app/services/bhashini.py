@@ -35,6 +35,7 @@ import httpx
 from app.config import REPO_ROOT, get_settings
 from app.errors import ApiError
 from app.models import ErrorCode
+from app.services import masking
 from app.services.cache import TTLCache
 
 Task = Literal["asr", "mt", "tts", "ocr"]
@@ -496,6 +497,13 @@ async def translate(text: str, source: str, target: str) -> str:
             if out is None:
                 data = await call_model("mt", entry.key, {"input_text": chunk})
                 out = _field(data, "output_text").strip()
+                if masking.missing(out, dict.fromkeys(masking.placeholders(chunk))):
+                    raise ApiError(
+                        ErrorCode.upstream_unavailable,
+                        "This couldn't be translated without losing a name or price.",
+                        status=503,
+                        retryable=False,
+                    )
                 _mt_cache.set(cache_key, out)
             parts.append(out)
         text = " ".join(parts)

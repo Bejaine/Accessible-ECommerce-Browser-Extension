@@ -145,3 +145,13 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - One utterance per `listen()`: energy VAD, silence timeout 1.0 s (2.5 s in speech mode), 19 s
   cap, 300 ms pre-roll; output 16 kHz mono 16-bit WAV, confirmed accepted by live Hindi ASR.
 - The mic is open only while listening; `mute()` (secure zone) closes it and discards audio.
+
+## 2026-10-11 — Masking around MT (Track A; affects Track C)
+- `masking.mask(text, keep=())` replaces prices, number+unit, decimals, model names and brands
+  with `ZQX0, ZQX1, …`; `unmask()` restores them. Chosen by a live test: with `⟦0⟧` the MT model
+  invented numbers; `ZQX0` survived en→hi, en→te and hi→en. Unmasked MT turned "Bluetooth 5.3"
+  into "5" and "6.8 inch" into "6.80"; masked, every name, unit and price came through exactly.
+- Pass the product's brand in `keep` (e.g. `keep=[product.brand]`): brands that are everyday
+  words ("Noise", "Apple") at the start of a sentence are otherwise translated.
+- `bhashini.translate` fails with `upstream_unavailable` if the MT drops a placeholder, so callers
+  keep English rather than speak a sentence with a name or price missing.
