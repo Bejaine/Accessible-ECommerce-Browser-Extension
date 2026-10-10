@@ -275,6 +275,52 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - Track A's `bhashini.translate_many` (track-a/tts-speech) is picked up automatically by
   `brain/language.py` once merged: ~2 MT calls per answer instead of ~14.
 
+## 2026-10-10 — Composer rules (Track D; affects A's player, C's option counts)
+- Input ladder voice → keyboard → phrase → switch. Speech makes voice unreliable as a *starting*
+  rung (speech alone starts at keyboard with prediction); motor makes keyboard unreliable;
+  `text_first` skips voice as a preference. The switch is always the last rung.
+- Pacing = most restrictive: 3 options and short summaries for ageing; scan interval 1500 ms base,
+  2000 motor, 2500 visual/ageing. Speech rate is the user's: turning ageing on sets a 0.85
+  *starting* rate once (never faster than the user's own), then "slower"/"faster" or the
+  Speech speed buttons change it in 0.1 steps (0.5–2), saved in prefs. (Changed 2026-10-11.)
+- Output: visual → audio (+ large_text with ageing or text_scale > 1); ageing → audio + large_text.
+- "Confirm every action" for ageing isn't in ResolvedMode 1.0; `confirmEveryAction()` covers it
+  until a minor schema bump adds a field.
+
+## 2026-10-10 — Local matcher scoring (Track D)
+- The brief named Fuse.js, but its substring scoring let short words match inside long ones
+  ("no" scored 0.90 against "Novix A15…") and missed misheard words ("add to card" 0.75).
+  `src/match` uses word-level edit distance scaled by coverage instead; no dependency.
+- Acts locally only at confidence ≥ 0.8 and ≥ 0.1 ahead of a different runner-up; otherwise
+  passes to /turn with the top two candidates. Products match by short name (brand + model).
+
+## 2026-10-10 — Inference scoring (Track D)
+- Signals add decaying evidence (half-life 3 min) to independence groups; score = 1 − Π(1 − group).
+  Groups cap at 0.5 (ageing 0.35), so a suggestion structurally needs 2 independent groups
+  (ageing 3). Keyboard clicks + focus moves without a pointer are one group ("keyboard"): alone
+  they ask "read aloud, or easier to press?" instead of suggesting either.
+- Weights and thresholds in `src/infer/scores.ts` / `collectors.ts` (TUNING) are first guesses;
+  calibrate with recorded normal sessions (`__asl.signals()`) before the demo.
+
+## 2026-10-11 — Turn pipeline in the content script (integration lead; affects B, C)
+- Phrase chips, suggestion chips, scan selections and utterances go through `src/core/turn.ts`:
+  TurnRequest → backend (via the background script) → render output → run `actions`, or hold
+  `confirmation.pending_actions` until Yes / one switch press (Escape or "no" cancels).
+- yes / no / repeat / help / slower / faster / undo are handled on the device (no server call).
+- Mock mode picks the fixture that fits the request and appends a "demo data, not from this
+  page" warning to every answer, so fixture facts are never mistaken for the open page.
+
+## 2026-10-11 — Device voices and privacy (Track D; affects A, demo, Responsible AI slide)
+- Measured on Chrome 149 / Linux: without flags it offers 19 Google *online* voices (English,
+  Hindi; no Telugu); with `--enable-speech-dispatcher` it offers none, so that flag is not used.
+  Firefox uses on-device voices via speech-dispatcher (e.g. Piper, eSpeak incl. Telugu).
+- The speaker picks a voice per language: on-device first, then online, Indian variant preferred.
+  A language with no voice is not read with another language's voice; the user is told once and
+  the text stays on screen and in the live region.
+- Online voices send the spoken text to Google: say so on the Responsible AI slide; Bhashini TTS
+  (real backend) or Firefox avoids it. Addresses are never spoken through them (only ADDR_n
+  placeholders reach the overlay today).
+
 ## 2026-10-11 — Numbers are spoken as words (Track A; affects C, D)
 - Live, the Hindi and Telugu TTS voices read digits in English ("सेवेंटींथ…", "బైవ్ థౌసండ్") and
   ₹ is rejected, so `bhashini.tts` first calls `numbers.speakable(text, lang)`: prices with the

@@ -12,6 +12,16 @@ export default defineConfig({
     name: 'Accessible Shopping Layer',
     description: 'Voice-first, accessible shopping on Amazon.in, Flipkart and other stores.',
     permissions: ['storage'],
+    commands: {
+      'toggle-assistant': {
+        suggested_key: { default: 'Alt+Shift+A' },
+        description: 'Open or close the Shopping assistant',
+      },
+      'playback-key': {
+        suggested_key: { default: 'Alt+Shift+K' },
+        description: 'Pause or resume reading; wait for the spoken playback menu',
+      },
+    },
     host_permissions: ['http://localhost:8000/*'],
     ...(browser === 'firefox' && {
       browser_specific_settings: {

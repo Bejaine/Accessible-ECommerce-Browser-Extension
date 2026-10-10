@@ -11,13 +11,16 @@
     "zip": "wxt zip",
     "postinstall": "wxt prepare",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "eval:inference": "vitest run --config vitest.eval.config.ts"
   },
   "devDependencies": {
     "ajv": "^8.20.0",
     "ajv-formats": "^3.0.1",
+    "axe-core": "^4.14.0",
     "happy-dom": "^20.14.6",
     "vitest": "^5.0.3",
+    "web-ext": "^10.7.0",
     "wxt": "^0.21.4"
   }
 }
