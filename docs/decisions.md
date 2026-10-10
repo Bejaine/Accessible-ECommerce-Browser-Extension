@@ -377,3 +377,11 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   and merging it into a real product would invent facts (rule 1).
 - Barge-in starts only after the user has used Speak once, so the mic permission prompt never
   appears unexpectedly during playback.
+
+## 2026-10-11 — `make ext` Chrome on Linux: voices restored (Track D; affects everyone testing)
+- Measured: web-ext's default flag `--disable-component-extensions-with-background-pages` leaves
+  Chrome with 0 voices (Chrome's speech voices are a component extension); without it, 19.
+  `extension/dev/chrome-linux.sh` launches Chrome without that one flag (Linux only).
+- `--test-type` hides the "unsupported command-line flag" bar; web-ext's
+  `--disable-blink-features=AutomationControlled` stays (otherwise navigator.webdriver is true and
+  shops may block the session as a bot).
