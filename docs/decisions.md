@@ -217,3 +217,12 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   compiling; schema_version stays "1.0". Team: bump to 1.1 later if we want strict versioning.
 - B: please extract it on Amazon/Flipkart checkout pages (logged-in account; save + sanitise).
   Without `total` and the Place-order target, the backend refuses to place an order.
+
+## 2026-10-11 — Place order (Track C; affects B, D, core)
+- `order_task` with task "place" on a checkout page: reads `PageContext.checkout` aloud (items,
+  delivery charge, ADDR_n, payment) and returns ONE high-risk Confirmation "Place this order?
+  Total ₹X. Delivery PIN N." with read_back {quantity, total, pin_code}; the Place-order click is
+  only its pending action. Next page with the order "placed" → "Your order is placed."
+- Refused (nothing offered) without a total, the Place-order target or a selected payment
+  method. Warns when the page's payment differs from prefs.preferred_payment. Pressing the
+  button directly is refused. Payment details are always entered by the user (secure zone).

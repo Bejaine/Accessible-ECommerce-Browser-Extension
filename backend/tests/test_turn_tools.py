@@ -181,6 +181,7 @@ def test_page_brief_is_small_and_has_no_page_text(req):
         "SEEN",
         "stated_preferences",
         "TASK_IN_PROGRESS",
+        "checkout",
     }
     assert "reviews" not in json.dumps(brief)
 

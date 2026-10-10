@@ -1,0 +1,48 @@
+{
+  "model": "openai/gpt-oss-120b",
+  "response": {
+    "id": "chatcmpl-6ef8e119-d8f1-4e16-9fc2-be3ff424d4b1",
+    "object": "chat.completion",
+    "created": 1791664171,
+    "model": "openai/gpt-oss-120b",
+    "choices": [
+      {
+        "index": 0,
+        "message": {
+          "role": "assistant",
+          "tool_calls": [
+            {
+              "id": "fc_0fd44380-cce6-45fe-8c1e-990dab69398c",
+              "type": "function",
+              "function": {
+                "name": "order_task",
+                "arguments": "{\"alternatives\":[],\"confidence\":0.99,\"task\":\"place\"}"
+              }
+            }
+          ]
+        },
+        "logprobs": null,
+        "finish_reason": "tool_calls"
+      }
+    ],
+    "usage": {
+      "queue_time": 0.394611997,
+      "prompt_tokens": 4037,
+      "prompt_time": 0.169180457,
+      "completion_tokens": 59,
+      "completion_time": 0.123241049,
+      "total_tokens": 4096,
+      "total_time": 0.292421506,
+      "completion_tokens_details": {
+        "reasoning_tokens": 17
+      }
+    },
+    "usage_breakdown": null,
+    "system_fingerprint": "fp_90620edd96",
+    "x_groq": {
+      "id": "req_01m4kr3a2besmsqby7gvsg3db0",
+      "seed": 1869054456
+    },
+    "service_tier": "on_demand"
+  }
+}
