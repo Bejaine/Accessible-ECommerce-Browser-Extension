@@ -12,7 +12,7 @@ import hashlib
 import logging
 from collections.abc import Awaitable, Callable
 
-from app.brain import compare, review_summariser, sections, vision
+from app.brain import brevity, compare, review_summariser, sections, vision
 from app.brain.grounding import CheckResult
 from app.brain.llm import LLMError
 from app.brain.llm_sections import llm_section
@@ -125,7 +125,10 @@ async def prepare_sections(product: ProductJSON) -> dict[str, AccessibleOutput |
 
 
 async def prepare(req: ProductPrepareRequest) -> ProductPrepareResponse:
+    vision.remember_product(req.product)  # so /vision/describe can ground its answer
     result = await prepare_sections(req.product)
+    if brevity.wants_short(req.prefs):  # the cache keeps the full sections; shorten per request
+        result = {k: brevity.shorten(v) if v else None for k, v in result.items()}
     return ProductPrepareResponse.model_validate(
         {
             "schema_version": SCHEMA_VERSION,
