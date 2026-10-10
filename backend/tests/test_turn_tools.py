@@ -201,6 +201,7 @@ def test_turn_answers_in_the_users_language(req, monkeypatch):
         return f"[{target}] {text}"
 
     monkeypatch.setattr(bhashini, "translate", fake_translate)
+    monkeypatch.delattr(bhashini, "translate_many", raising=False)  # test the single-line path
     response = run(
         orchestrator.handle_turn(with_input(req, kind="switch", target_id="t-add-to-cart"))
     )
@@ -223,6 +224,7 @@ def test_failed_translation_keeps_english_and_says_so(req, monkeypatch):
         raise ApiError(ErrorCode.upstream_unavailable, "MT down", status=503)
 
     monkeypatch.setattr(bhashini, "translate", down)
+    monkeypatch.delattr(bhashini, "translate_many", raising=False)  # test the single-line path
     response = run(
         orchestrator.handle_turn(with_input(req, kind="switch", target_id="t-add-to-cart"))
     )
@@ -336,6 +338,7 @@ def test_answer_strings_are_translated_in_parallel(req, monkeypatch):
         return f"[{target}] {text}"
 
     monkeypatch.setattr(bhashini, "translate", slow_translate)
+    monkeypatch.delattr(bhashini, "translate_many", raising=False)  # test the single-line path
     ctx = tools.Context(req)
     long_answer = run(tools.read_section(ctx, "reviews")).output
     n = 1 + len(long_answer.followups) + sum(1 + len(s.items) for s in long_answer.sections)
@@ -485,3 +488,25 @@ def test_short_prepare_keeps_the_cache_full(mock_body, monkeypatch):
     b = run(prepare.prepare(ProductPrepareRequest.model_validate(normal)))
     assert all(len(s.items) <= 3 for s in a.sections.specs.sections)
     assert any(len(s.items) > 3 for s in b.sections.specs.sections)
+
+
+def test_turn_uses_one_packed_translation_per_answer(req, monkeypatch):
+    """With Track A's translate_many, a whole answer costs one packed call (not one per line)."""
+    from app.services import bhashini
+
+    calls = []
+
+    async def fake_many(lines, source, target):
+        calls.append(len(lines))
+        return [f"[{target}] {line}" for line in lines]
+
+    async def single(*_a, **_k):
+        raise AssertionError("answers must not be translated line by line")
+
+    monkeypatch.setattr(bhashini, "translate_many", fake_many, raising=False)
+    monkeypatch.setattr(bhashini, "translate", single)
+    long_answer = run(tools.read_section(tools.Context(req), "reviews")).output
+    out = run(orchestrator._translate_output(long_answer, "hi"))
+    assert len(calls) == 1 and calls[0] >= 10
+    assert out.lang.value == "hi"
+    assert out.summary.startswith("[hi] ")
