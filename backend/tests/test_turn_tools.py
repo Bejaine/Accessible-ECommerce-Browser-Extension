@@ -262,7 +262,8 @@ def test_speech_with_no_words_is_a_miss_with_chips(req):
         )
     )
     assert r.output.summary.startswith("I didn't catch that.")
-    assert r.output.followups == ["Price", "Specs", "Reviews", "Add to cart"]
+    # The fixture persona has verbosity "short": at most 3 options (docs/conditions.md).
+    assert r.output.followups == ["Price", "Specs", "Reviews"]
     assert session.get(req.session_id).misses == 1
 
 
@@ -384,3 +385,103 @@ def test_canned_turn_response_speaks_one_language(mock_body):
     canned = mock_body("TurnResponse")
     assert canned["confirmation"]["prompt"] == canned["output"]["summary"]
     assert canned["output"]["lang"] == "hi"
+
+
+# --- Track A's sandbox: burst of 12 per MT model, then ~0.8/s ---
+
+
+def test_at_most_four_translations_at_once_and_each_line_once(monkeypatch):
+    from app.brain import language
+    from app.services import bhashini
+
+    monkeypatch.delattr(bhashini, "translate_many", raising=False)
+    in_flight, peak, seen = 0, 0, []
+
+    async def slow_translate(text, source, target):
+        nonlocal in_flight, peak
+        in_flight += 1
+        peak = max(peak, in_flight)
+        seen.append(text)
+        await asyncio.sleep(0.01)
+        in_flight -= 1
+        return f"[{target}] {text}"
+
+    monkeypatch.setattr(bhashini, "translate", slow_translate)
+    lines = [f"Line {i}" for i in range(15)] + ["Yes", "No", "Yes", "No"]
+    out = run(language.translate_many(lines, "en", "hi"))
+    assert peak <= language.MAX_CONCURRENT
+    assert len(seen) == 17, "repeated lines are translated once"
+    assert out[-2:] == ["[hi] Yes", "[hi] No"]
+
+
+def test_uses_track_as_translate_many_when_present(monkeypatch):
+    from app.brain import language
+    from app.services import bhashini
+
+    calls = []
+
+    async def packed(lines, source, target):
+        calls.append(len(lines))
+        return [f"[{target}] {line}" for line in lines]
+
+    async def single(*_a, **_k):
+        raise AssertionError("single-line translate must not be used")
+
+    monkeypatch.setattr(bhashini, "translate_many", packed, raising=False)
+    monkeypatch.setattr(bhashini, "translate", single)
+    out = run(language.translate_many(["Colour: Black", "Add Zentra Pulse 5G?"], "en", "hi"))
+    assert calls == [2]
+    assert out[1].startswith("[hi] ") and "Zentra Pulse 5G" in out[1]
+
+
+def test_packed_translation_that_loses_a_name_keeps_english(monkeypatch):
+    from app.brain import language
+    from app.services import bhashini
+
+    async def drops_names(lines, source, target):
+        return ["कार्ट में जोड़ें?" for _ in lines]
+
+    monkeypatch.setattr(bhashini, "translate_many", drops_names, raising=False)
+    assert run(language.translate_many(["Add Zentra Pulse 5G to your cart?"], "en", "hi")) is None
+
+
+# --- verbosity / lite mode: at most 3 options, summaries never cut ---
+
+
+@pytest.mark.parametrize(
+    ("verbosity", "lite", "chips"),
+    [("normal", False, 4), ("short", False, 3), ("normal", True, 3)],
+)
+def test_short_and_lite_users_get_at_most_three_options(mock_body, verbosity, lite, chips):
+    session.reset()
+    data = mock_body("TurnRequest")
+    data["prefs"].update(verbosity=verbosity, lite_mode=lite)
+    data["input"].update(
+        kind="voice", text="", asr_meta={"confidence": None, "mic_level": 0.6, "alternatives": []}
+    )
+    r = run(orchestrator.handle_turn(TurnRequest.model_validate(data)))
+    assert len(r.output.followups) == chips
+    assert r.output.summary == "I didn't catch that. You can choose one of these."
+
+
+def test_short_users_keep_the_whole_confirmation(mock_body):
+    data = mock_body("TurnRequest")
+    data["prefs"].update(verbosity="short", lang="en")
+    data["input"].update(kind="switch", target_id="t-add-to-cart", lang="en")
+    r = run(orchestrator.handle_turn(TurnRequest.model_validate(data)))
+    assert r.output.summary == "Add Zentra Pulse 5G to your cart? Quantity 1, price ₹17,999."
+    assert r.confirmation.read_back.total.amount == 17999
+
+
+def test_short_prepare_keeps_the_cache_full(mock_body, monkeypatch):
+    from app.brain import prepare
+    from app.models import ProductPrepareRequest
+
+    monkeypatch.setattr(prepare, "_cache", prepare.TTLCache(60))
+    short = mock_body("ProductPrepareRequest")
+    normal = json.loads(json.dumps(short))
+    normal["prefs"]["verbosity"] = "normal"
+    a = run(prepare.prepare(ProductPrepareRequest.model_validate(short)))
+    b = run(prepare.prepare(ProductPrepareRequest.model_validate(normal)))
+    assert all(len(s.items) <= 3 for s in a.sections.specs.sections)
+    assert any(len(s.items) > 3 for s in b.sections.specs.sections)

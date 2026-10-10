@@ -231,9 +231,27 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - All lines of one answer (summary, headings, items, follow-ups, warnings) are translated
   concurrently through `bhashini.translate`; one at a time, a 20-line answer cost 20 round trips.
   Still all-or-nothing: if any line fails, the whole answer stays English (`lang: en`).
-- Track A: a /turn can now send up to ~20 MT requests at once; your per-model limiter queues
-  them. Tell us if the AnuvaadHub sandbox needs a lower burst.
+- At most 4 MT requests at once, each distinct line once (Track A: the sandbox allows a burst
+  of 12 per model then ~0.8/s, and returned 500s for ~20 at once). When Track A's
+  `bhashini.translate_many` lands it is used automatically (a few packed requests per answer);
+  masking and the lost-placeholder check still apply per line.
 - The user's words are redacted BEFORE translation (they were translated first, so a card number
   or OTP said in Hindi reached the MT service); placeholders survive masking and translation.
 - MT turns ": " into a visarga ("रंगः"); we put the colon back, at most as many as the English
   had. `fixtures/mocks/TurnResponse.json` now has the Hindi prompt equal to the Hindi summary.
+
+## 2026-10-11 — Short answers, photo grounding, did-you-mean, streaming (Track C; affects D, core)
+- `prefs.verbosity == "short"` or `prefs.lite_mode`: at most 3 items per section, 3 follow-up chips
+  and 4 table rows (docs/conditions.md: 3 options per step). Summaries are never cut: they are
+  already ≤ 2 sentences and cutting lost key facts (delivery date, read-backs). The cache keeps the
+  full sections; /product/prepare and /turn shorten per request.
+- `/vision/describe` with the `product_id` of a prepared product grounds its answer in
+  `images[i].description`. Without one there is nothing to cite: only visual description is kept
+  (numbers and printed text dropped), marked AI-made. This is the one ungrounded output.
+- "Did you mean X or Y?": when the model gives no different second meaning, the sound-alike command
+  is offered ("a cart" → Open the cart, or Add to cart?); consequential choices carry no actions.
+- No backend streaming (track brief item, decided not to build): /turn answers are built by our
+  tools, not free-form LLM prose, grounding is already per sentence, and a turn returns in ~1–2 s.
+  The slow part is TTS (Track A), which `player.ts` already plays sentence by sentence. Streaming
+  would need a new endpoint, an event schema and a client rewrite for little gain. Revisit only if
+  free-form LLM answers are added.

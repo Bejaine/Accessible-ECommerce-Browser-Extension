@@ -11,13 +11,12 @@ so a turn never makes more than two.
 
 from __future__ import annotations
 
-import asyncio
 import json
 import logging
 import re
 from typing import Any
 
-from app.brain import intent, language, session, tools
+from app.brain import brevity, intent, language, session, tools
 from app.brain.llm import LLMError, LLMSettings, complete_tool_call
 from app.brain.output import plain_output
 from app.brain.redact import redact
@@ -253,6 +252,14 @@ async def handle_turn(req: TurnRequest) -> TurnResponse:
     return await _respond(req, ctx, "unclear", min(confidence, 0.49), [], result)
 
 
+# Commands that unclear speech mixes up, offered as the other "Did you mean" option.
+SOUNDS_ALIKE: dict[str, tuple[str, dict[str, Any]]] = {
+    "go_to_cart": ("add_to_cart", {}),
+    "add_to_cart": ("go_to_cart", {}),
+    "read_section": ("where_am_i", {}),
+    "where_am_i": ("read_section", {"section": "overview"}),
+}
+
 SILENT_MIC = 0.05  # mic_level (0-1, from Track A's capture) below this: nothing was said
 
 
@@ -304,7 +311,12 @@ async def _ask(
     """0.5-0.8: never act; offer the top two meanings. Each choice carries its actions only if
     they are safe to run directly; consequential ones are confirmed on the next turn."""
     options: list[dict[str, Any]] = []
-    for tool_name, tool_args in [(name, args), *[(t, a) for _, t, a in alts]]:
+    candidates = [(name, args), *[(t, a) for _, t, a in alts]]
+    if len(candidates) == 1 and name in SOUNDS_ALIKE:
+        # The model often gives no second meaning; offer the command that sounds alike
+        # ("a cart": add to cart or open the cart?). Consequential ones carry no actions.
+        candidates.append(SOUNDS_ALIKE[name])
+    for tool_name, tool_args in candidates:
         if tool_name in tools.READ_TOOLS:
             # Reading needs no page action; don't run it (it may cost an LLM call).
             options.append(
@@ -349,7 +361,10 @@ async def _respond(
     result: tools.ToolResult,
 ) -> TurnResponse:
     lang = req.input.lang.value
-    output = await _translate_output(result.output, lang, _brands(req))
+    output = result.output
+    if brevity.wants_short(req.prefs):
+        output = brevity.shorten(output)
+    output = await _translate_output(output, lang, _brands(req))
     confirmation = result.confirmation
     if confirmation is not None:
         confirmation = {**confirmation, "prompt": output.summary}
@@ -392,15 +407,11 @@ async def _translate_output(
             texts.append((item, "text"))
         if section["table"]:
             texts.append((section["table"], "spoken"))
-    # In parallel: one at a time, a 20-line answer took 20 round trips (Track A measured
-    # 0.3-1 s+ each). Track A's gateway rate-limits per model, so a burst is safe.
-    results = await asyncio.gather(
-        *(
-            language.translate(container[key], "en", lang, keep=keep or [])
-            for container, key in texts
-        )
+    # One batch: Track A packs lines into a few requests (or we send at most 4 at a time).
+    results = await language.translate_many(
+        [container[key] for container, key in texts], "en", lang, keep=keep or []
     )
-    if any(out is None for out in results):
+    if results is None:
         return output  # all or nothing: never a half-translated answer
     for (container, key), out in zip(texts, results, strict=True):
         container[key] = out
