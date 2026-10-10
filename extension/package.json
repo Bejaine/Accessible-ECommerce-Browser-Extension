@@ -11,7 +11,8 @@
     "zip": "wxt zip",
     "postinstall": "wxt prepare",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "eval:inference": "vitest run --config vitest.eval.config.ts"
   },
   "devDependencies": {
     "ajv": "^8.20.0",

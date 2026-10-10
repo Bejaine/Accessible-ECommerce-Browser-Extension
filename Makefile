@@ -5,7 +5,7 @@ VENV := .venv
 BIN := $(CURDIR)/$(VENV)/bin
 GEN_PY := $(CURDIR)/shared/generated/py
 
-.PHONY: setup types types-check check lint lint-ts lint-py test test-ext test-backend validate backend ext ext-firefox build
+.PHONY: setup types types-check check lint lint-ts lint-py test test-ext test-backend validate backend ext ext-firefox build eval-inference
 
 setup:
 	npm install
@@ -62,3 +62,6 @@ ext-firefox:
 build:
 	npm run -w extension build
 	npm run -w extension build:firefox
+
+eval-inference:
+	npm run -w extension eval:inference

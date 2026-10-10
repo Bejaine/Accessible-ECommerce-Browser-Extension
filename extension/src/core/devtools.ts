@@ -5,6 +5,7 @@
 import type { AccessibleOutput, ActionTarget, PageType, TurnRequest } from '@shared/index';
 import searchPage from '@fixtures/mocks/PageContext.search.json';
 import turnRequest from '@fixtures/mocks/TurnRequest.json';
+import type { RecordedSession, SessionLabel } from '../infer/replay';
 import type { InferredCondition, SignalKind } from '../infer/scores';
 import { createDebugPanel, type DebugPanel } from '../ui/debugPanel';
 import type { App } from './app';
@@ -43,6 +44,7 @@ const SIMULATE: Record<InferredCondition, SignalKind[]> = {
 
 export function installDevHooks(bus: Bus, getApp: () => App, store: ProfileStore): void {
   let debug: DebugPanel | null = null;
+  let recording: { label: SessionLabel; start: number } | null = null;
   const hooks = {
     sources: SOURCES,
     async show(name: Source = 'reviews') {
@@ -93,6 +95,34 @@ export function installDevHooks(bus: Bus, getApp: () => App, store: ProfileStore
       getApp().overlay.open();
       return getApp().say(text);
     },
+    /** Start recording a calibration session (eval/inference/README.md). */
+    recordSession(label: SessionLabel = 'normal') {
+      recording = { label, start: performance.now() };
+      return `recording "${label}": shop normally for 3-5 minutes, then __asl.saveSession('initials')`;
+    },
+    /** Stop recording and download the session as JSON (signal names and timings only). */
+    saveSession(recordedBy = '') {
+      if (!recording) return 'not recording: call __asl.recordSession(label) first';
+      const { label, start } = recording;
+      recording = null;
+      const session: RecordedSession = {
+        label,
+        recordedBy,
+        recordedAt: new Date().toISOString(),
+        durationMs: Math.round(performance.now() - start),
+        signals: getApp()
+          .engine.log.filter((s) => s.at >= start)
+          .map((s) => ({ kind: s.kind, at: Math.round(s.at - start) })),
+      };
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(
+        new Blob([JSON.stringify(session, null, 2)], { type: 'application/json' }),
+      );
+      a.download = `session-${label}-${session.recordedAt!.replace(/[:.]/g, '-')}.json`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      return `saved ${session.signals.length} signals over ${Math.round(session.durationMs / 1000)} s; move the file into eval/inference/sessions/`;
+    },
     /** Recorded signals for calibration sessions (stays on this device). */
     signals() {
       return getApp().engine.log.map((s) => ({ kind: s.kind, at: Math.round(s.at) }));
@@ -114,6 +144,6 @@ export function installDevHooks(bus: Bus, getApp: () => App, store: ProfileStore
   );
   (globalThis as { __asl?: typeof hooks }).__asl = hooks;
   console.info(
-    '[asl] dev hooks ready: __asl.show, scan, stopScan, phrases, announce, debug, simulate, say, signals, resetProfile',
+    '[asl] dev hooks ready: __asl.show, scan, stopScan, phrases, announce, debug, simulate, say, signals, recordSession, saveSession, resetProfile',
   );
 }
