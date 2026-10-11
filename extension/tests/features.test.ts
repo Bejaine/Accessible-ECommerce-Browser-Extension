@@ -2,10 +2,10 @@
 // which accessibility features are on.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
-import type { PageContext } from '@shared/index';
+import type { ASRResponse, PageContext } from '@shared/index';
 import turnRequest from '../../fixtures/mocks/TurnRequest.json';
 import type { Mic, Utterance } from '../src/audio/mic';
-import { mountApp, SIMPLE_TEXT_SCALE, type App } from '../src/core/app';
+import { HOLD_MS, mountApp, SIMPLE_TEXT_SCALE, type App } from '../src/core/app';
 import { createMockBackend } from '../src/core/backend';
 import { createBus } from '../src/core/bus';
 import { setConditionActive } from '../src/core/composer';
@@ -21,6 +21,16 @@ vi.mock('../src/extract', async (importOriginal) => ({
 function fakeMic() {
   const calls: string[] = [];
   let release: ((u: Utterance) => void) | null = null;
+  /** What the user says before the mic stops (null = silence). */
+  let speech: string | null = null;
+  const utterance = (said: boolean) =>
+    ({
+      reason: said ? 'stopped' : 'no_speech',
+      wav: new Uint8Array(),
+      audioBase64: said ? 'UklGRg==' : '',
+      durationMs: said ? 900 : 0,
+      micLevel: said ? 0.5 : 0,
+    }) as unknown as Utterance;
   const mic: Mic = {
     get listening() {
       return release !== null;
@@ -32,19 +42,23 @@ function fakeMic() {
     },
     stop: () => {
       calls.push('stop');
-      release?.({
-        reason: 'stopped',
-        wav: new Uint8Array(),
-        audioBase64: '',
-        durationMs: 0,
-        micLevel: 0,
-      } as unknown as Utterance);
+      const r = release;
       release = null;
+      r?.(utterance(speech !== null));
     },
     mute: () => undefined,
     unmute: () => undefined,
   };
-  return { mic, calls };
+  return {
+    mic,
+    calls,
+    say(text: string | null) {
+      speech = text;
+    },
+    get heard() {
+      return speech;
+    },
+  };
 }
 
 describe('Space, simple mode and the features note', () => {
@@ -52,18 +66,36 @@ describe('Space, simple mode and the features note', () => {
   let app: App;
   let store: ProfileStore;
   let mic: ReturnType<typeof fakeMic>;
+  let rec: ReturnType<typeof recordingSpeaker>;
 
   const root = () => host.shadowRoot!;
-  const space = (target: EventTarget = document.body) => {
-    const e = new KeyboardEvent('keydown', {
+  const key = (type: 'keydown' | 'keyup', target: EventTarget = document.body, extra = {}) => {
+    const e = new KeyboardEvent(type, {
       code: 'Space',
       key: ' ',
       bubbles: true,
       cancelable: true,
       composed: true,
+      ...extra,
     });
     target.dispatchEvent(e);
     return e;
+  };
+  /** A quick press and release. */
+  const tap = (target: EventTarget = document.body) => {
+    const down = key('keydown', target);
+    key('keyup', target);
+    return down;
+  };
+  /** Press and keep holding past the hold time. */
+  const hold = async (target: EventTarget = document.body) => {
+    const down = key('keydown', target);
+    await vi.advanceTimersByTimeAsync(HOLD_MS + 10);
+    return down;
+  };
+  const release = async (target: EventTarget = document.body) => {
+    key('keyup', target);
+    await vi.advanceTimersByTimeAsync(50);
   };
 
   function mount(devicePrefs: DevicePrefs = { assistantVoice: 'auto' }) {
@@ -71,8 +103,19 @@ describe('Space, simple mode and the features note', () => {
     const container = document.createElement('div');
     root().replaceChildren(container);
     mic = fakeMic();
-    app = mountApp(container, store, createBus(), createMockBackend(), {
-      speaker: recordingSpeaker().speaker,
+    rec = recordingSpeaker();
+    const base = createMockBackend();
+    const backend = {
+      ...base,
+      asr: async (): Promise<ASRResponse> => ({
+        schema_version: '1.0',
+        text: mic.heard ?? '',
+        lang: 'en',
+        asr_meta: { confidence: null, mic_level: null, alternatives: [] },
+      }),
+    };
+    app = mountApp(container, store, createBus(), backend, {
+      speaker: rec.speaker,
       mic: mic.mic,
       devicePrefs,
     });
@@ -93,48 +136,89 @@ describe('Space, simple mode and the features note', () => {
     host.remove();
   });
 
-  describe('Space to speak', () => {
-    it('Space on the page starts listening, and again stops it', () => {
-      const e = space();
-      expect(e.defaultPrevented).toBe(true);
+  describe('Space: hold to talk, tap for its usual job', () => {
+    beforeEach(() => vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] }));
+    afterEach(() => vi.useRealTimers());
+
+    it('a tap on the page starts hands-free listening; another tap stops it', () => {
+      expect(tap().defaultPrevented).toBe(true); // no page scroll
       expect(mic.calls).toEqual(['listen']);
-      space();
+      tap();
       expect(mic.calls).toEqual(['listen', 'stop']);
     });
 
-    it('typing, a focused button, and other keys keep Space as it is', () => {
-      const input = document.createElement('input');
-      const button = document.createElement('button');
-      const a = document.createElement('a');
-      a.href = '#x';
-      document.body.append(input, button, a);
-      for (const el of [input, button, a]) expect(space(el).defaultPrevented).toBe(false);
-      // Our own typing box too.
-      expect(space(root().querySelector('.asl-type input')!).defaultPrevented).toBe(false);
-      const shifted = new KeyboardEvent('keydown', {
-        code: 'Space',
-        shiftKey: true,
-        bubbles: true,
-        cancelable: true,
-      });
-      document.body.dispatchEvent(shifted);
-      expect(shifted.defaultPrevented).toBe(false);
-      expect(mic.calls).toEqual([]);
-      input.remove();
-      button.remove();
-      a.remove();
+    it('holding pauses the reading and listens until release; nothing heard -> reading resumes', async () => {
+      rec.speaker.say('A long answer', 'en');
+      await hold();
+      expect(rec.calls).toContain('pause');
+      expect(mic.calls).toEqual(['listen']);
+      await release();
+      expect(mic.calls).toEqual(['listen', 'stop']);
+      await vi.waitFor(() => expect(rec.calls.at(-1)).toBe('resume'));
     });
 
-    it('during switch scanning Space stays the switch', () => {
+    it('"next" said while holding moves on in what is being read (no server call)', async () => {
+      const turn = vi.spyOn(app.turn, 'send');
+      rec.speaker.say('A long answer', 'en');
+      await hold();
+      mic.say('next');
+      await release();
+      await vi.waitFor(() => expect(rec.calls).toContain('nextSection'));
+      expect(turn).not.toHaveBeenCalled();
+    });
+
+    it('"read aloud" by voice reads the answer; a voice request is answered aloud', async () => {
+      await hold();
+      mic.say('what is the price');
+      await release();
+      // The user spoke, so the answer is read aloud by itself (no Read aloud press needed).
+      await vi.waitFor(() => expect(rec.calls).toContain('speakOutput'));
+      rec.speaker.stop();
+      const before = rec.calls.filter((c) => c === 'speakOutput').length;
+      await hold();
+      mic.say('read aloud');
+      await release();
+      await vi.waitFor(() =>
+        expect(rec.calls.filter((c) => c === 'speakOutput').length).toBe(before + 1),
+      );
+    });
+
+    it('a tap on a focused button presses it; holding on it talks instead', async () => {
+      const button = document.createElement('button');
+      const click = vi.fn();
+      button.addEventListener('click', click);
+      document.body.append(button);
+      tap(button);
+      expect(click).toHaveBeenCalledOnce();
+      expect(mic.calls).toEqual([]);
+      await hold(button);
+      await release(button);
+      expect(click).toHaveBeenCalledOnce();
+      expect(mic.calls).toEqual(['listen', 'stop']);
+      button.remove();
+    });
+
+    it('typing and Shift+Space are left alone', () => {
+      const input = document.createElement('input');
+      document.body.append(input);
+      expect(tap(input).defaultPrevented).toBe(false);
+      expect(tap(root().querySelector('.asl-type input')!).defaultPrevented).toBe(false);
+      expect(key('keydown', document.body, { shiftKey: true }).defaultPrevented).toBe(false);
+      expect(mic.calls).toEqual([]);
+      input.remove();
+    });
+
+    it('during switch scanning Space stays the switch', async () => {
       app.controls.startScanning(currentPage.targets);
-      space();
+      await hold();
+      await release();
       expect(mic.calls).toEqual([]);
       app.controls.stopScanning();
     });
 
     it('can be turned off in Settings', () => {
       mount({ assistantVoice: 'auto', spaceToSpeak: false });
-      expect(space().defaultPrevented).toBe(false);
+      expect(tap().defaultPrevented).toBe(false);
       expect(mic.calls).toEqual([]);
     });
   });

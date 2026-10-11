@@ -139,8 +139,12 @@ describe('turns from the overlay buttons', () => {
 
     bus.emit({ type: 'phrase', id: 'add_to_cart', text: 'Add to cart' });
     await settle();
+    // One switch press = a tap of Space (down, then up before the hold time).
     document.body.dispatchEvent(
       new KeyboardEvent('keydown', { code: 'Space', bubbles: true, cancelable: true }),
+    );
+    document.body.dispatchEvent(
+      new KeyboardEvent('keyup', { code: 'Space', bubbles: true, cancelable: true }),
     );
     expect(app.turn.pending).toBeNull();
   });

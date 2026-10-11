@@ -471,3 +471,18 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - A corner note lists the features that are on by their feature names ("Read-aloud mode"), never
   conditions or people, marks automatic ones, offers Change and Hide; hidden while the panel is open.
 
+## 2026-10-11 — Space: hold to talk, tap for its usual job (Track D; everyone testing voice)
+- Hold Space (≥ 400 ms) anywhere, also on the setup page: what is being read pauses, the mic
+  listens while Space is held ("speech" mode, patient silence), letting go sends what was said.
+  Nothing heard → the reading carries on. Playback words ("pause", "next", "repeat", "read aloud")
+  act on what was being read, locally.
+- Tap Space: yes to a pending confirmation / the switch answer to a suggestion (when Space is the
+  switch key), presses a focused button, steps through choices on the setup page; on the page
+  itself it starts hands-free listening (ends on silence; a second tap stops it).
+- Not while typing; during switch scanning Space is only the switch (resting on a switch never
+  starts talking). Setting "Hold Space to talk" turns it off.
+- After the user has spoken once, answers and prompts are read aloud for the rest of the tab's
+  session (assistant voice "auto"); the panel opens (without focus) to show the answer.
+- "Always listen while it reads" (barge-in) is now off by default: holding Space is the dependable
+  way to talk over an answer; continuous listening needs headphones.
+

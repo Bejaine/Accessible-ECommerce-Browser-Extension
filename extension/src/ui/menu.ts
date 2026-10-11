@@ -50,6 +50,8 @@ export const MENU_CSS = `
 .asl-row > .asl-grow { flex: 1 1 auto; }
 .asl-ask .asl-voice { gap: 12px; }
 .asl-ask .asl-mic { flex: 1 1 auto; border-radius: 10px; min-block-size: 48px; }
+.asl-ask .asl-space-hint { margin: -2px 0 4px; font-size: 0.875em; color: var(--asl-muted); }
+.asl-ask .asl-space-hint[hidden] { display: none; }
 .asl-type { display: grid; gap: 6px; }
 .asl-type label { font-weight: 600; }
 .asl-type .asl-hint { font-size: 0.875em; color: var(--asl-muted); }

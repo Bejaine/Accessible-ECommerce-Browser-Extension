@@ -122,7 +122,7 @@ const FALLBACK = {
   'onboarding.read_aloud': 'Would you like me to read things aloud?',
   'onboarding.colours': 'Do colours ever look alike to you?',
   'onboarding.how':
-    'Press a number, tap a choice, say your answer, or press Space to step through the choices with one switch.',
+    'Press a number, tap a choice, hold Space and say your answer, or tap Space to step through the choices with one switch.',
   'onboarding.yes': 'Yes',
   'onboarding.no': 'No',
   'onboarding.done':
@@ -141,10 +141,13 @@ const FALLBACK = {
   'active.change': 'Change',
   'active.hide': 'Hide',
   'active.hide_name': 'Hide this note',
-  'settings.space': 'Press Space to speak',
-  'settings.space_hint': 'Space starts and stops listening, except while typing or on a button.',
-  'settings.interrupt': 'Stop the assistant by speaking',
-  'settings.interrupt_hint': 'Best with headphones: on a phone speaker it can hear itself.',
+  'settings.space': 'Hold Space to talk',
+  'settings.space_hint':
+    'Hold Space while you speak, or tap it to start listening. Not while typing.',
+  'ask.space_hint': 'Or hold Space and speak, anywhere on the page.',
+  'settings.interrupt': 'Always listen while it reads',
+  'settings.interrupt_hint':
+    'Speak to stop it any time. Best with headphones: on a speaker it can hear itself.',
   'settings.modes': 'Modes',
   'settings.language': 'Language',
   'settings.colour': 'Colour names on swatches',

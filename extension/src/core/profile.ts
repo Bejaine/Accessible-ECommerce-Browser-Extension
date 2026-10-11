@@ -97,9 +97,9 @@ export async function markOnboarded(): Promise<void> {
 export interface DevicePrefs {
   assistantVoice: 'auto' | 'on' | 'off';
   dwellMs?: number | null;
-  /** Speaking while the assistant reads pauses it (barge-in). Unset: on for desktop, off on phones. */
+  /** Speaking while the assistant reads pauses it (barge-in). Off unless turned on. */
   interruptBySpeaking?: boolean;
-  /** Space (outside text fields and controls) starts and stops listening. Default on. */
+  /** Hold Space to talk, tap to start listening (outside text fields). Default on. */
   spaceToSpeak?: boolean;
   /** Simple mode raised the text size from this value (restored when simple mode is turned off). */
   textScaleBeforeSimple?: number | null;
@@ -112,16 +112,12 @@ export function spaceToSpeak(prefs: DevicePrefs): boolean {
 }
 
 /**
- * Barge-in default: on with a desktop's echo cancellation; off on touch devices, where the phone's
- * speaker is heard by its own mic (Track A's live test). The user can change it in Settings.
+ * Barge-in (the mic listening during playback by itself): off unless the user turns it on in
+ * Settings. Holding Space is the dependable way to talk over an answer; continuous listening is
+ * best with headphones (a phone's speaker is heard by its own mic, Track A's live test).
  */
 export function interruptBySpeaking(prefs: DevicePrefs): boolean {
-  if (prefs.interruptBySpeaking !== undefined) return prefs.interruptBySpeaking;
-  try {
-    return !matchMedia('(pointer: coarse)').matches;
-  } catch {
-    return true;
-  }
+  return prefs.interruptBySpeaking ?? false;
 }
 
 export const DEVICE_PREFS_KEY = 'device-prefs';

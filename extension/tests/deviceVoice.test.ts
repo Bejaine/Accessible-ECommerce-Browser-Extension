@@ -149,15 +149,9 @@ describe('speak, interrupting and the settings page in the app', () => {
     expect(root().activeElement).toBe(root().querySelector('.asl-type input'));
   });
 
-  it('interrupting by speaking: on by default on desktop, off on phones, user can change it', () => {
-    const coarse = (matches: boolean) =>
-      vi.spyOn(window, 'matchMedia').mockReturnValue({ matches } as MediaQueryList);
-    coarse(false);
-    expect(interruptBySpeaking({ assistantVoice: 'auto' })).toBe(true);
-    coarse(true);
+  it('always listening while it reads: off unless turned on (Space is the dependable way)', () => {
     expect(interruptBySpeaking({ assistantVoice: 'auto' })).toBe(false);
     expect(interruptBySpeaking({ assistantVoice: 'auto', interruptBySpeaking: true })).toBe(true);
-    vi.restoreAllMocks();
   });
 
   it('Settings opens as its own page with sections, and Back returns to the menu', () => {
@@ -170,7 +164,8 @@ describe('speak, interrupting and the settings page in the app', () => {
       'Text and language',
       'Pointer and switch',
     ]);
-    expect(page.textContent).toContain('Stop the assistant by speaking');
+    expect(page.textContent).toContain('Always listen while it reads');
+    expect(page.textContent).toContain('Hold Space to talk');
     // The menu shrinks to Ask while a page is open.
     expect(root().querySelector('.asl-controls')!.classList.contains('asl-answering')).toBe(true);
     [...page.querySelectorAll('button')].find((b) => b.textContent === 'Back to menu')!.click();
