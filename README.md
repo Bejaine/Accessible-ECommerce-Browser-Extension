@@ -1,85 +1,67 @@
 # Accessible Shopping Layer
 
-A browser extension (Chrome desktop + Firefox for Android) and a FastAPI backend that make real
-e-commerce sites usable for people with visual, speech, hand-motor and age-related impairments,
-in English and Indian languages via Bhashini. Megathon 2026, Bhashini track.
+Setup and run instructions. Licensed under MIT (see `LICENSE`).
 
-Read `CLAUDE.md` first: it holds the product rules, contracts and track ownership.
-
-## Setup
-
-Prerequisites:
+## Prerequisites
 
 | Tool | Version | Why |
 |---|---|---|
-| Node.js | 20+ (CI uses 22) | extension, Prettier/ESLint, type generation |
+| Node.js | 20+ (CI uses 22) | extension, linting, type generation |
 | Python | 3.11 (exactly) | backend |
 | [uv](https://docs.astral.sh/uv/) | any (optional) | faster Python installs; `make setup` falls back to pip |
-| jq | any | `.claude/hooks/format.sh` |
-| ruff | on PATH | `.claude/hooks/format.sh` formats Python after every edit; `uv tool install ruff`, or activate `.venv` |
-| Chrome and/or Firefox | system install | `make ext` / `make ext-firefox` open them with the extension loaded (web-ext is installed by `make setup`) |
+| GNU Make | any | the commands below |
+| Chrome and/or Firefox | system install | `make ext` / `make ext-firefox` open them with the extension loaded |
+
+## Setup
 
 ```
-make setup     # npm install (root + extension workspace) and .venv with backend[dev]
-make types     # regenerate shared/generated/ from shared/schemas/
-make check     # generated types fresh, Prettier, ESLint, tsc, Vitest, ruff, pytest, fixture validation
+make setup     # npm install (root + extension) and .venv with the backend's dependencies
+make types     # generate shared/generated/ from shared/schemas/
+make check     # lint, type checks, all tests, fixture validation
 ```
 
 If `python3.11` isn't your interpreter's name: `make setup PY=/path/to/python3.11`.
-Copy `.env.example` to `.env` and `backend/config/models.example.json` to
-`backend/config/models.local.json` when you have real keys (both are gitignored).
 
-## Running
+### API keys (only for live models; everything also runs without them, on recorded responses)
 
-- Backend: `make backend` (MOCK=1 by default; every route serves `fixtures/mocks/`). Docs at http://localhost:8000/docs.
-- Extension, Chrome: `make ext`. Firefox: `make ext-firefox`. Both default to `VITE_BACKEND=mock`.
-- Firefox for Android: see `extension/README.md`.
-- Tests only: `make test` (or `make test-ext`, `make test-backend`).
-- Persona runs on MockMart with the real backend: `make e2e` (writes `eval/e2e/report.md`).
-- Inference calibration report: `make eval-inference` (needs recorded sessions, see `eval/inference/README.md`).
+1. `cp .env.example .env` and fill in `GROQ_API_KEY` (or `GROQ_API_KEYS`), `GEMINI_API_KEY` and,
+   optionally, `SERPAPI_API_KEY`. Set `MOCK=0`.
+2. `cp backend/config/models.example.json backend/config/models.local.json` and fill in the
+   Bhashini (AnuvaadHub) model URLs and access tokens for ASR, MT, TTS and OCR.
 
-## Layout
+Both files are gitignored. Never commit keys.
 
-See CLAUDE.md "Repo layout". Each top-level folder has a README with its owner.
-Contracts are in `shared/schemas/` (DRAFT until the team freezes them; see `shared/README.md`).
+## Run
 
-## Declared libraries, APIs and datasets
+1. **Backend**
+   - Recorded responses, no keys needed: `make backend`
+   - Live models: `MOCK=0 make backend` (wait ~25 s for the language models to warm up)
+   - Check: `curl localhost:8000/health`; API docs at http://localhost:8000/docs
+2. **Demo store (MockMart)**: `python3 -m http.server 8080 -d mock-store`, then open
+   http://localhost:8080/?reset=1
+3. **Extension**
+   - Chrome, against the backend: `VITE_BACKEND=http://localhost:8000 make ext`
+   - Firefox: `VITE_BACKEND=http://localhost:8000 make ext-firefox`
+   - Without a backend (in-browser sample data, no speech recognition): `make ext`
+   - To load it by hand instead: `make build`, then load `extension/.output/chrome-mv3`
+     (chrome://extensions → Developer mode → Load unpacked) or `extension/.output/firefox-mv3`
+     (about:debugging → Load Temporary Add-on).
+   - On a shop page or MockMart, open the assistant with **Alt+Shift+A** or the "Shopping
+     assistant" button; hold **Space** to talk.
+4. **Firefox for Android**: `BACKEND_HOST=0.0.0.0 make backend`, build with
+   `VITE_BACKEND=http://<laptop LAN IP>:8000 make build`, then follow `extension/README.md`.
 
-Add to this list in the same PR that introduces a dependency (docs/product.md).
+## Tests and reports
 
-**JavaScript / TypeScript**
-- [WXT](https://wxt.dev) — WebExtension framework (MV3 builds for Chrome and Firefox)
-- [TypeScript](https://www.typescriptlang.org) — pinned to 6.0.x for typescript-eslint compatibility
-- [Vitest](https://vitest.dev) + [happy-dom](https://github.com/capricorn86/happy-dom) — extension unit tests
-- [ESLint](https://eslint.org), [@eslint/js](https://www.npmjs.com/package/@eslint/js), [typescript-eslint](https://typescript-eslint.io), [globals](https://www.npmjs.com/package/globals) — linting
-- [Prettier](https://prettier.io) — formatting
-- [axe-core](https://github.com/dequelabs/axe-core) — automated accessibility checks of the overlay in tests
-- [web-ext](https://github.com/mozilla/web-ext) — launches Chrome/Firefox for `make ext`, and Firefox for Android
-- [json-schema-to-typescript](https://github.com/bcherny/json-schema-to-typescript) — TS types from schemas
-- [Ajv](https://ajv.js.org) + [ajv-formats](https://github.com/ajv-validator/ajv-formats) — validates extractor output against the JSON Schemas in extension tests (dev only)
+```
+make test              # extension + backend tests (make test-ext / make test-backend)
+make e2e               # persona runs on MockMart against the backend -> eval/e2e/report.md
+make a11y              # accessibility audit in headless Chrome -> eval/a11y/report.md
+make eval-inference    # inference calibration report (needs recorded sessions, eval/inference/)
+```
 
-**Python**
-- [FastAPI](https://fastapi.tiangolo.com), [Uvicorn](https://www.uvicorn.org), [Pydantic v2](https://docs.pydantic.dev) — backend
-- [HTTPX](https://www.python-httpx.org) — HTTP client (and FastAPI test client)
-- [jsonschema](https://python-jsonschema.readthedocs.io) — fixture and schema validation
-- [pytest](https://pytest.org), [pytest-asyncio](https://pytest-asyncio.readthedocs.io) — tests
-- [Ruff](https://docs.astral.sh/ruff/) — lint and format
+## Datasets and model weights
 
-**Data**
-- `fixtures/pages/` — saved public Amazon.in and Flipkart product/search pages (captured logged-out on 2026-10-10, scripts and reviewer identities removed), used only for offline extractor tests
-- [datamodel-code-generator](https://github.com/koxudaxi/datamodel-code-generator) — Pydantic models from schemas
-
-**APIs**
-- Bhashini models via AnuvaadHub (ASR, MT, TTS, OCR) — only through `backend/app/services/bhashini.py` (stub)
-- SerpApi `amazon_product` — only through `backend/app/services/serpapi.py`; development uses `fixtures/serpapi/`
-- [Groq](https://console.groq.com) chat completions (`openai/gpt-oss-120b`, `openai/gpt-oss-20b`, strict
-  structured outputs) — section summaries and `/turn` tool calls, only through `backend/app/brain/llm.py`;
-  tests replay `fixtures/llm/`
-- [Gemini API](https://ai.google.dev) (Interactions endpoint, `gemini-3.5-flash-lite`, `store: false`) —
-  product photo descriptions, only through `backend/app/brain/vision.py`; tests replay `fixtures/llm/vision/`
-
-**Datasets**
-- None added yet. Planned: TORGO (dysarthric speech) for `eval/`.
-
-**CI**
-- GitHub Actions: actions/checkout, actions/setup-node, actions/setup-python, astral-sh/setup-uv
+None to download. All models are used through hosted APIs (Bhashini via AnuvaadHub, Groq,
+Gemini); tests replay recorded responses from `fixtures/`. Libraries, APIs and data used are
+listed in `docs/dependencies.md`.
