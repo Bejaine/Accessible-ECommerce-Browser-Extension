@@ -555,3 +555,20 @@ def test_turn_uses_one_packed_translation_per_answer(req, monkeypatch):
     assert len(calls) == 1 and calls[0] >= 10
     assert out.lang.value == "hi"
     assert out.summary.startswith("[hi] ")
+
+
+def test_null_optional_arguments_are_allowed_and_mean_not_given(search_req):
+    """Seen live: Groq rejected compare(max_price=null) because the schema said number."""
+    from jsonschema import Draft202012Validator
+
+    specs = {s["function"]["name"]: s["function"]["parameters"] for s in tools.TOOL_SPECS}
+    sent = {"max_price": None, "min_rating": None, "prefer": "cheapest", "confidence": 0.9,
+            "alternatives": []}  # fmt: skip
+    Draft202012Validator(specs["recommend"]).validate(sent)
+    with pytest.raises(Exception):  # noqa: B017 - required arguments stay non-null
+        Draft202012Validator(specs["read_section"]).validate(
+            {"section": None, "confidence": 0.9, "alternatives": []}
+        )
+    session.reset()
+    result = run(tools.run(tools.Context(search_req), "recommend", sent))
+    assert result.output.sections[0].table is not None
