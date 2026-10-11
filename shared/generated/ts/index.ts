@@ -819,6 +819,10 @@ export interface ProductPrepareRequest {
   schema_version: SchemaVersion;
   product: ProductJSON;
   prefs: Prefs;
+  /**
+   * Optional: the same id as TurnRequest.session_id, so a product that was only opened (no turn) can be compared later.
+   */
+  session_id?: string;
 }
 export interface ProductPrepareResponse {
   schema_version: SchemaVersion;

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from .. import ProductJSON_schema, Profile_schema, common_schema
 
@@ -18,3 +18,7 @@ class ProductPrepareRequest(BaseModel):
     schema_version: common_schema.SchemaVersion
     product: ProductJSON_schema.ProductJSON
     prefs: Profile_schema.Prefs
+    session_id: str | None = Field(
+        None,
+        description="Optional: the same id as TurnRequest.session_id, so a product that was only opened (no turn) can be compared later.",
+    )
