@@ -153,6 +153,13 @@ describe('turn pipeline', () => {
     expect(turn.canRetry).toBe(false);
   });
 
+  it('a network failure (no ErrorResponse) is retryable', async () => {
+    replies = [new Error('ECONNREFUSED')];
+    const turn = pipeline();
+    await turn.send({ kind: 'text', text: 'x' });
+    expect(turn.canRetry).toBe(true);
+  });
+
   it('a validation error is not offered for retry', async () => {
     replies = [{ error: 'bad', code: 'validation', retryable: false }];
     const turn = pipeline();

@@ -108,13 +108,14 @@ const ERROR_KEYS: Partial<Record<ErrorCode, UiKey>> = {
   auth_expired: 'turn.unavailable',
 };
 
+/** An ErrorResponse's code and retryable flag; anything else (a network failure) is retryable. */
 function errorShape(error: unknown): { code: string | null; retryable: boolean } {
-  if (!error || typeof error !== 'object') return { code: null, retryable: true };
-  const e = error as { code?: unknown; retryable?: unknown };
-  return {
-    code: typeof e.code === 'string' ? e.code : null,
-    retryable: e.retryable === true,
+  const e = (error && typeof error === 'object' ? error : {}) as {
+    code?: unknown;
+    retryable?: unknown;
   };
+  if (typeof e.code !== 'string') return { code: null, retryable: true };
+  return { code: e.code, retryable: e.retryable === true };
 }
 
 /** Every string an answer shows or speaks, with `fn` applied (grounding paths stay as they are). */
