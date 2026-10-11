@@ -25,6 +25,7 @@ class Session:
     max_price: float | None = None
     min_rating: float | None = None
     workflow: dict | None = None  # the order task in progress (brain/workflows.py)
+    results: dict | None = None  # {"url", "next"}: where "more results" carries on
 
     def remember(self, product: ProductJSON) -> None:
         self.seen.pop(product.id, None)
