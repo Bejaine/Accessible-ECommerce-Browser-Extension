@@ -153,6 +153,10 @@ async def answer_question(
     data = p.model_dump(mode="json", by_alias=True)
     paths = list(dict.fromkeys(field_paths or []))
     words = {w for w in re.findall(r"[a-z0-9]{3,}", topic.lower())}
+    # Seen live: the model often sends only topic="price", which then read as "not listed".
+    # Only a topic made of these words maps ("water resistance rating" is not the star rating).
+    if words and words <= TOPIC_PATHS.keys() | _TOPIC_FILLER:
+        paths += [TOPIC_PATHS[w] for w in sorted(words) if w in TOPIC_PATHS]
     for key, spec in p.specs.items():  # don't rely on the model knowing the exact keys
         if words & set(re.findall(r"[a-z0-9]{3,}", f"{key} {spec.label}".lower())):
             paths.append(f"specs.{key}")
@@ -179,11 +183,51 @@ async def answer_question(
     return ToolResult(f"Answer about {topic}", result.output, dropped=result.dropped)
 
 
+TOPIC_PATHS = {
+    "price": "price",
+    "cost": "price",
+    "mrp": "price",
+    "discount": "price",
+    "rating": "rating",
+    "ratings": "rating",
+    "stars": "rating",
+    "stock": "availability",
+    "available": "availability",
+    "availability": "availability",
+    "delivery": "delivery",
+    "shipping": "delivery",
+    "seller": "seller",
+    "sold": "seller",
+    "brand": "brand",
+}
+_TOPIC_FILLER = {
+    "the", "its", "this", "product", "item", "current", "today", "how", "much",
+    "what", "status", "date", "time", "star", "overall", "who", "and",
+}  # fmt: skip
+
+
 def _leaf(path: str, value: Any) -> str:
-    return f"{path}.value" if isinstance(value, dict) and "value" in value else path
+    if path == "rating":  # the answer states the value and the count
+        return path
+    if isinstance(value, dict) and "value" in value:
+        return f"{path}.value"
+    if path == "availability" and isinstance(value, dict):
+        return "availability.text" if value.get("text") else "availability.status"
+    if path == "delivery" and isinstance(value, dict):
+        return "delivery.text"
+    return path
 
 
 def _describe(p: ProductJSON, path: str, value: Any) -> tuple[str, str] | None:
+    if path.startswith("availability"):
+        a = p.availability
+        if a is None or (not a.text and a.status.value == "unknown"):
+            return None
+        return "Availability", a.text or a.status.value.replace("_", " ").capitalize()
+    if path.startswith("delivery"):
+        if p.delivery is None or not p.delivery.text:
+            return None
+        return "Delivery", brief(p.delivery.text, 120)
     if re.fullmatch(r"specs\.[a-z0-9_]+(\.value)?", path):
         key = path.split(".")[1]
         spec = p.specs[key]
@@ -267,11 +311,14 @@ async def compare(
             {p.id: p for p in [*chosen, *here, *reversed(list(s.seen.values()))]}.values()
         )
     if len(chosen) < 2:
-        out = plain_output(
-            "I need at least two products to compare. Open another product, or search, and "
-            "ask me again.",
-            followups=["Search again"],
+        text = (
+            "I don't remember another product from this visit. Open the other product, ask me "
+            "anything there, then come back and say compare."
+            if ctx.page.page_type.value == "product"
+            else "I need at least two products to compare. Open another product, or search, "
+            "and ask me again."
         )
+        out = plain_output(text, followups=["Search again"])
         return ToolResult("Compare products", out)
     here = ctx.main_product() if ctx.page.page_type.value == "product" else None
     result = compare_mod.build(

@@ -183,4 +183,4 @@ def test_preferences_are_remembered_for_the_session(ctx_on):
 
 def test_compare_needs_two_products(ctx_on):
     out = run(tools.compare(ctx_on(SAMSUNG, sid="lonely"))).output
-    assert out.summary.startswith("I need at least two products to compare.")
+    assert out.summary.startswith("I don't remember another product from this visit.")
