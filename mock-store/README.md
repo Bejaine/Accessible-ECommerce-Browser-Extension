@@ -13,14 +13,14 @@ seed state (empty cart, one delivered and one shipped order).
 
 ## Pages (`<body data-page>`)
 
-| Page | What it has |
-|---|---|
-| `index.html?q=` | search results (all products when empty) |
-| `product.html?id=` | JSON-LD Product, price/MRP, stock, delivery, seller, colour swatches, quantity, Add to Cart, Buy Now, specs table, reviews |
-| `cart.html` | quantity selects, delete, subtotal, Proceed to checkout |
-| `checkout.html` | address with PIN code, payment (UPI / COD / card — card fields are a secure zone), order review, **Place your order** |
-| `orders.html` | order list with Track / Cancel / Return |
-| `order.html?id=` | order detail, tracking, cancel flow (`&do=cancel`), return flow (`&do=return`); both need a reason |
+| Page               | What it has                                                                                                                                                                |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `index.html?q=`    | search results (all products when empty)                                                                                                                                   |
+| `product.html?id=` | JSON-LD Product, price/MRP, stock, delivery, seller, colour swatches, quantity, Add to Cart, Buy Now, specs table, reviews                                                 |
+| `cart.html`        | quantity selects, delete, subtotal, Proceed to checkout                                                                                                                    |
+| `checkout.html`    | address with PIN code, payment (UPI / COD / card — card fields are a secure zone), order review, **Place your order**                                                      |
+| `orders.html`      | order list with Track / Cancel / Return                                                                                                                                    |
+| `order.html?id=`   | order detail, tracking, cancel flow (`&do=cancel`), return flow (`&do=return`, reason required: the reasons Track C offers as chips); cancel reason optional, as on Amazon |
 
 Products: `zx-buds-air` (3 colours), `zx-pulse-5g`, `kk-cooker-5l` (low stock), `zx-fit-band-2`
 (out of stock), `nx-charger-33w`. Seed orders: `MS-1001` delivered (returnable), `MS-1002`

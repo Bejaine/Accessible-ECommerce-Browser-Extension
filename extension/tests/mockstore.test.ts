@@ -244,6 +244,11 @@ describe('mock store flows through the actuator', () => {
     expect(extractPageContext(document).secure_zone_active).toBe(true);
   });
 
+  it("a select's name is its label, not its options", () => {
+    const ctx = open('order.html?id=MS-1001&do=return');
+    expect(ctx.targets.filter((t) => t.kind === 'select').map((t) => t.label)).toEqual(['Reason']);
+  });
+
   it('cancels a shipped order', async () => {
     open('orders.html');
     const ctx = open('order.html?id=MS-1002&do=cancel');
