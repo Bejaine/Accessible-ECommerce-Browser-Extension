@@ -50,6 +50,30 @@ describe('continuity', () => {
     expect((await session(7)).continue_task).toBe(false);
   });
 
+  it('after a search the next page reads the results (a marker kind of its own)', async () => {
+    const { session } = setup();
+    const c = createContinuity(memoryStore(), () => 5_000);
+    await c.handle({ type: CONTINUE_MESSAGE, op: 'mark', step: 'read_results' }, 3);
+    const reply = (await c.handle({ type: SESSION_MESSAGE }, 3)) as SessionReply;
+    expect(reply.next_step).toBe('read_results');
+    expect(reply.continue_task).toBe(false); // not an order task
+    expect(((await c.handle({ type: SESSION_MESSAGE }, 3)) as SessionReply).next_step).toBeNull();
+    // An order step still reads as before.
+    await c.handle({ type: CONTINUE_MESSAGE, op: 'mark' }, 3);
+    expect(((await c.handle({ type: SESSION_MESSAGE }, 3)) as SessionReply).next_step).toBe(
+      'continue',
+    );
+    void session;
+  });
+
+  it('a marker stored as a bare timestamp (older build) still means "continue"', async () => {
+    const store = memoryStore();
+    await store.set({ 'asl-continue-4': 1_000 });
+    const c = createContinuity(store, () => 2_000);
+    const reply = (await c.handle({ type: SESSION_MESSAGE }, 4)) as SessionReply;
+    expect(reply).toMatchObject({ continue_task: true, next_step: 'continue' });
+  });
+
   it('a page without a background still gets a session of its own', async () => {
     const reply = await requestSession(() => Promise.reject(new Error('no receiver')));
     expect(reply.continue_task).toBe(false);

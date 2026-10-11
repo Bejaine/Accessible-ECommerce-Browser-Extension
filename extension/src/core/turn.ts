@@ -15,7 +15,7 @@ import type {
 } from '@shared/index';
 import { label, type UiKey } from '../ui/strings';
 import type { BackendClient } from './backend';
-import type { TaskContinuity } from './continuity';
+import type { NextStep, TaskContinuity } from './continuity';
 import { MAX_HISTORY, pushHistory, type Session } from './session';
 
 export interface TurnInputSpec {
@@ -80,6 +80,8 @@ export interface TurnPipeline {
   readonly canRetry: boolean;
   /** The order task in progress and its step (TurnResponse.workflow), or null. */
   readonly workflow: TurnResponse['workflow'];
+  /** The search results page loaded after a search: read its results (Track C's chip). */
+  readResults(): Promise<void>;
   /** The user said yes / pressed the switch / pressed Yes. */
   confirm(): Promise<void>;
   cancel(): void;
@@ -152,6 +154,17 @@ function mapOutput(output: AccessibleOutput, fn: (text: string) => string): Acce
 }
 
 const CONTINUE: TurnInputSpec = { kind: 'phrase', text: 'Continue', phrase_id: 'continue' };
+/** Track C's chip: reads the results page's list (numbered, price, rating); no LLM call. */
+const READ_RESULTS: TurnInputSpec = {
+  kind: 'phrase',
+  text: 'Read the results',
+  phrase_id: 'read the results',
+};
+
+/** A search that opens the results page (Track C's search tool navigates to the site's URL). */
+export function isSearchNavigation(intent: string, actions: readonly ClientAction[]): boolean {
+  return intent === 'search' && actions.some((a) => a.type === 'navigate');
+}
 /** At most this many automatic "Continue" turns in a row without the user doing anything. */
 const MAX_AUTO_CONTINUE = 3;
 /** Let the page settle after a workflow step before reading it again. */
@@ -159,7 +172,8 @@ const SETTLE_MS = 300;
 
 export function createTurnPipeline(deps: TurnDeps): TurnPipeline {
   let pending: Confirmation | null = null;
-  let pendingInTask = false;
+  /** What the next page does after the pending actions run (an order step, or a search). */
+  let pendingNext: NextStep | null = null;
   let busy = false;
   let localIds = 0;
   /** True while the backend reports an order task in progress (TurnResponse.workflow). */
@@ -172,9 +186,13 @@ export function createTurnPipeline(deps: TurnDeps): TurnPipeline {
   const restore = deps.restore ?? ((text: string) => text);
 
   /** `alreadySaid`: the answer's summary was just announced; don't say the same prompt twice. */
-  function setPending(confirmation: Confirmation | null, alreadySaid?: string, task = false): void {
+  function setPending(
+    confirmation: Confirmation | null,
+    alreadySaid?: string,
+    next: NextStep | null = null,
+  ): void {
     pending = confirmation;
-    pendingInTask = confirmation !== null && task;
+    pendingNext = confirmation !== null ? next : null;
     const shown = confirmation && { ...confirmation, prompt: restore(confirmation.prompt) };
     deps.showConfirmation(shown);
     if (shown && shown.prompt.trim() !== alreadySaid?.trim()) {
@@ -183,30 +201,31 @@ export function createTurnPipeline(deps: TurnDeps): TurnPipeline {
   }
 
   /**
-   * Runs actions in order and verifies each (the actuator checks expected_effect). In an order
-   * task, the next page continues it: the marker is set first, because a step that navigates
-   * ends this script; if this page is still here afterwards, it continues the task itself.
+   * Runs actions in order and verifies each (the actuator checks expected_effect). When the next
+   * page should do something (continue an order task, or read a search's results), the tab is
+   * marked first, because an action that navigates ends this script; if this page is still here
+   * afterwards (single-page shops), it does that itself.
    */
   async function runActions(
     actions: ClientAction[],
     confirmed: boolean,
-    task: boolean,
+    next: NextStep | null,
   ): Promise<boolean> {
-    const continuing = task && actions.length > 0 && deps.continuity;
-    if (continuing) await deps.continuity!.mark();
+    const marking = next !== null && actions.length > 0 && deps.continuity;
+    if (marking) await deps.continuity!.mark(next);
     for (const action of actions) {
       const result = await deps.perform(action, { confirmed });
       if (!result.ok) {
         // A navigation may still be on its way: keep the marker only for that case.
-        if (continuing && result.reason !== 'effect_not_seen') await deps.continuity!.clear();
+        if (marking && result.reason !== 'effect_not_seen') await deps.continuity!.clear();
         deps.announce(label(FAILURE_KEYS[result.reason ?? ''] ?? 'action.failed'), true);
         return false;
       }
     }
     if (actions.length > 0) deps.announce(label('action.done'));
-    if (continuing) {
+    if (marking) {
       await deps.continuity!.clear();
-      setTimeout(() => void autoContinue(), SETTLE_MS);
+      setTimeout(() => void (next === 'continue' ? autoContinue() : turn(READ_RESULTS)), SETTLE_MS);
     }
     return true;
   }
@@ -218,7 +237,11 @@ export function createTurnPipeline(deps: TurnDeps): TurnPipeline {
   }
 
   /** Actions from an answer or a chosen alternative: run now, or confirm first (ageing). */
-  async function handleActions(actions: ClientAction[], lang: string): Promise<void> {
+  async function handleActions(
+    actions: ClientAction[],
+    lang: string,
+    next: NextStep | null,
+  ): Promise<void> {
     if (actions.length > 0 && deps.confirmEveryAction()) {
       setPending(
         {
@@ -230,10 +253,10 @@ export function createTurnPipeline(deps: TurnDeps): TurnPipeline {
           read_back: null,
         },
         undefined,
-        inTask,
+        next,
       );
     } else {
-      await runActions(actions, false, inTask);
+      await runActions(actions, false, next);
     }
   }
 
@@ -285,9 +308,14 @@ export function createTurnPipeline(deps: TurnDeps): TurnPipeline {
       deps.showOutput(output);
 
       if (response.confirmation) {
-        setPending(response.confirmation, output.summary, inTask);
+        setPending(response.confirmation, output.summary, inTask ? 'continue' : null);
       } else {
-        await handleActions(response.actions, lang);
+        const next = inTask
+          ? 'continue'
+          : isSearchNavigation(response.intent.name, response.actions)
+            ? 'read_results'
+            : null;
+        await handleActions(response.actions, lang, next);
       }
     } catch (error) {
       const { code, retryable } = errorShape(error);
@@ -324,6 +352,7 @@ export function createTurnPipeline(deps: TurnDeps): TurnPipeline {
       await turn(input);
     },
     continueTask: () => autoContinue(),
+    readResults: () => turn(READ_RESULTS),
     async chooseAlternative(index) {
       const choice = alternatives[index];
       if (!choice) return;
@@ -331,7 +360,11 @@ export function createTurnPipeline(deps: TurnDeps): TurnPipeline {
       autoContinues = 0;
       updated();
       if (choice.actions.length > 0)
-        await handleActions(choice.actions, deps.getProfile().prefs.lang);
+        await handleActions(
+          choice.actions,
+          deps.getProfile().prefs.lang,
+          isSearchNavigation(choice.intent, choice.actions) ? 'read_results' : null,
+        );
       else await turn({ kind: 'phrase', text: choice.label });
     },
     async retry() {
@@ -344,10 +377,10 @@ export function createTurnPipeline(deps: TurnDeps): TurnPipeline {
         return;
       }
       const { pending_actions: actions } = pending;
-      const task = pendingInTask;
+      const next = pendingNext;
       setPending(null);
       autoContinues = 0;
-      await runActions(actions, true, task);
+      await runActions(actions, true, next);
     },
     cancel() {
       if (!pending) return;

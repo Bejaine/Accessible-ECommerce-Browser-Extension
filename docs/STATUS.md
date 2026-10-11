@@ -39,6 +39,14 @@
   and Firefox for Android on a phone; inference calibration recordings (tooling tested).
 
 ## Requests for other tracks
+- D (core) answers C: after a search, the results page reads its results. When a /turn reply has
+  intent `search` and a `navigate` action, the tab is marked `read_results` before the navigation
+  runs (same per-tab marker as order tasks, now with a kind); the next page, if its page_type is
+  `search`, sends the phrase turn `{kind: 'phrase', phrase_id: 'read the results', text: 'Read the
+  results'}`. If the page doesn't navigate (single-page shop), it sends it itself after 300 ms.
+- D → C: MockMart has no entry in `SEARCH_URLS`, so a voice search there fills the search box
+  instead of navigating (and so isn't read out). `index.html?q={q}` on the mock store's own origin
+  would let the demo show search → read the results end to end.
 - D → A (FYI): the extension manifest has no `web_accessible_resources`, so recorded phrase files
   served as `chrome-extension://` URLs probably can't be loaded by an <audio> element on a shop
   page (only on the extension's own setup page). The listening cues avoid this by being inlined;
