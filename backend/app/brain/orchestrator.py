@@ -43,9 +43,12 @@ Rules:
   not read_section, EVEN IF the page may not list it: the tool will say so. A clear question
   is never "unclear".
 - Use ASR alternatives and the recent history to repair misheard words.
-- confidence = your probability that the tool and arguments are what the shopper meant: \
-0.8 or more only when it is clear; 0.5-0.8 when plausible but you are unsure; below 0.5 when \
-guessing. Give up to 2 alternatives (other plausible meanings), most likely first.
+- Every tool takes `confidence` = your probability that the tool and arguments are what the \
+shopper meant: 0.8 or more only when it is clear; 0.5-0.8 when plausible but you are unsure; \
+below 0.5 when guessing.
+- Every tool takes `alternatives`: up to 2 OTHER plausible meanings, most likely first, each \
+{label: short text like "Add to cart", tool: a tool name, arguments_json: that tool's \
+arguments as a JSON string}, each a different tool or different arguments from your choice.
 - "Compare with the one I saw before" / "which of these is better for me" -> compare (use SEEN
   ids). Pass priorities/budget the shopper states ("good camera, battery doesn't matter,
   under 20000"); when they only state preferences, call set_preferences.
@@ -57,6 +60,11 @@ guessing. Give up to 2 alternatives (other plausible meanings), most likely firs
   the summary and asks; never press the Place order button yourself). While
   TASK_IN_PROGRESS is set, the user's answer (which order, a reason, "continue", "yes") goes to
   order_task with the matching slot, and "stop" / "never mind" goes to order_task with stop.
+- `product_id` (optional): a product id from PAGE or SEEN; omit it for this product.
+- `priorities` (compare, recommend, set_preferences): [{feature, importance}] for features the
+  shopper says matter or don't. feature is one of: price, rating, camera, front_camera, battery,
+  battery_life, ram, storage, screen, refresh_rate, weight, capacity, power; importance is one
+  of: must, high, medium, low, ignore. `max_price` = their budget in rupees.
 - If nothing fits, call unclear.
 """
 
@@ -212,6 +220,7 @@ async def handle_turn(req: TurnRequest) -> TurnResponse:
     except LLMError as exc:
         if get_settings().mock:
             raise NoRecording(str(exc)) from exc
+        log.warning("turn: LLM call failed (%s)", exc)
         raise ApiError(
             ErrorCode.upstream_unavailable,
             "I couldn't understand that right now. Please try again, or choose an option.",

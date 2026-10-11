@@ -116,7 +116,8 @@ def test_request_body_is_strict_json_schema(product, monkeypatch):
     assert fmt["json_schema"]["strict"] is True
     assert fmt["json_schema"]["schema"] == OUTPUT_SCHEMA
     assert sent["body"]["temperature"] == 0
-    assert sent["models"] == ["openai/gpt-oss-120b", "openai/gpt-oss-20b"]
+    # Background summaries use only the fast model; the main model's budget is kept for /turn.
+    assert sent["models"] == ["openai/gpt-oss-20b"]
     user = sent["body"]["messages"][1]["content"]
     assert '"price"' not in user, "reviews must not see fields it doesn't need"
 
@@ -128,22 +129,60 @@ def test_real_mode_without_key_raises(monkeypatch, product):
         run(llm_section("specs", product))
 
 
-def test_rate_limit_tries_next_model(monkeypatch, product):
+def test_rate_limited_summary_falls_back_to_the_template(monkeypatch, product):
+    """Summaries never borrow the main model (it is kept for /turn); a 429 means template."""
     monkeypatch.setenv("MOCK", "0")
     monkeypatch.setenv("GROQ_API_KEY", "test")
     tried = []
-    recorded = json.loads(llm.fixture_path(f"summary/specs.{PID.replace(':', '_')}").read_text())
 
-    async def fake_post(body, _cfg):
+    async def limited(body, _cfg):
+        tried.append(body["model"])
+        raise llm.RateLimited("429")
+
+    monkeypatch.setattr(llm, "_post", limited)
+    with pytest.raises(LLMError):
+        run(llm_section("specs", product))
+    assert tried == ["openai/gpt-oss-20b"]
+    monkeypatch.setattr(prepare_mod, "_cache", prepare_mod.TTLCache(60))
+    sections = run(prepare_mod.prepare_sections(product))
+    assert sections["specs"].summary.startswith("The page lists"), "template answered"
+
+
+def test_turn_tries_the_main_model_then_the_fast_one(mock_body, monkeypatch):
+    from app.brain import orchestrator
+    from app.models import TurnRequest
+
+    monkeypatch.setenv("MOCK", "0")
+    monkeypatch.setenv("GROQ_API_KEY", "test")
+    tried = []
+
+    async def first_limited(body, _cfg):
         tried.append(body["model"])
         if len(tried) == 1:
             raise llm.RateLimited("429")
-        return recorded["response"]
+        return {
+            "choices": [
+                {
+                    "message": {
+                        "tool_calls": [
+                            {
+                                "function": {
+                                    "name": "where_am_i",
+                                    "arguments": '{"confidence": 0.9, "alternatives": []}',
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        }
 
-    monkeypatch.setattr(llm, "_post", fake_post)
-    result = run(llm_section("specs", product))
-    assert tried == ["openai/gpt-oss-20b", "openai/gpt-oss-120b"]
-    assert result.dropped == []
+    monkeypatch.setattr(llm, "_post", first_limited)
+    data = mock_body("TurnRequest")
+    data["input"].update(text="where am i", lang="en")
+    data["prefs"]["lang"] = "en"
+    run(orchestrator.handle_turn(TurnRequest.model_validate(data)))
+    assert tried == ["openai/gpt-oss-120b", "openai/gpt-oss-20b"]
 
 
 def _raw(facts, summary, items=(), simpler=None):

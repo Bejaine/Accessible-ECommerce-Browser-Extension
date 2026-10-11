@@ -240,9 +240,10 @@ def recording_key(name: str, product_id: str) -> str:
 
 
 def models_for(name: str) -> list[str]:
-    cfg = LLMSettings.load()
-    main, fast = cfg.model, cfg.fast_model
-    return [main, fast] if SECTION_MODEL[name] == "main" else [fast, main]
+    """Background summaries use only the fast model: the main model's per-minute token budget
+    is kept for /turn (live run: opening a product used up both models and the next spoken
+    request failed). If the fast model is rate-limited, the template answers instead."""
+    return [LLMSettings.load().fast_model]
 
 
 async def llm_section(name: str, p: ProductJSON, *, key: str | None = None) -> CheckResult:

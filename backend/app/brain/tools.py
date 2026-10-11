@@ -642,27 +642,13 @@ TOOLS: dict[str, Tool] = {
     "unclear": unclear,
 }
 
+# Shared by every tool; explained once in the system prompt (keeping these bare cut a /turn
+# request from ~4.4k to well under 2k tokens; Groq's free tier allows 8k tokens/min per model).
 _COMMON = {
-    "confidence": {
-        "type": "number",
-        "description": "Probability 0-1 that this is what the user meant. >=0.8 only when clear.",
-    },
+    "confidence": {"type": "number"},
     "alternatives": {
         "type": "array",
-        "description": "Up to 2 OTHER plausible meanings, each a different tool or different "
-        "arguments from your choice (e.g. 'a cart': add_to_cart vs go_to_cart). Most likely first.",
-        "items": {
-            "type": "object",
-            "properties": {
-                "label": {"type": "string", "description": "Short, e.g. 'Add to cart'"},
-                "tool": {"type": "string", "enum": list(TOOLS)},
-                "arguments_json": {
-                    "type": "string",
-                    "description": "That tool's arguments as JSON",
-                },
-            },
-            "required": ["label", "tool", "arguments_json"],
-        },
+        "items": {"type": "object"},
     },
 }
 
@@ -684,27 +670,17 @@ def _spec(
     }
 
 
-_PID = {
-    "product_id": {"type": "string", "description": "A product id from PAGE; omit for this product"}
-}
+_PID = {"product_id": {"type": "string"}}
 
 _PREFS = {
     "priorities": {
         "type": "array",
-        "description": "Features the user said matter (or don't).",
         "items": {
             "type": "object",
-            "properties": {
-                "feature": {"type": "string", "enum": features.ALL_NAMES},
-                "importance": {
-                    "type": "string",
-                    "enum": ["must", "high", "medium", "low", "ignore"],
-                },
-            },
-            "required": ["feature", "importance"],
+            "properties": {"feature": {"type": "string"}, "importance": {"type": "string"}},
         },
     },
-    "max_price": {"type": "number", "description": "Budget in rupees, if stated"},
+    "max_price": {"type": "number"},
     "min_rating": {"type": "number"},
 }
 
