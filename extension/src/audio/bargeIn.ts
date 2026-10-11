@@ -10,6 +10,10 @@
 // - Not during device-voice segments: echo cancellation covers audio the page plays, but the
 //   device voice is played by the OS and could be heard as the user speaking.
 // - Secure zone (mic muted): no listening. Mic refused: off for the session, reported once.
+// - OFF unless `enabled()` says so. Live phone test (2026-10-11): from the phone's speaker the
+//   mic heard our own answer, paused it, and sent it back as a new command, in a loop. Echo
+//   cancellation is not enough on phones, so the app opts in (e.g. a "use headphones"
+//   setting) and should drop transcripts for which `isEcho()` is true.
 import type { ListenMode, Mic, Utterance } from './mic';
 import type { PlayerEvent, PlayerState } from './player';
 
@@ -21,6 +25,8 @@ interface PlayerLike {
 }
 
 export interface BargeIn {
+  /** True if a transcript is just our own recent speech heard back (drop it, don't send it). */
+  isEcho(transcript: string): boolean;
   /** Resume playback that barge-in paused (e.g. ASR found no words). No-op otherwise. */
   resumeAfterBargeIn(): void;
   dispose(): void;
@@ -34,7 +40,11 @@ export function createBargeIn(deps: {
   onUtterance: (utterance: Utterance) => void;
   /** The mic could not be used (MicError): barge-in is off for this session. */
   onError?: (error: unknown) => void;
+  /** Listen during playback at all? Default false (see the note above). */
+  enabled?: () => boolean;
 }): BargeIn {
+  const enabled = deps.enabled ?? (() => false);
+  const recent: string[] = []; // texts of the last segments played, for isEcho()
   let listening = false;
   let speaking = false;
   let pausedByUs = false;
@@ -50,7 +60,7 @@ export function createBargeIn(deps: {
   }
 
   function listen() {
-    if (disposed || disabled || listening || deviceVoice || deps.mic.muted) return;
+    if (disposed || disabled || listening || deviceVoice || deps.mic.muted || !enabled()) return;
     if (deps.player.state === 'idle') return;
     listening = true;
     speaking = false;
@@ -91,8 +101,10 @@ export function createBargeIn(deps: {
   const unsubscribe = deps.player.subscribe((event) => {
     if (disposed) return;
     if (event.type === 'sentence') {
+      recent.push(event.text);
+      if (recent.length > RECENT_SEGMENTS) recent.shift();
       deviceVoice = event.source === 'device';
-      if (deviceVoice) closeUnlessSpeaking();
+      if (deviceVoice || !enabled()) closeUnlessSpeaking();
       else listen();
     } else if (event.type === 'state') {
       if (event.state === 'playing') pausedByUs = false; // a new answer, or resumed
@@ -101,6 +113,7 @@ export function createBargeIn(deps: {
   });
 
   return {
+    isEcho: (transcript) => isLikelyEcho(transcript, recent),
     resumeAfterBargeIn,
     dispose() {
       disposed = true;
@@ -108,4 +121,40 @@ export function createBargeIn(deps: {
       if (listening) deps.mic.stop();
     },
   };
+}
+
+const RECENT_SEGMENTS = 6;
+const NUMBER_WORDS = [
+  'zero',
+  'one',
+  'two',
+  'three',
+  'four',
+  'five',
+  'six',
+  'seven',
+  'eight',
+  'nine',
+  'ten',
+];
+
+function words(text: string): string[] {
+  return text
+    .normalize('NFC')
+    .toLowerCase()
+    .replace(/(?<=\d),(?=\d)/g, '') // 1,999 -> 1999
+    .replace(/[^\p{L}\p{M}\p{N}\s]/gu, ' ') // punctuation, ₹
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((w) => (NUMBER_WORDS.includes(w) ? String(NUMBER_WORDS.indexOf(w)) : w));
+}
+
+/** At least 3 words, of which at least 80% occur in what we just said: our own voice heard
+ *  back. A real command that merely shares words with it ("add this to cart" while we said "Add
+ *  Zentra Buds Air to your cart?") stays below that. */
+export function isLikelyEcho(transcript: string, spoken: string[]): boolean {
+  const heard = words(transcript);
+  if (heard.length < 3) return false;
+  const said = new Set(spoken.flatMap(words));
+  return heard.filter((w) => said.has(w)).length / heard.length >= 0.8;
 }
