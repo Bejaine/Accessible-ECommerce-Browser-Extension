@@ -43,5 +43,20 @@
     "common.done": "పూర్తయింది.",
     "cart.added": "కార్టుకు జోడించబడింది.",
     "player.paused": "ఆగిపోయింది."
+  },
+  "ml": {
+    "overlay.title": "ഷോപ്പിംഗ് അസിസ്റ്റന്റ്",
+    "onboarding.choose_language": "മലയാളത്തിന്, മലയാളം എന്ന് പറയുക അല്ലെങ്കിൽ 4 അമർത്തുക.",
+    "onboarding.read_aloud": "ഞാൻ കാര്യങ്ങൾ ഉച്ചത്തിൽ വായിക്കണമെന്ന് നിങ്ങൾ ആഗ്രഹിക്കുന്നുണ്ടോ?",
+    "onboarding.colours": "നിറങ്ങൾ എപ്പോഴെങ്കിലും നിങ്ങൾക്ക് സമാനമായി കാണപ്പെടുന്നുണ്ടോ?",
+    "listening.stopped": "കേൾക്കുന്നത് നിർത്തി.",
+    "listening.resumed": "വീണ്ടും കേൾക്കുന്നു.",
+    "mic.listening": "കേൾക്കുന്നു.",
+    "common.yes": "അതെ",
+    "common.no": "ഇല്ല",
+    "common.cancelled": "റദ്ദാക്കി.",
+    "common.done": "ചെയ്തു.",
+    "cart.added": "കാർട്ടിൽ ചേർത്തു.",
+    "player.paused": "നിർത്തി."
   }
 }

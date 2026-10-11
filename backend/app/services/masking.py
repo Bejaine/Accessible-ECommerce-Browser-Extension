@@ -25,8 +25,8 @@ import re
 from collections.abc import Iterable
 
 PREFIX = "ZQX"
-_NATIVE_DIGITS = str.maketrans("०१२३४५६७८९౦౧౨౩౪౫౬౭౮౯", "0123456789" * 2)
-_PLACEHOLDER = re.compile(r"z\s*q\s*x\s*([0-9०-९౦-౯]+)", re.IGNORECASE)
+_NATIVE_DIGITS = str.maketrans("०१२३४५६७८९౦౧౨౩౪౫౬౭౮౯൦൧൨൩൪൫൬൭൮൯", "0123456789" * 3)
+_PLACEHOLDER = re.compile(r"z\s*q\s*x\s*([0-9०-९౦-౯൦-൯]+)", re.IGNORECASE)
 
 _URL = re.compile(r"(?:https?://|www\.)\S+?(?=[.,!?)\]]*(?:\s|$))")
 _PRICE = re.compile(
@@ -49,7 +49,7 @@ _NAME = re.compile(
 _CAPITALISED = re.compile(r"\b[A-Z][a-z]+\b")
 _NUMBER = re.compile(r"\b\d+(?:\.\d+)?\b")
 _LATIN_RUN = re.compile(r"[A-Za-z0-9][A-Za-z0-9.+/-]*(?:[ \t]+[A-Za-z0-9][A-Za-z0-9.+/-]*)*")
-_INDIC = re.compile(r"[ऀ-ॿఀ-౿]")
+_INDIC = re.compile(r"[ऀ-ॿఀ-౿ഀ-ൿ]")  # Devanagari, Telugu, Malayalam
 _SENTENCE_END = re.compile(r"(?:^|[.!?।\n])[\s\"'“‘(]*$")
 
 Span = tuple[int, int]

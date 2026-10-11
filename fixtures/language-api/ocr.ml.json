@@ -1,0 +1,9 @@
+{
+  "status": "success",
+  "message": "OCR Inference performed successfully",
+  "data": {
+    "decoded_text": "ബാറ്ററി 5000 mgh\nപെട്ടിയില്‍: ഫോണ്‍, ചാര്‍ജര്‍"
+  },
+  "error": null,
+  "code": 200
+}

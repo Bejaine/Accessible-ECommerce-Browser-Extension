@@ -519,7 +519,7 @@ async def _translate_hop(entry: ModelEntry, text: str) -> str:
         out = _mt_cache.get(cache_key)
         if out is None:
             data = await call_model("mt", entry.key, {"input_text": chunk})
-            out = _field(data, "output_text").strip()
+            out = _mt_output(data, entry.key)
             if masking.missing(out, dict.fromkeys(masking.placeholders(chunk))):
                 raise ApiError(
                     ErrorCode.upstream_unavailable,
@@ -585,7 +585,7 @@ async def _translate_packed(entry: ModelEntry, batch: list[str]) -> list[str] | 
     items = [line if line[-1] in _TERMINAL else f"{line}." for line in batch]
     text = "\n".join(f"{n}. {item}" for n, item in enumerate(items, 1))
     data = await call_model("mt", entry.key, {"input_text": text})
-    parts = _split_numbered(_field(data, "output_text"), len(batch))
+    parts = _split_numbered(_mt_output(data, entry.key), len(batch))
     if parts is None:
         return None
     result = []
@@ -626,18 +626,45 @@ async def tts(text: str, lang: str, voice: str | None = None) -> TtsResult:
     hit = _tts_cache.get(cache_key)
     if hit is not None:
         return replace(hit, cached=True)
-    wavs = []
+    wavs, cut_short = [], False
     for chunk in chunk_words(clean, TTS_MAX_WORDS):
-        data = await call_model("tts", lang, {"text": chunk, "gender": gender})
-        wavs.append(
-            await _download(
+        for attempt in (1, 2):
+            data = await call_model("tts", lang, {"text": chunk, "gender": gender})
+            wav = await _download(
                 _field(data, "s3_url"), max_bytes=MAX_DOWNLOAD_BYTES, mock_file="tts.audio.wav"
             )
-        )
+            seconds = _too_short(wav, len(chunk.split()))
+            if seconds is None:
+                break
+            log.warning(
+                "tts %s: %.1f s of audio for %d words, cut short%s",
+                lang,
+                seconds,
+                len(chunk.split()),
+                "; retrying" if attempt == 1 else "; not cached",
+            )
+        else:
+            cut_short = True
+        wavs.append(wav)
     audio = join_wavs(wavs)
     result = TtsResult(audio_base64=base64.b64encode(audio).decode("ascii"), encoding="wav")
-    _tts_cache.set(cache_key, result)
+    if not cut_short:
+        _tts_cache.set(cache_key, result)
     return result
+
+
+def _too_short(wav: bytes, words: int) -> float | None:
+    """The audio's length if it is implausibly short for `words` words, else None. Live test
+    (2026-10-11): a cold Malayalam voice returned 0.5 s for 7 words; speech runs 0.35-0.75 s
+    per word, so under 0.2 s per word (4+ words) means the audio was cut off."""
+    if words < 4 or get_settings().mock:
+        return None
+    try:
+        with wave.open(io.BytesIO(wav), "rb") as reader:
+            seconds = reader.getnframes() / reader.getframerate()
+    except (wave.Error, EOFError, ZeroDivisionError):
+        return None
+    return seconds if seconds / words < TTS_MIN_SECONDS_PER_WORD else None
 
 
 async def ocr(lang: str, *, image_url: str | None = None, image_base64: str | None = None) -> str:
@@ -674,13 +701,27 @@ _DIGIT_SCRIPTS = (  # list markers may come back in any of these digits
     str.maketrans("", ""),
     str.maketrans("0123456789", "०१२३४५६७८९"),
     str.maketrans("0123456789", "౦౧౨౩౪౫౬౭౮౯"),
+    str.maketrans("0123456789", "൦൧൨൩൪൫൬൭൮൯"),
 )
 TTS_MAX_WORDS = 30
+TTS_MIN_SECONDS_PER_WORD = 0.2  # less means the voice cut the audio short
 ASR_MAX_SECONDS = 20
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024
 MAX_DOWNLOAD_BYTES = 10 * 1024 * 1024
 _TTS_PUNCTUATION = set(".,?!।")
 _SENTENCE_END = re.compile(r"(?<=[.!?।॥])\s+")
+
+
+# Live (2026-10-11): en→ml wrote a colon as a word-final visarga ("ശേഷിഃ ZQX0"), which TTS
+# reads as a sound. Inside a word (ദുഃഖം) the visarga is a real letter and is kept.
+_ML_VISARGA_COLON = re.compile(r"ഃ(?=\s|$)")
+
+
+def _mt_output(data: dict[str, Any], key: str) -> str:
+    out = _field(data, "output_text").strip()
+    if key.endswith("-ml"):
+        out = _ML_VISARGA_COLON.sub(":", out)
+    return out
 
 
 def _field(data: dict[str, Any], name: str) -> str:
@@ -711,9 +752,15 @@ def chunk_words(text: str, limit: int) -> list[str]:
 
 def tts_clean_text(text: str) -> str:
     """Keep letters (any script, with their combining marks), digits and . , ? ! । — the
-    service rejects special characters. Apostrophes are dropped, anything else becomes a space."""
+    service rejects special characters. Apostrophes are dropped, anything else becomes a space.
+    Old-style Malayalam chillus (ന + ് + ZWJ) become the atomic letter (ൻ) and any other ZWJ is
+    dropped, so a word is never split in two."""
+    for old, chillu in numbers.ML_OLD_CHILLUS:
+        text = text.replace(old, chillu)
     out = []
     for ch in text:
+        if ch == "\u200d":
+            continue
         if unicodedata.category(ch)[0] in "LMN" or ch in _TTS_PUNCTUATION:
             out.append(ch)
         elif ch in "'’":

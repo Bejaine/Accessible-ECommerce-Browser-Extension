@@ -1,0 +1,10 @@
+{
+  "_mock_input": "Battery capacity: ZQX0",
+  "status": "success",
+  "message": "Inference performed successfully",
+  "data": {
+    "output_text": "ബാറ്ററി ശേഷിഃ zqx0"
+  },
+  "error": null,
+  "code": 200
+}

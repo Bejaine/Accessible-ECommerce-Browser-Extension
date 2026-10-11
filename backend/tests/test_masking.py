@@ -48,6 +48,7 @@ CASES = [
     ("मुझे iPhone 15 Pro दिखाओ", "मुझे ZQX0 दिखाओ", ["iPhone 15 Pro"]),
     ("boat airdopes ka price kya hai", "boat airdopes ka price kya hai", []),  # all-Latin Hinglish
     ("ఈ Redmi Note 13 ధర ఎంత?", "ఈ ZQX0 ధర ఎంత?", ["Redmi Note 13"]),
+    ("ഈ Redmi Note 13 ന്റെ വില എത്ര?", "ഈ ZQX0 ന്റെ വില എത്ര?", ["Redmi Note 13"]),
     # links
     (
         "See https://www.amazon.in/dp/B0XX for more",

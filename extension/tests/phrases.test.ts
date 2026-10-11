@@ -7,7 +7,7 @@ import prerecord from '../src/i18n/prerecord.json';
 
 describe('pre-recorded phrase audio', () => {
   it('has a recording of every listed phrase in every language', () => {
-    for (const lang of ['en', 'hi', 'te'])
+    for (const lang of ['en', 'hi', 'te', 'ml'])
       for (const key of prerecord) expect(phraseAudioUrl(key, lang), `${lang} ${key}`).toBeTruthy();
   });
 
@@ -36,6 +36,6 @@ describe('pre-recorded phrase audio', () => {
 
   it('returns null for an unknown key or language', () => {
     expect(phraseAudioUrl('no.such.key', 'hi')).toBeNull();
-    expect(phraseAudioUrl('cart.added', 'ml')).toBeNull();
+    expect(phraseAudioUrl('cart.added', 'ta')).toBeNull();
   });
 });

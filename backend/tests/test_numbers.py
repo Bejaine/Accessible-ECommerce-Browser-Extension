@@ -207,10 +207,72 @@ SPEAK = [
     ("en", "Samsung Galaxy S24 5G", "Samsung Galaxy S24 5G"),
     ("hi", "boAt Airdopes 141", "boAt Airdopes एक सौ इकतालीस"),  # a separate number is read
     ("en", "", ""),
-    ("ml", "₹1,299", "₹1,299"),  # no tables for other languages yet: unchanged
+    ("ta", "₹1,299", "₹1,299"),  # no tables for other languages yet: unchanged
 ]  # fmt: skip
 
 
 @pytest.mark.parametrize(("lang", "text", "spoken"), SPEAK)
 def test_speakable(lang, text, spoken):
     assert speakable(text, lang) == spoken
+
+
+# --- Malayalam --------------------------------------------------------------------------------
+# Number words join (ഇരുപത്തിയഞ്ച് = 25), thousands are one word (രണ്ടായിരം = 2000) and case
+# endings attach to the number (ആയിരത്തിൽ = "in/than a thousand"); the ending is kept after the
+# digits so "under 20000" still says "under".
+
+ML_CASES = [
+    ("ml", "ഇരുപത്തിയഞ്ച്", "25"),
+    ("ml", "ഇരുപത്തഞ്ച്", "25"),  # shorter spelling
+    ("ml", "ഇരുപത്തി അഞ്ച്", "25"),  # said as two words
+    ("ml", "ഇരുനൂറ്റിയമ്പത്", "250"),
+    ("ml", "ഇരുനൂറ്റി അമ്പത് രൂപ", "250 രൂപ"),
+    ("ml", "രണ്ടായിരത്തി അഞ്ഞൂറ് രൂപ", "2500 രൂപ"),
+    ("ml", "ഒന്നര ലക്ഷം", "150000"),
+    ("ml", "രണ്ടര ലക്ഷം രൂപ", "250000 രൂപ"),
+    ("ml", "ആയിരം രൂപ", "1000 രൂപ"),  # a lone ആയിരം is a plain number
+    ("ml", "ഇരുപതിനായിരത്തിൽ താഴെ", "20000-ത്തിൽ താഴെ"),
+    ("ml", "അഞ്ഞൂറിന്", "500-ന്"),
+    ("ml", "പത്ത് മുതൽ പതിനഞ്ച് ആയിരം", "10000 മുതൽ 15000"),
+    ("ml", "രണ്ട് ലക്ഷത്തി അമ്പതിനായിരം", "250000"),
+    ("ml", "മൂന്ന് ലക്ഷത്തി ആയിരം", "301000"),
+    ("ml", "ഫോണ്‍ ആയിരത്തിൽ താഴെ", "ഫോണ്‍ 1000-ത്തിൽ താഴെ"),
+    ("ml", "൨൫൦൦൦ രൂപ", "25000 രൂപ"),  # Malayalam digits
+    # left alone
+    ("ml", "ഒരു ഫോൺ കാണിക്കൂ", "ഒരു ഫോൺ കാണിക്കൂ"),  # ഒരു = "a"
+    ("ml", "ഒന്ന് നോക്കട്ടെ", "ഒന്ന് നോക്കട്ടെ"),  # ഒന്ന് = "just" here
+    ("ml", "രണ്ടും കാണിക്കൂ", "രണ്ടും കാണിക്കൂ"),  # "both", not 2
+    ("ml", "കാർട്ടിൽ ചേർക്കൂ", "കാർട്ടിൽ ചേർക്കൂ"),
+]
+
+
+@pytest.mark.parametrize(("lang", "spoken", "normalised"), ML_CASES)
+def test_normalise_numbers_malayalam(lang, spoken, normalised):
+    assert normalise_numbers(spoken, lang) == normalised
+
+
+ML_SPEAK = [
+    ("വില ₹1,299 ആണ്", "വില ആയിരത്തി ഇരുനൂറ്റി തൊണ്ണൂറ്റിയൊമ്പത് രൂപ ആണ്"),
+    ("₹1", "ഒരു രൂപ"),
+    ("₹1,50,000", "ഒരു ലക്ഷത്തി അമ്പതിനായിരം രൂപ"),
+    ("₹99.50", "തൊണ്ണൂറ്റിയൊമ്പത് രൂപ അമ്പത് പൈസ"),
+    ("5000 mAh ബാറ്ററി", "അയ്യായിരം മില്ലിആമ്പിയർ അവർ ബാറ്ററി"),
+    ("20% കിഴിവ്", "ഇരുപത് ശതമാനം കിഴിവ്"),
+    ("റേറ്റിംഗ് 4.3", "റേറ്റിംഗ് നാല് പോയിന്റ് മൂന്ന്"),
+    ("പിൻ കോഡ് 682001", "പിൻ കോഡ് ആറ് എട്ട് രണ്ട് പൂജ്യം പൂജ്യം ഒന്ന്"),
+    ("3,45,67,890", "മൂന്ന് കോടി നാൽപത്തിയഞ്ച് ലക്ഷത്തി അറുപത്തിയേഴ് ആയിരത്തി എണ്ണൂറ്റി തൊണ്ണൂറ്"),
+    ("Samsung Galaxy S24 5G", "Samsung Galaxy S24 5G"),
+]
+
+
+@pytest.mark.parametrize(("text", "spoken"), ML_SPEAK)
+def test_speakable_malayalam(text, spoken):
+    assert speakable(text, "ml") == spoken
+
+
+def test_malayalam_words_read_back_to_the_same_number():
+    """What TTS says is what the normaliser understands, for every number up to a lakh and a
+    spread above it."""
+    numbers = [*range(100_001), *range(100_000, 10**9, 9973)]
+    wrong = [n for n in numbers if parse_number(number_to_words(n, "ml"), "ml") != n]
+    assert wrong == []

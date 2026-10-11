@@ -26,7 +26,8 @@
   "ocr": {
     "en": { "url": "", "token": "", "model": "" },
     "hi": { "url": "", "token": "", "model": "" },
-    "te": { "url": "", "token": "", "model": "" }
+    "te": { "url": "", "token": "", "model": "" },
+    "ml": { "url": "", "token": "", "model": "" }
   },
   "rpm": { "asr": 50, "mt": 50, "tts": 50, "ocr": 50 }
 }

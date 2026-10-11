@@ -37,6 +37,7 @@ OCR_EXPECTED = {
     "en": "Battery 5000 mAh In the box: phone, charger",
     "hi": "बैटरी 5000 mAh डिब्बे में: फ़ोन, चार्जर",
     "te": "బ్యాటరీ 5000 mAh పెట్టెలో: ఫోన్, ఛార్జర్",
+    "ml": "ബാറ്ററി 5000 mAh പെട്ടിയിൽ: ഫോൺ, ചാർജർ",
 }
 SMOKE_DIR = REPO_ROOT / "fixtures/language-api/smoke"
 

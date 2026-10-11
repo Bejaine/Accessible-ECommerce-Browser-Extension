@@ -503,3 +503,15 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - Code that maps every `Lang` must handle `ml` (TypeScript flags it): `core/app.ts`
   `LANGUAGE_NAMES` gained `ml: 'മലയാളം'`. Malayalam UI strings, onboarding, numbers and masking
   follow in a separate Track A PR.
+
+## 2026-10-11 — Malayalam: how numbers, endings and drafts work (Track A)
+- Numbers: one generator builds both what TTS says (ആയിരത്തി ഇരുനൂറ്റി…, ഒരു ലക്ഷം) and the words the
+  normaliser understands, so they always agree (every number to 1 lakh round-trips in a test).
+  Case endings stay after the digits: ഇരുപതിനായിരത്തിൽ താഴെ → "20000-ത്തിൽ താഴെ" (keeps "under").
+- Old chillu spellings (ന്‍ = ന + ് + ZWJ, as OCR returns them) are folded to ൻ in numbers, TTS
+  text and the matcher, so a ZWJ never splits a word.
+- en→ml MT writes a colon as a word-final visarga (ഃ); the gateway turns that back into ":".
+- Live, a cold Malayalam voice returned 0.5 s of audio for 7 words. The gateway now retries any
+  TTS chunk under 0.2 s per word (4+ words) once and never caches a short one (all languages).
+- Track D's UI table has an `ml` draft (machine-translated with masking, 68 lines hand-corrected);
+  the `hi`/`te` lookup order is unchanged. Native review pending.

@@ -69,7 +69,7 @@ def test_registry_loads_example_shape():
         "ur-en",
     ]
     assert reg.keys("tts") == ["en", "hi", "ml", "te", "ur"]
-    assert reg.keys("ocr") == ["en", "hi", "te"]
+    assert reg.keys("ocr") == ["en", "hi", "ml", "te"]
     e = reg.get("mt", "en-hi")
     assert e.rpm == 50 and not e.configured
 
@@ -411,7 +411,7 @@ async def test_asr_live_uploads_wav_as_audio_file_form_field(monkeypatch):
     assert b"Content-Type: audio/wav" in seen["body"] and audio in seen["body"]
 
 
-@pytest.mark.parametrize("lang", ["en", "hi", "te"])
+@pytest.mark.parametrize("lang", ["en", "hi", "te", "ml"])
 async def test_asr_mock_round_trip_every_language(lang):
     assert (await bhashini.asr(lang, audio_base64=b64(wav_bytes()), encoding="wav")).text
 
@@ -482,6 +482,27 @@ async def test_translate_caches_chunks_so_repeats_cost_no_calls(monkeypatch):
     assert len(calls) == 1
 
 
+@pytest.mark.parametrize("lang", ["hi", "te", "ml"])
+async def test_translate_mock_round_trip_every_language(lang):
+    native = await bhashini.translate("Battery capacity: ZQX0", "en", lang)
+    assert "ZQX0" in native.upper()  # MT may lower-case it ("zqx0"); unmask ignores case
+    assert await bhashini.translate(re.sub("zqx0", "ZQX0", native, flags=re.I), lang, "en")
+
+
+async def test_malayalam_colon_written_as_visarga_is_repaired(monkeypatch):
+    """Live en→ml wrote "Battery capacity: X" as "ബാറ്ററി ശേഷിഃ X"; a visarga inside a word
+    (ദുഃഖം) is a real letter and stays."""
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=ok({"output_text": "ബാറ്ററി ശേഷിഃ zqx0. ദുഃഖം ഇല്ല"}))
+
+    _live(monkeypatch, handler)
+    model = {"url": "https://up.example/mt", "token": "T0K"}
+    monkeypatch.setattr(bhashini, "_registry", Registry.from_dict({"mt": {"en-ml": model}}))
+    out = await bhashini.translate("Battery capacity: ZQX0. No sorrow", "en", "ml")
+    assert out == "ബാറ്ററി ശേഷി: zqx0. ദുഃഖം ഇല്ല"
+
+
 async def test_translate_same_language_makes_no_call(monkeypatch):
     async def boom(*a, **k):
         raise AssertionError("should not call a model")
@@ -544,13 +565,51 @@ async def test_tts_splits_long_text_and_joins_the_wavs(monkeypatch):
         if req.url.host == "up.example":
             texts.append(json.loads(req.content)["text"])
             return httpx.Response(200, json=ok({"s3_url": "https://s3.example/x.wav"}))
-        return httpx.Response(200, content=wav_bytes(seconds=0.5))
+        return httpx.Response(200, content=wav_bytes(seconds=10))
 
     _live(monkeypatch, handler)
     res = await bhashini.tts(" ".join(["word"] * 70), "hi")
     assert [len(t.split()) for t in texts] == [30, 30, 10]
     with wave.open(io.BytesIO(base64.b64decode(res.audio_base64))) as w:
-        assert w.getnframes() == 3 * 8000  # three 0.5 s chunks at 16 kHz
+        assert w.getnframes() == 3 * 160_000  # three 10 s chunks at 16 kHz
+
+
+def _tts_upstream(monkeypatch, lengths: list[float]):
+    """Fake TTS whose n-th call returns lengths[n] seconds of audio; returns the call count."""
+    calls = []
+
+    def handler(req: httpx.Request) -> httpx.Response:
+        if req.url.host == "up.example":
+            calls.append(json.loads(req.content)["text"])
+            return httpx.Response(200, json=ok({"s3_url": "https://s3.example/x.wav"}))
+        return httpx.Response(200, content=wav_bytes(seconds=lengths[len(calls) - 1]))
+
+    _live(monkeypatch, handler)
+    return calls
+
+
+async def test_tts_retries_audio_cut_short_by_a_cold_voice(monkeypatch):
+    calls = _tts_upstream(monkeypatch, [0.5, 3.0])  # 0.5 s for 6 words, then a real reading
+    res = await bhashini.tts("one two three four five six", "hi")
+    assert len(calls) == 2
+    with wave.open(io.BytesIO(base64.b64decode(res.audio_base64))) as w:
+        assert w.getnframes() == 3 * 16000
+    assert (await bhashini.tts("one two three four five six", "hi")).cached
+
+
+async def test_tts_audio_still_short_after_a_retry_is_played_but_not_cached(monkeypatch, caplog):
+    calls = _tts_upstream(monkeypatch, [0.5, 0.5, 3.0])
+    first = await bhashini.tts("one two three four five six", "hi")
+    assert len(calls) == 2 and not first.cached
+    assert "cut short; not cached" in caplog.text
+    again = await bhashini.tts("one two three four five six", "hi")
+    assert len(calls) == 3 and not again.cached  # asked the service again
+
+
+async def test_tts_short_words_are_never_treated_as_cut_short(monkeypatch):
+    calls = _tts_upstream(monkeypatch, [0.4])
+    await bhashini.tts("Yes.", "hi")  # one short word really is short
+    assert len(calls) == 1
 
 
 @pytest.mark.parametrize(
@@ -560,6 +619,8 @@ async def test_tts_splits_long_text_and_joins_the_wavs(monkeypatch):
         ("Don't miss *this* deal — 50% off", "Dont miss this deal 50 off"),
         ("बैटरी क्षमता: 5000 mAh।", "बैटरी क्षमता 5000 mAh।"),
         ("దీన్ని కార్ట్‌లో వేయండి", "దీన్ని కార్ట్ లో వేయండి"),
+        ("വില: ₹500 മാത്രം!", "വില 500 മാത്രം!"),
+        ("ഫോണ\u0d4d\u200d കാര\u0d4d\u200dട്ടിൽ", "ഫോൺ കാർട്ടിൽ"),  # old chillus, one word each
     ],
 )
 def test_tts_clean_text_drops_special_characters_but_keeps_scripts(text, clean):
@@ -572,7 +633,7 @@ async def test_tts_with_nothing_speakable_is_a_validation_error():
     assert exc.value.code == ErrorCode.validation
 
 
-@pytest.mark.parametrize("lang", ["en", "hi", "te"])
+@pytest.mark.parametrize("lang", ["en", "hi", "te", "ml"])
 async def test_tts_mock_round_trip_every_language(lang):
     res = await bhashini.tts("hello", lang)
     with wave.open(io.BytesIO(base64.b64decode(res.audio_base64))) as w:
@@ -814,7 +875,7 @@ async def test_tts_speaks_numbers_and_prices_in_the_listeners_language(monkeypat
         if req.url.host == "up.example":
             sent.append(json.loads(req.content)["text"])
             return httpx.Response(200, json=ok({"s3_url": "https://s3.example/x.wav"}))
-        return httpx.Response(200, content=wav_bytes())
+        return httpx.Response(200, content=wav_bytes(seconds=5))
 
     _live(monkeypatch, handler)
     await bhashini.tts("कीमत ₹1,299 है, रेटिंग 4.3", "hi")

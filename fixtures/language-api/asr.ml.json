@@ -1,0 +1,9 @@
+{
+  "status": "success",
+  "message": "Inference performed successfully",
+  "data": {
+    "recognized_text": "ദയവായി ഈ ഫോൺ എന്റെ കാർട്ടിലേക്ക് ചേർക്കുക"
+  },
+  "error": null,
+  "code": 200
+}
