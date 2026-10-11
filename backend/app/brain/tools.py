@@ -700,9 +700,22 @@ _COMMON = {
 }
 
 
+def _nullable(schema: dict[str, Any]) -> dict[str, Any]:
+    kind = schema.get("type")
+    if not isinstance(kind, str):
+        return schema
+    out = {**schema, "type": [kind, "null"]}
+    if "enum" in schema:
+        out["enum"] = [*schema["enum"], None]
+    return out
+
+
 def _spec(
     name: str, description: str, props: dict[str, Any], required: list[str]
 ) -> dict[str, Any]:
+    # Seen live: the model sends null for optional arguments it doesn't use (max_price: null),
+    # and Groq rejects the whole call unless the schema allows it.
+    props = {k: v if k in required else _nullable(v) for k, v in props.items()}
     return {
         "type": "function",
         "function": {
@@ -857,7 +870,11 @@ def parse_alternatives(raw: Any) -> list[tuple[str, str, dict[str, Any]]]:
 async def run(ctx: Context, name: str, args: dict[str, Any]) -> ToolResult:
     if name not in TOOLS:
         raise ToolInputError(f"unknown tool {name!r}")
-    args = {k: v for k, v in args.items() if k not in ("confidence", "alternatives")}
+    args = {
+        k: v
+        for k, v in args.items()
+        if k not in ("confidence", "alternatives") and v is not None  # null: not given
+    }
     try:
         return await TOOLS[name](ctx, **args)
     except TypeError as exc:
