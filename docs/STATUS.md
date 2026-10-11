@@ -7,7 +7,31 @@
 | C Brain | `/product/prepare` (Groq-written overview/specs/reviews, every claim verified, template fallback; tested on Track B's 5 real pages + a real SerpApi iPhone listing); `/reviews/summarize`; `/turn`: one Groq tool call → 10 tools (read section, answer question, compare, recommend, where am I, add to cart, press, search, go to cart, unclear), confidence rules (≥0.8 act, 0.5–0.8 did-you-mean, <0.5 chips, 2 misses → chips), confirmations for cart/risky actions, buy/pay never pressed, secure zone stops, redaction before the LLM; chips and taps skip the LLM. Tested live with 14 utterances incl. Hinglish and unclear speech; photo descriptions (Gemini, main photo on prepare, any photo via /turn), tested on 4 real product photos; comparison: spec→feature mapping across sites, ranking by stated preferences (session memory, `set_preferences`), compare with products seen earlier, Amazon comparison section from SerpApi; order workflows (track, cancel, return, place order) as step machines with high-risk confirmations and page verification, tested live; short/lite answers (≤ 3 options); /vision/describe grounded for prepared products; two-option did-you-mean; translation batched (≤ 4 at once, Track A translate_many ready); backend streaming deliberately not built (see decisions) | Translation in /turn is wired to A's `bhashini.translate` (tested with a stand-in; live Hindi run needs `models.local.json`); checkout summary extraction on real pages (B) | None |
 | D Access UX | Overlay shell, single live region (queued), renderers (spoken sections, large text, explain simpler), composer + required combinations, two-level switch scanning (spoken when visual), phrase board, two-failures→phrases fallback, local command matcher (dysarthria fast path), on-device signal collectors + condition scores, suggest-then-switch (10 s countdown, undo, ambiguity question), debug panel, reactive profile store, turn pipeline + confirmation card (read-back, switch = yes), local commands, speech-speed control, voice input (A's mic → /speech/asr → matcher or turn, speech mode, two misses → phrases), /product/prepare at load with section cache, SPA URL refresh, first-run onboarding page (language in all three languages, read aloud?, colours?; keys/tap/one switch/voice), overlay Settings (what's in effect, each mode marked 'you' or 'automatic', voice, text size, short answers, switch key, language, scanning, setup); voice through Track A's player (Bhashini TTS, pre-recorded phrases, device voice in demo/lite; speaks answers when read-aloud/simple mode is on; Read aloud/Stop on every answer; live speed); Back to menu; Alt+Shift+A shortcut; whole UI follows the chosen language (hi/te drafts); button audit test; persona runs on MockMart with the real backend (`make e2e`, eval/e2e/report.md: 5 of 6 complete, checkout blocked on extraction); action menu (page actions by zone, large targets), colour names on swatches (our own labels, announced on focus), simplified product view from ProductJSON (opens directly in simple mode); playback controls (floating bar with highlighted current sentence, pause/resume, repeat sentence/all, back, next/previous section, slower/faster, stop; Alt+Shift+K single key with spoken mini-menu after 1.5 s; playback voice words; hint once per session); axe-core clean (all overlay states; colour contrast still to check in a browser); inference calibration tooling (record/save sessions in dev builds, replay, `make eval-inference` report); step-by-step checkout wizard from PageContext.checkout (items, delivery, payment, review → "place my order" via C's confirmation; opens directly in simple mode); stretch: adaptive scan speed (slows when presses land right after a move, never faster than the mode), dwell to click on our own controls (opt-in in Settings, 0.8–2 s), resume where playback stopped after a page change (position kept on the device for 2 min, offered as a paused answer) | Checkout wizard waits on B's checkout extraction (`__asl.checkout()` shows it with the fixture); backend output and page targets (fixtures via `__asl.show()` / `__asl.scan()` in dev builds); speech signals need A's voice pipeline; weights not yet calibrated: no sessions recorded yet (see eval/inference/README.md) | None |
 
+## Integration of A + B + C (branch `integration/abc`; Track D's UI integration follows later)
+- Done, tested without the overlay (`make e2e` → `eval/e2e/abc.e2e.ts`, real backend with
+  MOCK=1): product questions, add to cart, place order (summary → high-risk yes → the next page
+  continues and verifies), cancel and return across three pages, track, secure zone, Hindi voice
+  (ASR → /turn with asr_meta → TTS), backend down → calm message → retry.
+- Core (`turn.ts`, `continuity.ts`, background, content): one session id across pages and sites;
+  order tasks continue on the next page ("Continue" sent on load, max 3 in a row); did-you-mean
+  `alternatives` / `chooseAlternative(i)`; no turns in the secure zone, 423 stays quiet; calm
+  error messages by code with `retry()` / `canRetry`; ORDER_n / ADDR_n restored before showing or
+  speaking; English-only history; learned adapters on. Firefox for Android: the background relay
+  no longer dies without a commands API (Track A's report).
+- Fixed on the way: MockMart cancel/return reasons vs Track C's finishing step (C now chooses the
+  offered reason; cancel reason optional); chips a task offered skip the LLM; ORDER_n stable across
+  a tab's pages; order numbers redacted from PageContext.url; select labels without their options.
+- Left for Track D / UI integration: show `turn.alternatives` as two large choices and a Retry
+  button when `turn.canRetry`; keep the checkout steps on screen while the secure zone hides
+  `page.checkout`; live run with real models (MOCK=0, `VITE_BACKEND=http://localhost:8000`) and
+  latency against the 4 s budget; real-browser and Android passes.
+
 ## Requests for other tracks
+- Integration → A: Hindi/Telugu for two new UI strings in `src/ui/strings.ts`: `turn.busy`
+  ("Lots of requests right now. Please try again in a moment.") and `turn.unavailable` ("I couldn't
+  do that right now. You can try again, or use the phrase buttons.").
+- Integration → A: done — your Firefox for Android fix is in (`browser.commands?.`, and the backend
+  relay is registered first).
 - B → C: done, thanks for `/extract/fallback`; the extension side is `buildFallbackRequest` /
   `applyFallback` in `src/extract/llm.ts`.
 - B → integration lead (core): thanks for wiring extraction, the fallback, `performAction` and the
@@ -117,6 +141,5 @@
 - D (core) answers B: `muteMicInSecureZone(document, mic, …)` is wired; the extraction fallback
   (`buildFallbackRequest` → `extractFallback` → `applyFallback`) runs before /product/prepare on a
   real backend (not in demo mode).
-- D → B: please extract `PageContext.checkout` (CheckoutSummary) on MockMart's checkout page (and
-  Amazon/Flipkart). Without it the checkout steps can't show and Track C refuses to place the order
-  (persona run in eval/e2e/report.md shows exactly this). Track C asked for the same.
+- B → D: done — `PageContext.checkout` is extracted (MockMart end to end; the checkout persona in
+  eval/e2e/report.md now completes).
