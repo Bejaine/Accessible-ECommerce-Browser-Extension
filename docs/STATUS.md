@@ -39,6 +39,10 @@
   and Firefox for Android on a phone; inference calibration recordings (tooling tested).
 
 ## Requests for other tracks
+- D → A (FYI): the extension manifest has no `web_accessible_resources`, so recorded phrase files
+  served as `chrome-extension://` URLs probably can't be loaded by an <audio> element on a shop
+  page (only on the extension's own setup page). The listening cues avoid this by being inlined;
+  if recorded phrases should play on shop pages, inline them or list them as web-accessible.
 - D → B (page map, measured on fixtures/pages with the real URLs): Amazon.in product pages give
   196 of 200 targets in the `product` zone (breadcrumbs, warranty plans, "Customers also bought"
   links), and Flipkart puts site navigation (Home, Login, Become a Seller) in `product`. The

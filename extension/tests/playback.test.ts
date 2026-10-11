@@ -281,6 +281,20 @@ describe("voice adapter over Track A's player", () => {
     expect(speaker.state).toBe('playing');
   });
 
+  it('a cue over a paused answer plays by its key and leaves the answer paused', () => {
+    const { player } = fakePlayer();
+    const play = vi.spyOn(player, 'play');
+    const speaker = createPlayerSpeaker(player);
+    speaker.speakOutput(reviews);
+    speaker.pause();
+    speaker.cue('cue.listen', 'Listening…', 'en');
+    expect(play.mock.calls.at(-1)![0]).toEqual([
+      { segments: [{ text: 'Listening…', key: 'cue.listen' }] },
+    ]);
+    player.finish();
+    expect(speaker.state).toBe('paused');
+  });
+
   it('several lines in different languages play one after another', () => {
     const { player, played } = fakePlayer();
     createPlayerSpeaker(player).sayLines([

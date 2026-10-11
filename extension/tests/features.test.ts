@@ -183,6 +183,17 @@ describe('Space, simple mode and the features note', () => {
       );
     });
 
+    it('a rising chime when listening starts, a falling one when it stops', async () => {
+      await hold();
+      expect(rec.calls).toContain('cue:cue.listen');
+      expect(rec.calls).not.toContain('cue:cue.done');
+      await release();
+      expect(rec.calls.filter((c) => c.startsWith('cue:'))).toEqual([
+        'cue:cue.listen',
+        'cue:cue.done',
+      ]);
+    });
+
     it('a tap on a focused button presses it; holding on it talks instead', async () => {
       const button = document.createElement('button');
       const click = vi.fn();

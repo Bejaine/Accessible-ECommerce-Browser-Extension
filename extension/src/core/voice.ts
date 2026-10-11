@@ -18,6 +18,8 @@ export interface Speaker {
   say(text: string, lang: Lang): void;
   sayLines(lines: { text: string; lang: Lang }[]): void;
   prompt(text: string, lang: Lang): void;
+  /** A short sound (listening cue) played like a prompt: a paused answer stays paused. */
+  cue(key: string, text: string, lang: Lang): void;
   pause(): void;
   resume(): void;
   repeatSentence(): void;
@@ -111,6 +113,16 @@ export function createPlayerSpeaker(
     action();
   }
 
+  /** A prompt or cue over an answer: keep the answer to carry on (or stay paused) afterwards. */
+  function startPrompt(): void {
+    const snap = player.snapshot();
+    if (snap && !inPrompt && player.state !== 'idle') {
+      interrupted = { snap, playing: player.state === 'playing', sentence };
+    }
+    inPrompt = true;
+    lines = [];
+  }
+
   /** New content replaces whatever was playing (and any interrupted answer). */
   function fresh(): void {
     interrupted = null;
@@ -143,13 +155,13 @@ export function createPlayerSpeaker(
       playOne(first.text, first.lang);
     },
     prompt(text, l) {
-      const snap = player.snapshot();
-      if (snap && !inPrompt && player.state !== 'idle') {
-        interrupted = { snap, playing: player.state === 'playing', sentence };
-      }
-      inPrompt = true;
-      lines = [];
+      startPrompt();
       playOne(text, l);
+    },
+    cue(key, text, l) {
+      startPrompt();
+      lang = l;
+      player.play([{ segments: [{ text, key }] }], l);
     },
     pause() {
       player.pause();

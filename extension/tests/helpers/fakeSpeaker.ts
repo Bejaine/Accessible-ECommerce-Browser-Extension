@@ -16,6 +16,7 @@ export function recordingSpeaker() {
     say: (text) => (calls.push(`say:${text}`), set('playing', text)),
     sayLines: () => (calls.push('sayLines'), set('playing')),
     prompt: (text) => calls.push(`prompt:${text}`),
+    cue: (key) => calls.push(`cue:${key}`),
     pause: () => (calls.push('pause'), state === 'playing' && set('paused')),
     resume: () => (calls.push('resume'), state === 'paused' && set('playing')),
     repeatSentence: () => (calls.push('repeatSentence'), set('playing')),
