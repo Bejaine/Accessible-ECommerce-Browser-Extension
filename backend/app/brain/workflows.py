@@ -125,9 +125,10 @@ def _target_for(ctx, order: OrderJSON, task: str, orders: list[OrderJSON]):
     eligible = [o for o in orders if TASKS[task]["action"] in o.available_actions]
     if len(candidates) == 1 and len(eligible) == 1:
         return candidates[0]
-    number = order.id.split("_")[1]
-    matches = [t for t in candidates if re.search(rf"(^|\D){number}$", t.id)]
-    return matches[0] if len(matches) == 1 else None
+    # Track B names order buttons t-track-N / t-cancel-N / t-return-N for ORDER_N; other targets
+    # have generic ids (t1, t2...), so only that exact form counts (a generic "t1" is not ORDER_1).
+    wanted = f"t-{TASKS[task]['action']}-{order.id.split('_')[1]}"
+    return next((t for t in candidates if t.id == wanted), None)
 
 
 def _say_status(order: OrderJSON) -> tuple[str, OutputBuilder]:

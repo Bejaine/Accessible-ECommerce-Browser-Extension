@@ -437,3 +437,12 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - Did-you-mean options appear once (two big buttons; not repeated as follow-up chips); the
   question is announced only if the answer's summary didn't already ask it.
 
+## 2026-10-11 — Groq per-minute budget (Track C; affects the demo)
+- Live test hit Groq's free-tier limit of 8k tokens/min per model (not the daily one): opening a
+  product (3 summary calls) plus speaking used up both models and /turn returned 503.
+- Fixes: /turn tool definitions trimmed (shared fields explained once in the system prompt):
+  a turn costs ~2k tokens instead of ~5k. Background summaries use only gpt-oss-20b (template if
+  it is limited); /turn uses gpt-oss-120b first, then 20b, so page loads never starve speaking.
+- Limits are per Groq account, not per key: rotating keys of one account gains nothing, and
+  rotating several accounts would circumvent Groq's limits, so we don't. Chips, taps and
+  confirmations never call Groq. Order buttons are matched only by `t-<action>-N` ids (Track B).

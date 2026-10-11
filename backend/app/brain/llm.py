@@ -7,6 +7,12 @@
 
 Callers pass an ordered list of models; on a rate limit the next one is tried. Any failure
 raises LLMError, and callers fall back to deterministic output (never to a guess).
+
+Several keys (GROQ_API_KEY, then GROQ_API_KEYS, comma-separated) are switched lazily: each call
+uses the first key that is not cooling down, so one key is used until Groq rate-limits it. A
+429 parks that (key, model) for as long as Groq says ("try again in 18m40s", else retry-after,
+else 60 s); a rejected key (401/403) is parked for a day. For each model, in the callers'
+order, every key is tried before moving to the next model. Keys are never logged: "#2 (…ab12)".
 """
 
 from __future__ import annotations
@@ -14,7 +20,9 @@ from __future__ import annotations
 import json
 import logging
 import os
-from dataclasses import dataclass
+import re
+import time
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any
 
@@ -29,16 +37,19 @@ GROQ_URL = "https://api.groq.com/openai/v1/chat/completions"
 
 @dataclass(frozen=True)
 class LLMSettings:
-    api_key: str
+    api_key: str  # the key one request uses (the first key, until chat() picks another)
     model: str
     fast_model: str
     timeout_s: float
     record: bool
+    api_keys: tuple[str, ...] = ()  # every configured key, in order
 
     @classmethod
     def load(cls) -> LLMSettings:
+        keys = _keys_from_env()
         return cls(
-            api_key=os.getenv("GROQ_API_KEY", ""),
+            api_key=keys[0] if keys else "",
+            api_keys=keys,
             model=os.getenv("GROQ_MODEL", "openai/gpt-oss-120b"),
             fast_model=os.getenv("GROQ_FAST_MODEL", "openai/gpt-oss-20b"),
             timeout_s=float(os.getenv("LLM_TIMEOUT_S", "20")),
@@ -51,7 +62,42 @@ class LLMError(Exception):
 
 
 class RateLimited(LLMError):
-    pass
+    """HTTP 429. `retry_after`: seconds until this key may use this model again."""
+
+    def __init__(self, message: str = "groq rate limit", retry_after: float | None = None):
+        super().__init__(message)
+        self.retry_after = retry_after
+
+
+class KeyRejected(LLMError):
+    """HTTP 401/403: the key is invalid, revoked or not allowed."""
+
+
+DEFAULT_COOLDOWN_S = 60.0
+REJECTED_KEY_COOLDOWN_S = 24 * 3600.0
+_clock = time.monotonic
+_transport: httpx.AsyncBaseTransport | None = None  # tests inject httpx.MockTransport
+_cooldown: dict[tuple[str, str], float] = {}  # (key, model or "*") -> usable again at _clock()
+_DURATION = re.compile(r"try again in ((?:\d+(?:\.\d+)?(?:ms|h|m|s))+)", re.IGNORECASE)
+
+
+def reset_key_cooldowns() -> None:
+    _cooldown.clear()
+
+
+def _keys_from_env() -> tuple[str, ...]:
+    raw = [os.getenv("GROQ_API_KEY", ""), *re.split(r"[\s,]+", os.getenv("GROQ_API_KEYS", ""))]
+    return tuple(dict.fromkeys(k.strip() for k in raw if k.strip()))
+
+
+def _label(keys: tuple[str, ...], key: str) -> str:
+    return f"#{keys.index(key) + 1} (…{key[-4:]})"
+
+
+def _cooling(key: str, model: str) -> float:
+    """Seconds until (key, model) may be used again; 0 if it can be used now."""
+    until = max(_cooldown.get((key, model), 0.0), _cooldown.get((key, "*"), 0.0))
+    return max(0.0, until - _clock())
 
 
 def fixture_path(key: str) -> Path:
@@ -67,34 +113,71 @@ async def chat(key: str, models: list[str], body: dict[str, Any]) -> dict[str, A
         return json.loads(path.read_text())["response"]
 
     cfg = LLMSettings.load()
-    if not cfg.api_key:
+    if not cfg.api_keys:
         raise LLMError("GROQ_API_KEY is not set")
-    last: LLMError = LLMError("no model given")
+    last: LLMError | None = None
     for model in models:
-        try:
-            raw = await _post({**body, "model": model}, cfg)
-        except RateLimited as exc:
-            log.warning("groq %s rate limited, trying next model", model)
-            last = exc
-            continue
-        if cfg.record:
-            _record(key, model, raw)
-        return raw
-    raise last
+        for api_key in cfg.api_keys:
+            if _cooling(api_key, model):
+                continue
+            name = _label(cfg.api_keys, api_key)
+            try:
+                raw = await _post({**body, "model": model}, replace(cfg, api_key=api_key))
+            except RateLimited as exc:
+                wait = exc.retry_after if exc.retry_after is not None else DEFAULT_COOLDOWN_S
+                _cooldown[(api_key, model)] = _clock() + wait
+                log.warning("groq key %s %s rate limited for %.0fs: %s", name, model, wait, exc)
+                last = exc
+                continue
+            except KeyRejected as exc:
+                _cooldown[(api_key, "*")] = _clock() + REJECTED_KEY_COOLDOWN_S
+                log.warning("groq key %s rejected, skipped for a day: %s", name, exc)
+                last = exc
+                continue
+            if cfg.record:
+                _record(key, model, raw)
+            return raw
+    if last is None and models:
+        soonest = min(_cooling(k, m) for m in models for k in cfg.api_keys)
+        raise RateLimited(f"all Groq keys are rate limited (next in {soonest:.0f}s)", soonest)
+    raise last or LLMError("no model given")
 
 
 async def _post(body: dict[str, Any], cfg: LLMSettings) -> dict[str, Any]:
     headers = {"Authorization": f"Bearer {cfg.api_key}"}
     try:
-        async with httpx.AsyncClient(timeout=cfg.timeout_s) as client:
+        async with httpx.AsyncClient(timeout=cfg.timeout_s, transport=_transport) as client:
             res = await client.post(GROQ_URL, json=body, headers=headers)
     except httpx.HTTPError as exc:
-        raise LLMError(f"groq request failed: {exc!r}") from exc
+        raise LLMError(f"groq request failed: {type(exc).__name__}") from None  # no headers/key
     if res.status_code == 429:
-        raise RateLimited("groq rate limit")
+        message = _groq_message(res)
+        raise RateLimited(f"groq 429: {message}", _retry_after(message, res))
+    if res.status_code in (401, 403):
+        raise KeyRejected(f"groq {res.status_code}: {_groq_message(res)}")
     if res.status_code >= 400:
         raise LLMError(f"groq {res.status_code}: {res.text[:300]}")
     return res.json()
+
+
+def _groq_message(res: httpx.Response) -> str:
+    try:
+        return str(res.json()["error"]["message"])[:300]
+    except (ValueError, KeyError, TypeError):
+        return res.text[:300]
+
+
+def _retry_after(message: str, res: httpx.Response) -> float:
+    """Groq says how long ("Please try again in 18m40.176s"); else retry-after; else 60 s."""
+    m = _DURATION.search(message)
+    if m:
+        units = {"h": 3600.0, "m": 60.0, "s": 1.0, "ms": 0.001}
+        parts = re.findall(r"(\d+(?:\.\d+)?)(ms|h|m|s)", m.group(1))
+        return sum(float(n) * units[u] for n, u in parts)
+    try:
+        return float(res.headers["retry-after"])
+    except (KeyError, ValueError):
+        return DEFAULT_COOLDOWN_S
 
 
 def _record(key: str, model: str, raw: dict[str, Any]) -> None:

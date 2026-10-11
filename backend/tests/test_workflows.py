@@ -228,3 +228,18 @@ def test_chips_the_task_offered_are_answered_without_the_llm(page):
     first = workflows._first_item(orders[1])
     assert workflows.chip_answer(state, first, orders) == {"order_id": orders[1].id}
     assert workflows.chip_answer(None, first, orders) is None
+
+
+def test_generic_target_ids_never_match_an_order(ctx, page):
+    """Track B: only t-<action>-N ids belong to ORDER_N; a generic "t1" must not match ORDER_1."""
+    page["orders"][1]["available_actions"] = ["cancel"]
+    page["targets"] = [
+        {"schema_version": "1.0", "id": "t1", "kind": "link", "label": "Cancel order",
+         "zone": "orders", "state": None, "colour_name": None},
+        {"schema_version": "1.0", "id": "t-cancel-2", "kind": "link", "label": "Cancel order",
+         "zone": "orders", "state": None, "colour_name": None},
+    ]  # fmt: skip
+    first = run(tools.order_task(ctx(page), task="cancel", order_id="ORDER_1"))
+    assert first.confirmation is None, "t1 is not ORDER_1's button"
+    second = run(tools.order_task(ctx(page, sid="other"), task="cancel", order_id="ORDER_2"))
+    assert [a["target_id"] for a in second.confirmation["pending_actions"]] == ["t-cancel-2"]
