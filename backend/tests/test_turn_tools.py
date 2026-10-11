@@ -610,3 +610,21 @@ def test_add_to_cart_on_results_asks_to_open_the_product_first(search_req):
     result = run(tools.add_to_cart(tools.Context(search_req)))
     assert result.output.summary.startswith("Let's open the product first.")
     assert result.actions == [] and result.confirmation is None
+
+
+def test_page_brief_stays_small_on_a_busy_results_page(search_req):
+    """Seen live: a real results page made one turn ~5,200 tokens, over Groq's 8k a minute
+    for two turns. The page part must stay near 1,300 tokens."""
+    first = search_req.page.products[0]
+    search_req.page.products = [
+        first.model_copy(update={"id": f"amazon.in:B0BUSY{i:04d}", "title": "Phone " * 30})
+        for i in range(24)
+    ]
+    link = search_req.page.targets[1]
+    search_req.page.targets = [
+        link.model_copy(update={"id": f"t-{i}", "label": "A long link label " * 6})
+        for i in range(90)
+    ]
+    brief = orchestrator.page_brief(search_req)
+    assert len(brief["products"]) == 10 and len(brief["targets"]) == 40
+    assert len(json.dumps(brief, separators=(",", ":"))) < 5600
