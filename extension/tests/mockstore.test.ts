@@ -66,7 +66,10 @@ function state(): {
   return JSON.parse(localStorage.getItem('asl-mock-store-v1') ?? '{}');
 }
 
-beforeEach(() => localStorage.clear());
+beforeEach(() => {
+  localStorage.clear();
+  sessionStorage.clear();
+});
 
 describe('mock store pages', () => {
   it.each([
@@ -242,6 +245,17 @@ describe('mock store flows through the actuator', () => {
     });
     (document.getElementById('cc-number') as HTMLInputElement).focus();
     expect(extractPageContext(document).secure_zone_active).toBe(true);
+  });
+
+  it('an order page URL carries ORDER_n, not the order number', () => {
+    const ctx = open('order.html?id=MS-1002&do=cancel');
+    expect(ctx.url).toMatch(/\?id=ORDER_\d+&do=cancel$/);
+    expect(JSON.stringify(ctx)).not.toMatch(/MS-100\d/);
+  });
+
+  it("a select's name is its label, not its options", () => {
+    const ctx = open('order.html?id=MS-1001&do=return');
+    expect(ctx.targets.filter((t) => t.kind === 'select').map((t) => t.label)).toEqual(['Reason']);
   });
 
   it('cancels a shipped order', async () => {

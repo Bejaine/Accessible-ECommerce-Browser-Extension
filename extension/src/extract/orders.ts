@@ -21,16 +21,39 @@ interface OrderRegistry {
 
 const registries = new WeakMap<Document, OrderRegistry>();
 
+/**
+ * The mapping is kept in the tab's sessionStorage, so ORDER_2 on the orders page is still
+ * ORDER_2 on that order's cancel page: the backend's order task refers to it across pages. It
+ * holds only order numbers the shop itself showed in this tab, and ends with the tab.
+ */
+const STORAGE_KEY = 'asl-order-placeholders';
+
+function stored(doc: Document): [string, string][] {
+  try {
+    const raw = doc.defaultView?.sessionStorage.getItem(STORAGE_KEY);
+    const pairs: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(pairs)
+      ? pairs.filter(
+          (p): p is [string, string] =>
+            Array.isArray(p) && typeof p[0] === 'string' && /^ORDER_\d+$/.test(String(p[1])),
+        )
+      : [];
+  } catch {
+    return []; // storage blocked: numbering is per page, as before
+  }
+}
+
 function registry(doc: Document): OrderRegistry {
   let r = registries.get(doc);
   if (!r) {
-    r = { byReal: new Map(), byPlaceholder: new Map() };
+    const pairs = stored(doc);
+    r = { byReal: new Map(pairs), byPlaceholder: new Map(pairs.map(([a, b]) => [b, a])) };
     registries.set(doc, r);
   }
   return r;
 }
 
-/** Stable ORDER_n for a real order id within this document. */
+/** Stable ORDER_n for a real order id, within this document and across this tab's pages. */
 export function orderPlaceholder(doc: Document, realId: string): string {
   const r = registry(doc);
   let id = r.byReal.get(realId);
@@ -38,6 +61,11 @@ export function orderPlaceholder(doc: Document, realId: string): string {
     id = `ORDER_${r.byReal.size + 1}`;
     r.byReal.set(realId, id);
     r.byPlaceholder.set(id, realId);
+    try {
+      doc.defaultView?.sessionStorage.setItem(STORAGE_KEY, JSON.stringify([...r.byReal]));
+    } catch {
+      // Not fatal: placeholders stay stable within this page.
+    }
   }
   return id;
 }

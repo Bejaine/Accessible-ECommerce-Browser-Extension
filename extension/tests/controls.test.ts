@@ -70,6 +70,7 @@ describe('overlay controls', () => {
     expect(item()).toBe('Search');
     vi.advanceTimersByTime(1500);
     expect(item()).toBe('Product');
+    vi.advanceTimersByTime(600); // reaction time: a press right on the move would slow scanning
     document.body.dispatchEvent(space());
     expect(item()).toBe('Midnight Black');
     vi.advanceTimersByTime(1500 * 3);

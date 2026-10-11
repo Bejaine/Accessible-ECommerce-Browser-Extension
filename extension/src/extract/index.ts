@@ -98,7 +98,7 @@ export function extractPageContext(
     return {
       schema_version: '1.0',
       page_type: pageType,
-      url,
+      url: redactOrderIds(doc, url),
       site,
       products: [],
       orders: [],
@@ -127,7 +127,8 @@ export function extractPageContext(
   return {
     schema_version: '1.0',
     page_type: pageType,
-    url,
+    // Order pages carry the order number in the URL (Amazon ?orderID=…, MockMart ?id=…).
+    url: redactOrderIds(doc, url),
     site,
     products,
     orders,
