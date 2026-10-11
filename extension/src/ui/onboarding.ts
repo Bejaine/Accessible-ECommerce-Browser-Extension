@@ -28,6 +28,7 @@ const LANGUAGES: Option[] = [
   { id: 'en', label: 'English', lang: 'en', words: ['english', 'angrezi', 'one', '1'] },
   { id: 'hi', label: 'हिंदी', lang: 'hi', words: ['hindi', 'हिंदी', 'हिन्दी', 'two', '2'] },
   { id: 'te', label: 'తెలుగు', lang: 'te', words: ['telugu', 'తెలుగు', 'three', '3'] },
+  { id: 'ml', label: 'മലയാളം', lang: 'ml', words: ['malayalam', 'മലയാളം', 'four', '4'] },
 ];
 
 export interface OnboardingOptions {
@@ -62,13 +63,13 @@ export function startOnboarding(opts: OnboardingOptions): Onboarding {
       id: 'yes',
       label: label('onboarding.yes', lang),
       lang,
-      words: ['yes', 'yeah', 'haan', 'हाँ', 'one', '1', 'y'],
+      words: ['yes', 'yeah', 'haan', 'हाँ', 'അതെ', 'ശരി', 'one', '1', 'y'],
     },
     {
       id: 'no',
       label: label('onboarding.no', lang),
       lang,
-      words: ['no', 'nahin', 'नहीं', 'two', '2', 'n'],
+      words: ['no', 'nahin', 'नहीं', 'ഇല്ല', 'വേണ്ട', 'two', '2', 'n'],
     },
   ];
   const options = (): Option[] =>
@@ -92,7 +93,7 @@ export function startOnboarding(opts: OnboardingOptions): Onboarding {
 
   function promptText(): string {
     if (step === 'language') {
-      return (['en', 'hi', 'te'] as const)
+      return (['en', 'hi', 'te', 'ml'] as const)
         .map((l) => label('onboarding.choose_language', l))
         .join(' ');
     }
@@ -110,14 +111,14 @@ export function startOnboarding(opts: OnboardingOptions): Onboarding {
 
     if (step === 'language') {
       // What this page is for, then the language question, each in its own language.
-      for (const l of ['en', 'hi', 'te'] as const) {
+      for (const l of ['en', 'hi', 'te', 'ml'] as const) {
         const p = document.createElement('p');
         p.lang = l;
         p.className = 'asl-purpose';
         p.textContent = label(`onboarding.purpose.${l}` as UiKey);
         children.push(p);
       }
-      for (const l of ['en', 'hi', 'te'] as const) {
+      for (const l of ['en', 'hi', 'te', 'ml'] as const) {
         const p = document.createElement('p');
         p.lang = l;
         p.className = 'asl-question';
@@ -177,7 +178,7 @@ export function startOnboarding(opts: OnboardingOptions): Onboarding {
     announce(promptText());
     opts.speak?.(
       step === 'language'
-        ? (['en', 'hi', 'te'] as const).flatMap((l) => [
+        ? (['en', 'hi', 'te', 'ml'] as const).flatMap((l) => [
             { text: label(`onboarding.purpose.${l}` as UiKey), lang: l },
             { text: label('onboarding.choose_language', l), lang: l },
           ])

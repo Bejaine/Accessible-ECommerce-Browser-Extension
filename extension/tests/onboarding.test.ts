@@ -42,12 +42,12 @@ describe('first-run onboarding', () => {
     vi.useRealTimers();
   });
 
-  it('asks for the language in all three languages, each marked with its language', async () => {
+  it('asks for the language in all four languages, each marked with its language', async () => {
     onboarding = startOnboarding({ root, store, onDone });
-    expect(root.querySelector('h1')?.textContent).toBe('Language · भाषा · భాష');
+    expect(root.querySelector('h1')?.textContent).toBe('Language · भाषा · భాష · ഭാഷ');
     expect(
       [...root.querySelectorAll('p.asl-question[lang]')].map((p) => p.getAttribute('lang')),
-    ).toEqual(['en', 'hi', 'te']);
+    ).toEqual(['en', 'hi', 'te', 'ml']);
     expect(root.querySelector('p.asl-purpose')?.textContent).toContain(
       'Setting up the Shopping assistant',
     );
@@ -55,10 +55,20 @@ describe('first-run onboarding', () => {
       ['1. English', 'en'],
       ['2. हिंदी', 'hi'],
       ['3. తెలుగు', 'te'],
+      ['4. മലയാളം', 'ml'],
     ]);
     expect(document.activeElement).toBe(root.querySelector('h1'));
     await vi.advanceTimersByTimeAsync(100);
     expect(live()).toContain('हिंदी के लिए');
+    expect(live()).toContain('മലയാളം എന്ന് പറയുക');
+  });
+
+  it('4 or "മലയാളം" chooses Malayalam, and the next question is in Malayalam', async () => {
+    onboarding = startOnboarding({ root, store, onDone });
+    key('4');
+    await vi.waitFor(() => expect(onboarding.step).toBe('read_aloud'));
+    expect(store.get().prefs.lang).toBe('ml');
+    expect(buttons().map((b) => b.textContent)).toEqual(['1. അതെ', '2. ഇല്ല']);
   });
 
   it('number keys answer each question and seed the profile as user choices', async () => {

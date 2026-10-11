@@ -100,12 +100,16 @@ describe('local matcher: acts only on confident, unambiguous matches', () => {
   });
 });
 
-describe('Hindi and Telugu playback words (Track A)', () => {
+describe('Hindi, Telugu and Malayalam playback words (Track A)', () => {
   it.each([
     ['रुको', 'command:pause'],
     ['ఆపు', 'command:pause'],
+    ['നിർത്തൂ', 'command:pause'],
+    ['നിര\u0D4D\u200Dത്തൂ', 'command:pause'], // old chillu spelling, as some ASR writes it
     ['दोबारा', 'command:repeat'],
     ['మళ్లీ', 'command:repeat'],
+    ['വീണ്ടും', 'command:repeat'],
+    ['തുടരൂ', 'command:resume'],
   ])('"%s" -> %s', (utterance, expected) => {
     expect(act(utterance)).toBe(expected);
   });

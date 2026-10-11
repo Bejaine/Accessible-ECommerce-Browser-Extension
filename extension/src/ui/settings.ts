@@ -74,6 +74,7 @@ const LANGUAGES: { id: Lang; name: string }[] = [
   { id: 'en', name: 'English' },
   { id: 'hi', name: 'हिंदी' },
   { id: 'te', name: 'తెలుగు' },
+  { id: 'ml', name: 'മലയാളം' },
 ];
 
 export const TEXT_STEP = 0.25;

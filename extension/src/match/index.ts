@@ -36,11 +36,11 @@ export type CommandId =
 
 /** English command phrases. Other languages come from src/i18n (requested from Track A). */
 export const COMMANDS: Record<CommandId, string[]> = {
-  // Hindi and Telugu forms from Track A's player.controls_hint.
-  pause: ['pause', 'wait', 'hold on', 'रुको', 'ఆపు'],
-  resume: ['resume', 'continue', 'play', 'जारी रखो', 'కొనసాగించు'],
+  // Hindi, Telugu and Malayalam forms from Track A's player.controls_hint.
+  pause: ['pause', 'wait', 'hold on', 'रुको', 'ఆపు', 'നിർത്തൂ'],
+  resume: ['resume', 'continue', 'play', 'जारी रखो', 'కొనసాగించు', 'തുടരൂ'],
   stop: ['stop', 'quiet', 'be quiet'],
-  repeat: ['repeat', 'repeat that', 'say again', 'again', 'दोबारा', 'మళ్లీ'],
+  repeat: ['repeat', 'repeat that', 'say again', 'again', 'दोबारा', 'మళ్లీ', 'വീണ്ടും'],
   repeat_all: ['repeat all', 'start again', 'from the start'],
   back: ['go back', 'back one', 'previous sentence'],
   next_section: ['next', 'next section', 'skip'],
@@ -50,11 +50,11 @@ export const COMMANDS: Record<CommandId, string[]> = {
   yes: ['yes', 'yeah', 'yep', 'confirm', 'okay'],
   no: ['no', 'nope', 'cancel', "don't"],
   help: ['help', 'what can i say'],
-  undo: ['undo', 'turn it off', 'switch it off'],
+  undo: ['undo', 'turn it off', 'switch it off', 'പഴയപടിയാക്കൂ'],
   // "Did you mean X or Y?" answers, and retrying a failed turn.
-  first: ['first one', 'the first', 'first', 'पहला', 'మొదటిది'],
-  second: ['second one', 'the second', 'second', 'दूसरा', 'రెండవది'],
-  retry: ['try again', 'retry', 'फिर से', 'మళ్ళీ ప్రయత్నించు'],
+  first: ['first one', 'the first', 'first', 'पहला', 'మొదటిది', 'ഒന്നാമത്തേത്'],
+  second: ['second one', 'the second', 'second', 'दूसरा', 'రెండవది', 'രണ്ടാമത്തേത്'],
+  retry: ['try again', 'retry', 'फिर से', 'మళ్ళీ ప్రయత్నించు', 'വീണ്ടും ശ്രമിക്കൂ'],
   read_aloud: [
     'read aloud',
     'read it',
@@ -68,6 +68,8 @@ export const COMMANDS: Record<CommandId, string[]> = {
     'पढ़ो',
     'చదివి వినిపించు',
     'చదువు',
+    'വായിച്ചു കേൾപ്പിക്കൂ',
+    'വായിക്കൂ',
   ],
 };
 
@@ -89,11 +91,16 @@ export type MatchDecision =
 
 const FILLERS = /\b(please|can you|could you|the|a|an|it|now|um+|uh+)\b/g;
 
+// Old Malayalam spelling of the chillu letters (consonant + virama + ZWJ), as OCR and some ASR
+// output write them: folded to the single letters, or the ZWJ would split the word.
+const OLD_CHILLU: Record<string, string> = { ണ: 'ൺ', ന: 'ൻ', ര: 'ർ', ല: 'ൽ', ള: 'ൾ', ക: 'ൿ' };
+
 export function normalise(text: string): string {
   return (
     text
+      .replace(/([ണനരലളക])\u0D4D\u200D/gu, (_, c: string) => OLD_CHILLU[c] ?? c)
       .toLowerCase()
-      // Keep marks (\p{M}): Devanagari and Telugu vowel signs are marks, not letters.
+      // Keep marks (\p{M}): Devanagari, Telugu and Malayalam vowel signs are marks, not letters.
       .replace(/[^\p{L}\p{M}\p{N}\s']/gu, ' ')
       .replace(FILLERS, ' ')
       .replace(/\s+/g, ' ')

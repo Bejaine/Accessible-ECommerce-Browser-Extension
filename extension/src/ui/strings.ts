@@ -118,8 +118,8 @@ const FALLBACK = {
   'mic.not_understood': "Sorry, I didn't catch that. Please try again.",
   'phrases.offer': 'Here are some phrases you can choose instead.',
   'onboarding.title': 'Welcome',
-  'onboarding.language': 'Language · भाषा · భాష',
-  // Track A's keys (src/i18n has reviewed hi/te text and recordings for these).
+  'onboarding.language': 'Language · भाषा · భాష · ഭാഷ',
+  // Track A's keys (src/i18n has hi/te/ml text and recordings for these).
   'onboarding.choose_language': 'For English, say English or press 1.',
   'onboarding.read_aloud': 'Would you like me to read things aloud?',
   'onboarding.colours': 'Do colours ever look alike to you?',
@@ -194,6 +194,8 @@ const FALLBACK = {
     'शॉपिंग सहायक की सेटअप: तीन छोटे सवाल, ताकि यह आपके हिसाब से काम करे। बाद में सब कुछ सेटिंग्स में बदल सकते हैं।',
   'onboarding.purpose.te':
     'షాపింగ్ సహాయకుడి సెటప్: మీకు తగినట్లు పని చేయడానికి మూడు చిన్న ప్రశ్నలు. తర్వాత అన్నీ సెట్టింగ్‌లలో మార్చవచ్చు.',
+  'onboarding.purpose.ml':
+    'ഷോപ്പിംഗ് അസിസ്റ്റന്റ് സജ്ജീകരണം: നിങ്ങൾക്ക് അനുയോജ്യമാകാൻ മൂന്ന് ചെറിയ ചോദ്യങ്ങൾ. എല്ലാം പിന്നീട് ക്രമീകരണങ്ങളിൽ മാറ്റാം.',
   'menu.title': 'Actions on this page',
   'menu.toggle': 'Actions on this page ({count})',
   'menu.more': 'Show {count} more',
