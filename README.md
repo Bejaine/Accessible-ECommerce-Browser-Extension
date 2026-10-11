@@ -35,6 +35,8 @@ Copy `.env.example` to `.env` and `backend/config/models.example.json` to
 - Extension, Chrome: `make ext`. Firefox: `make ext-firefox`. Both default to `VITE_BACKEND=mock`.
 - Firefox for Android: see `extension/README.md`.
 - Tests only: `make test` (or `make test-ext`, `make test-backend`).
+- Persona runs on MockMart with the real backend: `make e2e` (writes `eval/e2e/report.md`).
+- Inference calibration report: `make eval-inference` (needs recorded sessions, see `eval/inference/README.md`).
 
 ## Layout
 

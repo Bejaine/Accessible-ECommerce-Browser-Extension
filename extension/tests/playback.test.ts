@@ -278,6 +278,56 @@ describe("voice adapter over Track A's player", () => {
     expect(player.rate).toBe(1.5);
   });
 
+  it('snapshot is the answer, never a prompt over it', () => {
+    const { player } = fakePlayer();
+    const speaker = createPlayerSpeaker(player);
+    expect(speaker.snapshot()).toBeNull();
+    speaker.speakOutput(reviews);
+    speaker.nextSection();
+    speaker.prompt('Speech speed 1.25×', 'en');
+    const snap = speaker.snapshot()!;
+    expect(snap.index).toBe(1);
+    expect(snap.sections[0]!.segments[0]!.text).toBe(reviews.summary);
+  });
+
+  it('a position saved before a page change waits as a paused answer; Resume plays from it', () => {
+    const first = fakePlayer();
+    const before = createPlayerSpeaker(first.player);
+    before.speakOutput(reviews);
+    before.nextSection();
+    const snap = before.snapshot()!;
+
+    const { player, played } = fakePlayer(); // the next page: a new player
+    const speaker = createPlayerSpeaker(player);
+    const states: string[] = [];
+    speaker.onChange(() => states.push(speaker.state));
+    speaker.offerResume(snap);
+    expect(speaker.state).toBe('paused');
+    expect(played).toEqual([]); // nothing plays until the user asks
+    expect(states).toContain('paused');
+    speaker.prompt('Reading stopped when the page changed.', 'en');
+    player.finish();
+    expect(speaker.state).toBe('paused');
+    speaker.resume();
+    expect(played.at(-1)).toBe(reviews.sections[0]!.heading);
+    expect(speaker.state).toBe('playing');
+  });
+
+  it('an offer never replaces something already playing', () => {
+    const { player, played } = fakePlayer();
+    const speaker = createPlayerSpeaker(player);
+    speaker.say('New answer', 'en');
+    speaker.offerResume({
+      sections: [{ segments: [{ text: 'old' }] }],
+      lang: 'en',
+      section: 0,
+      index: 0,
+    });
+    speaker.pause();
+    speaker.resume();
+    expect(played).not.toContain('old');
+  });
+
   it('a language with no voice is reported once', () => {
     const { player } = fakePlayer();
     const onNoVoice = vi.fn();

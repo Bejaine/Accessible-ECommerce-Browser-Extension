@@ -91,10 +91,12 @@ export async function markOnboarded(): Promise<void> {
 /**
  * Device-only preferences outside the Profile contract. `assistantVoice` = the assistant's own
  * voice: 'auto' speaks when read-aloud or simple mode is on (users without a screen reader);
- * screen-reader users can turn it off to avoid hearing everything twice.
+ * screen-reader users can turn it off to avoid hearing everything twice. `dwellMs` = dwell to
+ * click on the assistant's own controls (null = off).
  */
 export interface DevicePrefs {
   assistantVoice: 'auto' | 'on' | 'off';
+  dwellMs?: number | null;
 }
 
 export const DEVICE_PREFS_KEY = 'device-prefs';

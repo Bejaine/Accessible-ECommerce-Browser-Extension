@@ -26,8 +26,9 @@ serves `fixtures/mocks/` in the browser, `VITE_BACKEND=http://localhost:8000` ca
 - **Firefox for Android:** the phone can't reach the laptop's `localhost`. Use the laptop's LAN
   address (`VITE_BACKEND=http://192.168.x.y:8000`, add it to `host_permissions`, run uvicorn
   with `--host 0.0.0.0`).
-- Missing in the client: `POST /extract/fallback` (Track B's tier-3 extraction) — add
-  `extractFallback(req: ExtractFallbackRequest): Promise<ExtractFallbackResponse>`.
+- `extractFallback` is in the client (Track B's tier 3 runs through `completeWithFallback`).
+- `session_id` comes from the background script (`src/core/continuity.ts`): one id for every page
+  and site until 30 idle minutes, so tasks survive page loads.
 
 ## 3. Endpoints and when to call them
 

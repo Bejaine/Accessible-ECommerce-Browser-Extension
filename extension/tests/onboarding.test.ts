@@ -144,6 +144,7 @@ describe('settings panel', () => {
 
   it('shows what is in effect and where each mode came from, and every control changes it', async () => {
     let voice = false;
+    let dwellMs: number | null = null;
     const onStartScanning = vi.fn();
     const onRunSetup = vi.fn();
     const settings = createSettings({
@@ -151,6 +152,7 @@ describe('settings panel', () => {
       onStartScanning,
       onRunSetup,
       voice: { get: () => voice, set: (on) => (voice = on) },
+      dwell: { get: () => dwellMs, set: (ms) => (dwellMs = ms) },
     });
     const el = settings.element;
     document.body.append(el); // inputs fire change only when attached (as in the overlay)
@@ -201,10 +203,26 @@ describe('settings panel', () => {
     await vi.waitFor(() => expect(store.get().prefs.switch_key).toBe('Enter'));
     expect(el.textContent).toContain('Switch key: Enter');
 
-    const select = el.querySelector('select')!;
+    const select = [...el.querySelectorAll('select')].find((s) => s.querySelector('[value="te"]'))!;
     select.value = 'te';
     select.dispatchEvent(new Event('change'));
     await vi.waitFor(() => expect(store.get().prefs.lang).toBe('te'));
+
+    // Dwell to click: off by default; turning it on uses the chosen resting time.
+    const dwellBox = [...el.querySelectorAll('label')]
+      .find((l) => l.textContent?.includes('resting the pointer'))!
+      .querySelector('input')!;
+    expect(dwellBox.checked).toBe(false);
+    dwellBox.click();
+    expect(dwellMs).toBe(1200);
+    const dwellTime = [...el.querySelectorAll('select')].find((s) =>
+      s.querySelector('[value="2000"]'),
+    )!;
+    dwellTime.value = '2000';
+    dwellTime.dispatchEvent(new Event('change'));
+    expect(dwellMs).toBe(2000);
+    dwellBox.click();
+    expect(dwellMs).toBeNull();
 
     named('Start switch scanning').click();
     named('Run setup again').click();

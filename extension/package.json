@@ -12,7 +12,8 @@
     "postinstall": "wxt prepare",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "eval:inference": "vitest run --config vitest.eval.config.ts"
+    "eval:inference": "vitest run --config vitest.eval.config.ts",
+    "e2e": "vitest run --config vitest.e2e.config.ts"
   },
   "devDependencies": {
     "ajv": "^8.20.0",

@@ -548,14 +548,11 @@ function renderOrder() {
   if (flow === 'cancel' && actionsFor(o).includes('cancel')) {
     box.innerHTML = `
       <h2>Cancel this order</h2>
-      <label>Reason <select id="cancel-reason"><option value="">Choose a reason</option><option>Ordered by mistake</option><option>Found a better price</option><option>Delivery is too late</option></select></label>
+      <label>Reason (optional) <select id="cancel-reason"><option value="">Choose a reason</option><option>Ordered by mistake</option><option>Found a better price</option><option>Delivery is too late</option></select></label>
       <button type="button" id="confirm-cancel">Confirm cancellation</button>
       <p id="flow-error" role="alert"></p>`;
+    // As on Amazon, a cancellation reason is optional.
     document.getElementById('confirm-cancel').addEventListener('click', () => {
-      if (!document.getElementById('cancel-reason').value) {
-        document.getElementById('flow-error').textContent = 'Please choose a reason.';
-        return;
-      }
       o.status = 'cancelled';
       save(state);
       location.href = `order.html?id=${o.id}&done=cancelled`;
@@ -563,7 +560,7 @@ function renderOrder() {
   } else if (flow === 'return' && actionsFor(o).includes('return')) {
     box.innerHTML = `
       <h2>Return this item</h2>
-      <label>Reason <select id="return-reason"><option value="">Choose a reason</option><option>Defective or not working</option><option>Not as described</option><option>No longer needed</option></select></label>
+      <label>Reason <select id="return-reason"><option value="">Choose a reason</option><option>It arrived damaged</option><option>Wrong item</option><option>Not as described</option><option>No longer needed</option></select></label>
       <p>Pickup from your delivery address on ${longDate(isoDay(2))}. Refund to the original payment method after pickup.</p>
       <button type="button" id="confirm-return">Confirm return</button>
       <p id="flow-error" role="alert"></p>`;

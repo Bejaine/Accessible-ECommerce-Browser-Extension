@@ -67,6 +67,10 @@ STATUS_WORDS = {
     "returned": "has been returned",
 }
 REASON_EXAMPLES = "For example: it arrived damaged, wrong item, or not as described."
+# The return reasons offered as chips. When the user picked one and the return page has a reason
+# list, the finishing step chooses it there too (MockMart's options match these).
+RETURN_REASONS = ("It arrived damaged", "Wrong item", "Not as described")
+REASON_FIELD = re.compile(r"\breason\b", re.I)
 
 
 @dataclass
@@ -87,6 +91,23 @@ def _first_item(o: OrderJSON) -> str:
     title = o.items[0].title if o.items else "this order"
     more = len(o.items) - 1
     return f"{title} and {more} more item{'s' if more > 1 else ''}" if more > 0 else title
+
+
+def chip_answer(
+    state: dict[str, Any] | None, chip: str, orders: list[OrderJSON]
+) -> dict[str, Any] | None:
+    """order_task arguments for a chip this task itself offered (a return reason, or an order by
+    its first item), so tapping it needs no LLM. None when the chip isn't one of those."""
+    if not state:
+        return None
+    said = chip.strip().rstrip(".").lower()
+    if state.get("awaiting") == "reason":
+        reason = next((r for r in RETURN_REASONS if r.lower() == said), None)
+        return {"reason": reason} if reason else None
+    if state.get("awaiting") == "order":
+        order = next((o for o in orders if _first_item(o).lower() == said), None)
+        return {"order_id": order.id} if order else None
+    return None
 
 
 def _state_marker(task: str, step: int) -> dict[str, Any]:
@@ -282,7 +303,7 @@ async def advance(
         out = b.checked(
             {chosen.id: chosen},
             f"Why are you returning {_first_item(chosen)}? {REASON_EXAMPLES}",
-            followups=["It arrived damaged", "Wrong item", "Not as described", "Stop"],
+            followups=[*RETURN_REASONS, "Stop"],
         ).output
         return Result(out, workflow=_state_marker("return", 2), label="Return order")
 
@@ -356,15 +377,26 @@ def _verify(ctx, state: dict[str, Any], orders: list[OrderJSON]) -> Result:
         None,
     )
     if finish is not None:
+        actions = []
         prompt = f'To finish, press "{finish.label}"?'
         if task == "return" and state["reason"]:
-            prompt += f" Choose the reason on this page: {state['reason']}."
-        action = ctx.action(
-            "click", finish.id, None, "url_change", f"{verb.capitalize()} request sent"
+            chip = next((r for r in RETURN_REASONS if r.lower() == state["reason"].lower()), None)
+            field = next(
+                (t for t in ctx.page.targets if t.kind.value == "select"
+                 and REASON_FIELD.search(t.label)),
+                None,
+            )  # fmt: skip
+            if chip and field:
+                actions.append(ctx.action("select", field.id, chip, "value_set", "Reason chosen"))
+                prompt = f'To finish, choose the reason "{chip}" and press "{finish.label}"?'
+            else:
+                prompt += f" Choose the reason on this page: {state['reason']}."
+        actions.append(
+            ctx.action("click", finish.id, None, "url_change", f"{verb.capitalize()} request sent")
         )
         return Result(
             plain_output(prompt, followups=["Yes", "No"]),
-            confirmation=_confirmation(ctx, prompt, [action], None, None),
+            confirmation=_confirmation(ctx, prompt, actions, None, None),
             workflow=_state_marker(task, step),
             label=f"Finish the {verb}",
         )

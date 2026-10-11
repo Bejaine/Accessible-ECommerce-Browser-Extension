@@ -78,6 +78,21 @@ function textWithAlt(el: Element | null): string | null {
   return spacedText(el) ?? meaningfulAlt(el.querySelector('img[alt]'));
 }
 
+/** A label's text without the control inside it (a select's options are not its name). */
+function labelText(label: Element | null, control: Element): string | null {
+  if (!label) return null;
+  const parts: string[] = [];
+  const walk = (node: Node): void => {
+    for (const child of Array.from(node.childNodes)) {
+      if (child === control) continue;
+      if (child.nodeType === 3) parts.push(child.textContent ?? '');
+      else if (child.nodeType === 1) walk(child);
+    }
+  };
+  walk(label);
+  return clean(parts.join(' '));
+}
+
 /** A practical subset of the accessible-name algorithm. */
 export function accessibleName(el: Element): string | null {
   const doc = el.ownerDocument;
@@ -95,7 +110,7 @@ export function accessibleName(el: Element): string | null {
   if (tag === 'input' || tag === 'select' || tag === 'textarea') {
     const id = el.getAttribute('id');
     const forLabel = id ? doc.querySelector(`label[for="${CSS.escape(id)}"]`) : null;
-    const label = clean(forLabel?.textContent) ?? clean(el.closest('label')?.textContent);
+    const label = labelText(forLabel, el) ?? labelText(el.closest('label'), el);
     if (label) return label;
     const type = (el.getAttribute('type') ?? '').toLowerCase();
     if (['submit', 'button', 'reset'].includes(type)) {

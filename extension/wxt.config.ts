@@ -30,6 +30,16 @@ export default defineConfig({
       },
     }),
   }),
+  // `make ext` Chrome: --test-type hides Chrome's "unsupported command-line flag" bar (web-ext adds
+  // --disable-blink-features=AutomationControlled on purpose, so shops don't see a bot). On Linux,
+  // Chrome is launched through dev/chrome-linux.sh, which drops one web-ext default flag that
+  // removes Chrome's speech voices; other platforms use the OS voices.
+  webExt: {
+    chromiumArgs: ['--test-type'],
+    ...(process.platform === 'linux' && {
+      binaries: { chrome: resolve(__dirname, 'dev/chrome-linux.sh') },
+    }),
+  },
   vite: () => ({
     // Mock mode reads ../fixtures/mocks; allow the dev server outside the package.
     server: { fs: { allow: ['..'] } },

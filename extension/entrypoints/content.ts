@@ -2,6 +2,12 @@ import { mountApp, type App } from '@/src/core/app';
 import { createRuntimeBackend, type BackendReply } from '@/src/core/backend';
 import { bus } from '@/src/core/bus';
 import {
+  createTaskContinuity,
+  requestSession,
+  type ContinuityMessage,
+} from '@/src/core/continuity';
+import { loadLearnedAdapters } from '@/src/extract';
+import {
   createProfileStore,
   loadDevicePrefs,
   PLAYBACK_COMMAND,
@@ -19,6 +25,13 @@ export default defineContentScript({
     );
     // The in-browser mock can't recognise speech or provide voices; the app says so honestly.
     const demo = (import.meta.env.VITE_BACKEND ?? 'mock') === 'mock';
+    // One shopping session for every page; an order task may continue on this page.
+    const sendContinuity = (message: ContinuityMessage) => browser.runtime.sendMessage(message);
+    const { session_id: sessionId, continue_task: continueTask } =
+      await requestSession(sendContinuity);
+    const continuity = createTaskContinuity(sendContinuity);
+    // Selectors learned from earlier LLM fallbacks on this site, before the first extraction.
+    await loadLearnedAdapters(browser.storage.local).catch(() => undefined);
 
     let app: App | null = null;
     const ui = await createShadowRootUi(ctx, {
@@ -27,7 +40,13 @@ export default defineContentScript({
       anchor: 'body',
       append: 'last',
       onMount: (container) => {
-        const mount = () => mountApp(container, store, bus, backend, { devicePrefs, demo });
+        const mount = () =>
+          mountApp(container, store, bus, backend, {
+            devicePrefs,
+            demo,
+            sessionId,
+            continuity,
+          });
         app = mount();
         // The whole interface follows the chosen language: remount when it changes.
         let lang = store.get().prefs.lang;
@@ -52,6 +71,9 @@ export default defineContentScript({
       },
     });
     ui.mount();
+    // The previous page took an order-task step (e.g. the confirmed "Place order" click): read
+    // this page and let the backend finish or verify the task.
+    if (continueTask) void (app as App | null)?.turn.continueTask();
 
     // Keyboard shortcut (Alt+Shift+A, from the background script): open or close from anywhere.
     browser.runtime.onMessage.addListener((msg: { type?: string }) => {

@@ -57,6 +57,26 @@ describe('turns from the overlay buttons', () => {
     vi.useRealTimers();
   });
 
+  it('a confirmation whose prompt is the answer summary is announced once, not twice', async () => {
+    const prompt = 'Add Zentra Pulse 5G to your cart? Quantity 1, price ₹17,999.';
+    const base = createMockBackend();
+    await mount({
+      ...base,
+      turn: async (req) => {
+        const res = await base.turn(req);
+        return {
+          ...res,
+          output: { ...res.output, lang: 'en', summary: prompt, sections: [], warnings: [] },
+          confirmation: { ...res.confirmation!, prompt },
+        };
+      },
+    });
+    await app.say('add to cart please', 'text');
+    await settle();
+    expect(app.turn.pending?.prompt).toBe(prompt);
+    expect(live().split(prompt)).toHaveLength(2); // exactly one occurrence
+  });
+
   it('a phrase button sends a turn and shows the answer (labelled as demo data)', async () => {
     const spy = vi.spyOn(backend, 'turn');
     bus.emit({ type: 'phrase', id: 'reviews', text: 'What do reviews say?' });
@@ -197,7 +217,11 @@ describe('turns from the overlay buttons', () => {
     await mount(failing);
     bus.emit({ type: 'phrase', id: 'price', text: "What's the price?" });
     await settle();
-    expect(q('.asl-summary')?.textContent).toBe('The assistant is busy. Please try again.');
-    expect(live()).toContain('The assistant is busy');
+    // A calm message chosen by the error code; the backend's own text is never read out.
+    expect(q('.asl-summary')?.textContent).toBe(
+      'Lots of requests right now. Please try again in a moment.',
+    );
+    expect(live()).toContain('Lots of requests right now');
+    expect(app.turn.canRetry).toBe(true);
   });
 });

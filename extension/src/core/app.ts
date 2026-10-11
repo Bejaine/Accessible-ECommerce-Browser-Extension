@@ -20,11 +20,11 @@ import { phraseAudioUrl } from '../audio/phrases';
 import { createPlayer, type Player } from '../audio/player';
 import { createSpeechSources } from '../audio/sources';
 import {
-  applyFallback,
-  buildFallbackRequest,
+  completeWithFallback,
   extractPageContext,
   muteMicInSecureZone,
   resolveTarget,
+  restorePlaceholders,
 } from '../extract';
 import { t } from '../i18n';
 import { attachCollectors } from '../infer/collectors';
@@ -43,11 +43,13 @@ import {
   type PlaybackAction,
 } from '../ui/playbackBar';
 import { createScanner } from '../ui/scanner';
+import { attachDwell, type Dwell } from '../ui/dwell';
 import { createActionMenu } from '../ui/actionMenu';
 import { createColourLabels, type ColourLabels } from '../ui/colourLabels';
 import { renderSimpleView, simpleSummary } from '../ui/simpleView';
 import { createCheckoutWizard } from '../ui/checkoutWizard';
 import { createControls, type Controls } from '../ui/controls';
+import { BACKEND_CHIPS } from '../ui/phrases';
 import { mountOverlay, type Overlay } from '../ui/overlay';
 import { createSpeechSpeed, formatRate } from '../ui/speechSpeed';
 import { label, setUiLang } from '../ui/strings';
@@ -69,8 +71,10 @@ import {
   type ProfileStore,
 } from './profile';
 import { createInputFallback } from './fallback';
+import type { TaskContinuity } from './continuity';
 import { createSession } from './session';
 import { createPlayerSpeaker, type Speaker } from './voice';
+import { createResumeStore } from './resume';
 import { createTurnPipeline, localOutput, type PerformFn, type TurnPipeline } from './turn';
 
 export const SUGGEST_CHECK_MS = 2000;
@@ -126,6 +130,10 @@ export interface AppOptions {
   devicePrefs?: DevicePrefs;
   /** True when the backend is the in-browser mock: no real speech recognition or voices. */
   demo?: boolean;
+  /** The shopping session shared by every page (from the background; src/core/continuity.ts). */
+  sessionId?: string;
+  /** Keeps an order task going across page loads; without it tasks stop at a page change. */
+  continuity?: TaskContinuity;
 }
 
 export function mountApp(
@@ -140,7 +148,7 @@ export function mountApp(
   const engine = createScoreEngine();
   const devicePrefs: DevicePrefs = options.devicePrefs ?? { assistantVoice: 'auto' };
   const demo = options.demo ?? false;
-  const session = createSession();
+  const session = createSession(options.sessionId);
   const offs: (() => void)[] = [];
   let profile = store.get();
   let mode = resolveMode(profile);
@@ -243,6 +251,9 @@ export function mountApp(
     },
     announce: (text, assertive) => announce(text, { assertive }),
     confirmEveryAction: () => confirmEveryAction(profile),
+    continuity: options.continuity,
+    // ORDER_n / ADDR_n back to the real order number and address, on the device only.
+    restore: (text) => restorePlaceholders(text),
   });
 
   // --- Speech speed (starting defaults come from conditions; the user changes it here) ---
@@ -296,7 +307,30 @@ export function mountApp(
         void saveDevicePrefs(devicePrefs);
       },
     },
+    dwell: {
+      get: () => devicePrefs.dwellMs ?? null,
+      set: (ms) => {
+        devicePrefs.dwellMs = ms;
+        setDwell(ms);
+        void saveDevicePrefs(devicePrefs);
+      },
+    },
   });
+
+  // --- Dwell to click (opt-in; only the assistant's own controls) ---
+  let dwell: Dwell | null = null;
+  function setDwell(ms: number | null): void {
+    if (ms === null) {
+      dwell?.detach();
+      dwell = null;
+    } else if (dwell) {
+      dwell.setTime(ms);
+    } else {
+      dwell = attachDwell(overlay.content.getRootNode() as ShadowRoot | Document, ms);
+    }
+  }
+  setDwell(devicePrefs.dwellMs ?? null);
+  offs.push(() => setDwell(null));
   settings.render(profile, mode);
   // --- Page tools: simplified view, action menu, colour labels ---
   const pageTools = document.createElement('div');
@@ -367,7 +401,11 @@ export function mountApp(
       // Track C's /turn maps "place my order" to the place-order task: it reads the order back
       // and returns a high-risk confirmation. Nothing is pressed until the user says yes.
       onPlaceOrder: () =>
-        void turn.send({ kind: 'phrase', phrase_id: 'place_order', text: 'place my order' }),
+        void turn.send({
+          kind: 'phrase',
+          phrase_id: BACKEND_CHIPS.place_order,
+          text: BACKEND_CHIPS.place_order,
+        }),
       onTarget: (id) => {
         const target = page.targets.find((t) => t.id === id);
         if (target) bus.emit({ type: 'select-target', target });
@@ -480,6 +518,31 @@ export function mountApp(
   });
   overlay.floating.append(playbackBar.element);
   offs.push(speaker.onChange((_, state, sentence) => playbackBar.update(state, sentence)));
+
+  // Resume where it stopped after a page change: keep the answer's position on the device while
+  // it plays; on the next page of this site, hold it as a paused answer and say how to resume.
+  const resume = createResumeStore(location.hostname);
+  let savedAt = '';
+  offs.push(
+    speaker.onChange(() => {
+      if (speaker.state === 'idle') {
+        savedAt = '';
+        resume.clear();
+        return;
+      }
+      const snap = speaker.snapshot();
+      if (!snap) return;
+      const at = `${speaker.state}|${snap.sections.length}|${snap.section}|${snap.index}`;
+      if (at === savedAt) return;
+      savedAt = at;
+      resume.save(snap);
+    }),
+  );
+  void resume.take().then((snap) => {
+    if (!snap || speaker.state !== 'idle') return;
+    speaker.offerResume(snap);
+    announce(label('playback.resume_offer', lang()));
+  });
 
   // Single key: press while playing -> pause; press while paused -> resume; or wait 1.5 s and the
   // mini-menu is scanned aloud (same model as switch access), and the same key picks an item.
@@ -638,12 +701,17 @@ export function mountApp(
     }
     void (async () => {
       let full = product;
-      // Track B's tier 3: ask /extract/fallback for fields the page's own tiers missed. Never in
-      // demo mode: the mock answers for the fixture phone, not this page (rule 1).
-      const request = demo ? null : buildFallbackRequest(document, product);
-      if (request) {
+      // Track B's tier 3: ask /extract/fallback for fields the page's own tiers missed, and
+      // learn where they were for the next page of this site. Never in demo mode: the mock
+      // answers for the fixture phone, not this page (rule 1).
+      if (!demo) {
         try {
-          full = applyFallback(product, await backend.extractFallback(request));
+          full = await completeWithFallback(
+            document,
+            product,
+            (req) => backend.extractFallback(req),
+            browser.storage.local,
+          );
           const i = page.products.findIndex((p) => p.id === product.id);
           if (i >= 0) page.products[i] = full;
         } catch {
@@ -780,7 +848,8 @@ export function mountApp(
       }
       const cached = preparedSection(m.id);
       if (cached) showOutput(cached);
-      else void turn.send({ kind: 'phrase', phrase_id: m.id, text: m.text });
+      // Track C answers its chips without the LLM, keyed by its own chip names.
+      else void turn.send({ kind: 'phrase', phrase_id: BACKEND_CHIPS[m.id] ?? null, text: m.text });
     }),
     bus.on('followup', (m) => void say(m.text, 'text')),
     bus.on(

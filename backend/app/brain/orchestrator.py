@@ -16,7 +16,7 @@ import logging
 import re
 from typing import Any
 
-from app.brain import brevity, intent, language, session, tools
+from app.brain import brevity, intent, language, session, tools, workflows
 from app.brain.llm import LLMError, LLMSettings, complete_tool_call
 from app.brain.output import plain_output
 from app.brain.redact import redact
@@ -163,6 +163,14 @@ async def handle_turn(req: TurnRequest) -> TurnResponse:
     if req.input.kind.value == "phrase" and chip in tools.CHIPS:
         name, args = tools.CHIPS[chip]
         return await _respond(req, ctx, name, 1.0, [], await _run(ctx, name, args))
+    # A chip the order task in progress offered (a return reason, an order): no LLM either.
+    if req.input.kind.value == "phrase":
+        task_args = workflows.chip_answer(
+            session.get(req.session_id).workflow, chip, list(req.page.orders)
+        )
+        if task_args is not None:
+            result = await _run(ctx, "order_task", task_args)
+            return await _respond(req, ctx, "order_task", 1.0, [], result)
 
     text = (req.input.text or "").strip()
     if not text:
