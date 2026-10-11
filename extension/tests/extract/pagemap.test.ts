@@ -21,6 +21,56 @@ describe('page map', () => {
     }
   });
 
+  it('Flipkart: <div> controls (React Native Web) are targets, as the box around the text', () => {
+    const { doc, ctx } = context('flipkart-product-earphones.html');
+    const add = ctx.targets.find((t) => t.label === 'Add to cart');
+    const buy = ctx.targets.find((t) => t.label === 'Buy now');
+    expect(add).toMatchObject({ kind: 'button', zone: 'product' });
+    expect(buy).toMatchObject({ kind: 'button', zone: 'product' });
+    const box = resolveTarget(add!.id, doc)!;
+    expect(box.tagName).toBe('DIV');
+    expect(box.textContent?.trim()).toBe('Add to cart');
+    expect(box.querySelector('[dir="auto"]')).not.toBeNull(); // the box, not just the text
+    for (const label of ['Specifications', 'All details']) {
+      expect(ctx.targets.some((t) => t.label === label)).toBe(true);
+    }
+    expect(schemaErrors('PageContext', ctx)).toEqual([]);
+  });
+
+  it('Amazon: every target is a native control (no text-based guessing there)', () => {
+    for (const f of fixtures.filter((x) => x.file.startsWith('amazon'))) {
+      const { doc, ctx } = context(f.file);
+      for (const t of ctx.targets) {
+        expect(
+          resolveTarget(t.id, doc)!.matches('a[href], button, input, select, textarea, [role]'),
+        ).toBe(true);
+      }
+    }
+  });
+
+  it('pseudo-buttons need an action-like text or a click signal; long text blocks are skipped', () => {
+    const doc = new DOMParser().parseFromString(
+      `<main>
+        <div class="b"><div><div dir="auto">Add to cart</div></div></div>
+        <div tabindex="0"><div>Bank offers</div></div>
+        <div tabindex="-1">Hidden from tab order</div>
+        <div>Add to cart is easy with this phone because it has so many</div>
+        <div>Price details</div>
+        <a href="/x"><div>Buy now</div></a>
+        <div tabindex="0">${'Long card text '.repeat(10)}</div>
+      </main>`,
+      'text/html',
+    );
+    const labels = (pseudo: boolean) =>
+      buildPageMap(doc, {
+        pageType: 'product',
+        url: 'https://www.flipkart.com/p',
+        pseudoButtons: pseudo,
+      }).map((t) => `${t.kind}:${t.label}`);
+    expect(labels(false)).toEqual(['link:Buy now']);
+    expect(labels(true)).toEqual(['button:Add to cart', 'button:Bank offers', 'link:Buy now']);
+  });
+
   it('finds Add to cart / Buy Now on the Amazon product page, in the product zone', () => {
     const { ctx } = context('amazon-product-phone.html');
     const add = ctx.targets.find((t) => /^add to cart$/i.test(t.label));

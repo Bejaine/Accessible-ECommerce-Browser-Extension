@@ -134,9 +134,12 @@ export function extractPageContext(
     orders,
     // Labels like "Order # 403-…" or "Deliver to <name, address>" must not carry personal
     // data to the backend.
-    targets: buildPageMap(doc, { pageType, url, pinned: placeOrder ? [placeOrder] : [] }).map(
-      (t) => ({ ...t, label: redactAddress(doc, redactOrderIds(doc, t.label)) }),
-    ),
+    targets: buildPageMap(doc, {
+      pageType,
+      url,
+      pinned: placeOrder ? [placeOrder] : [],
+      pseudoButtons: adapter?.pseudoButtons ?? false,
+    }).map((t) => ({ ...t, label: redactAddress(doc, redactOrderIds(doc, t.label)) })),
     checkout,
     secure_zone_active: false,
   };
