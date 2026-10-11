@@ -97,6 +97,21 @@ export async function markOnboarded(): Promise<void> {
 export interface DevicePrefs {
   assistantVoice: 'auto' | 'on' | 'off';
   dwellMs?: number | null;
+  /** Speaking while the assistant reads pauses it (barge-in). Unset: on for desktop, off on phones. */
+  interruptBySpeaking?: boolean;
+}
+
+/**
+ * Barge-in default: on with a desktop's echo cancellation; off on touch devices, where the phone's
+ * speaker is heard by its own mic (Track A's live test). The user can change it in Settings.
+ */
+export function interruptBySpeaking(prefs: DevicePrefs): boolean {
+  if (prefs.interruptBySpeaking !== undefined) return prefs.interruptBySpeaking;
+  try {
+    return !matchMedia('(pointer: coarse)').matches;
+  } catch {
+    return true;
+  }
 }
 
 export const DEVICE_PREFS_KEY = 'device-prefs';

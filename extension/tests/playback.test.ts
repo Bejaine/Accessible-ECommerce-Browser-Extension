@@ -258,6 +258,29 @@ describe("voice adapter over Track A's player", () => {
     expect(speaker.state).toBe('playing');
   });
 
+  it('after a prompt over a paused answer, listeners still see "paused" (the bar keeps Resume)', () => {
+    const { player } = fakePlayer();
+    const speaker = createPlayerSpeaker(player);
+    const seen: { state: string; sentence: string | null }[] = [];
+    speaker.onChange((_, state, sentence) => seen.push({ state, sentence }));
+    speaker.speakOutput(reviews);
+    speaker.pause();
+    speaker.prompt('Would you like me to read things aloud?', 'en');
+    player.finish();
+    expect(seen.at(-1)).toEqual({ state: 'paused', sentence: reviews.summary });
+  });
+
+  it('controls during or after a prompt act on the answer, not the prompt', () => {
+    const { player, played } = fakePlayer();
+    const speaker = createPlayerSpeaker(player);
+    speaker.speakOutput(reviews);
+    speaker.pause();
+    speaker.prompt('Listening is paused.', 'en');
+    speaker.nextSection();
+    expect(played.at(-1)).toBe(reviews.sections[0]!.heading);
+    expect(speaker.state).toBe('playing');
+  });
+
   it('several lines in different languages play one after another', () => {
     const { player, played } = fakePlayer();
     createPlayerSpeaker(player).sayLines([

@@ -446,3 +446,13 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - Limits are per Groq account, not per key: rotating keys of one account gains nothing, and
   rotating several accounts would circumvent Groq's limits, so we don't. Chips, taps and
   confirmations never call Groq. Order buttons are matched only by `t-<action>-N` ids (Track B).
+
+## 2026-10-11 — Playback fixes and the settings page (Track D)
+- Device voice: pause = cancel + repeat the sentence on resume (speechSynthesis.pause() is a no-op on
+  Chrome Linux/Android). Core supplies the engine; Track A's player is unchanged.
+- The speaker reports its own state: an answer paused behind a finished prompt is still "paused"
+  (the playback bar keeps Resume), and playback controls act on the answer, not the prompt.
+- Barge-in is a device preference (desktop on, phones off), per Track A's echo finding.
+- Settings is a page in the panel (Back to menu, "Right now" summary, sections Modes / Voice /
+  Text and language / Pointer and switch, then Run setup again), not an inline drop-down.
+

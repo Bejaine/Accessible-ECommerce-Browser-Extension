@@ -17,6 +17,8 @@ export const MENU_CSS = `
 .asl-group[hidden] { display: none; }
 /* An answer, the simplified view or the checkout steps is open: keep only the status and Ask. */
 .asl-controls.asl-answering > .asl-group:not(.asl-ask) { display: none; }
+/* The settings page: only the status area (a confirmation must stay reachable). */
+.asl-controls.asl-settings-open > .asl-group { display: none; }
 .asl-group > h3 { margin: 0; font-size: 0.875em; font-weight: 700; color: var(--asl-muted); }
 .asl-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .asl-grid > button, .asl-list > button, .asl-list > div > button, .asl-row > button,
