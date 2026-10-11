@@ -27,7 +27,7 @@ from app.services import numbers
 
 log = logging.getLogger(__name__)
 
-MAX_TARGETS = 60
+MAX_TARGETS = 40  # Groq's free tier is 8k tokens a minute: a turn must stay near 3k
 LOW_ASR = 0.5
 
 SYSTEM_PROMPT = """\
@@ -89,7 +89,20 @@ def page_brief(req: TurnRequest) -> dict[str, Any]:
     page = req.page
     mem = session.get(req.session_id)
     products = []
-    for p in page.products[:20]:
+    # A product page needs one product in detail; a results page only names (read_results and
+    # the tools read the rest from the page itself).
+    detailed = page.page_type.value == "product"
+    for p in page.products[: 1 if detailed else 10]:
+        if not detailed:
+            products.append(
+                {
+                    "id": p.id,
+                    "title": (p.title or "")[:50],
+                    "price": p.price.amount if p.price else None,
+                    "sponsored": p.sponsored,
+                }
+            )
+            continue
         products.append(
             {
                 "id": p.id,
@@ -144,7 +157,7 @@ def page_brief(req: TurnRequest) -> dict[str, Any]:
         ],
         "stated_preferences": {"priorities": mem.priorities, "max_price": mem.max_price},
         "targets": [
-            {"id": t.id, "kind": t.kind.value, "label": t.label[:60], "zone": t.zone.value}
+            {"id": t.id, "kind": t.kind.value, "label": t.label[:40], "zone": t.zone.value}
             for t in targets
         ],
     }
