@@ -72,7 +72,7 @@ export function createPhraseBoard(opts: PhraseBoardOptions): PhraseBoard {
   const lang = opts.lang;
   const pageSize = Math.max(1, opts.pageSize);
   const board = document.createElement('div');
-  board.className = 'asl-chips asl-phrases';
+  board.className = 'asl-grid asl-phrases';
   board.setAttribute('role', 'group');
   board.setAttribute('aria-label', label('phrases.title', lang));
 

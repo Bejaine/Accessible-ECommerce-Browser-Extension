@@ -2,6 +2,8 @@
 SHELL := /bin/bash
 PY ?= python3.11
 VENV := .venv
+# 0.0.0.0 lets a phone on the same Wi-Fi reach the backend (Firefox for Android testing).
+BACKEND_HOST ?= 127.0.0.1
 BIN := $(CURDIR)/$(VENV)/bin
 GEN_PY := $(CURDIR)/shared/generated/py
 
@@ -50,7 +52,7 @@ validate:
 	$(BIN)/python scripts/validate_fixtures.py
 
 backend:
-	cd backend && PYTHONPATH=$(GEN_PY) $(BIN)/uvicorn app.main:app --reload --port 8000 \
+	cd backend && PYTHONPATH=$(GEN_PY) $(BIN)/uvicorn app.main:app --reload --host $(BACKEND_HOST) --port 8000 \
 	  $$( [ -f ../.env ] && echo --env-file ../.env )
 
 ext:

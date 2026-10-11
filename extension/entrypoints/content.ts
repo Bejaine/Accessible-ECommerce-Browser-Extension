@@ -46,6 +46,7 @@ export default defineContentScript({
             demo,
             sessionId,
             continuity,
+            continueTask,
           });
         app = mount();
         // The whole interface follows the chosen language: remount when it changes.
@@ -73,7 +74,7 @@ export default defineContentScript({
     ui.mount();
     // The previous page took an order-task step (e.g. the confirmed "Place order" click): read
     // this page and let the backend finish or verify the task.
-    if (continueTask) void (app as App | null)?.turn.continueTask();
+    if (continueTask) void (app as App | null)?.continueTask();
 
     // Keyboard shortcut (Alt+Shift+A, from the background script): open or close from anywhere.
     browser.runtime.onMessage.addListener((msg: { type?: string }) => {

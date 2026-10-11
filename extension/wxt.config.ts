@@ -1,5 +1,22 @@
 import { resolve } from 'node:path';
+import { loadEnv } from 'vite';
 import { defineConfig } from 'wxt';
+
+/**
+ * The backend the extension may call: localhost always, plus VITE_BACKEND's origin when it is
+ * another address (e.g. the laptop's LAN IP, so Firefox for Android on a phone can reach it).
+ */
+function backendHosts(mode: string): string[] {
+  const hosts = ['http://localhost:8000/*'];
+  const setting = process.env.VITE_BACKEND ?? loadEnv(mode, __dirname, 'VITE_').VITE_BACKEND;
+  try {
+    const origin = setting && setting !== 'mock' ? new URL(setting).origin : null;
+    if (origin && !hosts.includes(`${origin}/*`)) hosts.push(`${origin}/*`);
+  } catch {
+    // Not a URL: mock mode, nothing to add.
+  }
+  return hosts;
+}
 
 // MV3 for both Chrome desktop and Firefox (incl. Firefox for Android).
 export default defineConfig({
@@ -8,7 +25,7 @@ export default defineConfig({
     '@shared': resolve(__dirname, '../shared/generated/ts'),
     '@fixtures': resolve(__dirname, '../fixtures'),
   },
-  manifest: ({ browser }) => ({
+  manifest: ({ browser, mode }) => ({
     name: 'Accessible Shopping Layer',
     description: 'Voice-first, accessible shopping on Amazon.in, Flipkart and other stores.',
     permissions: ['storage'],
@@ -22,7 +39,7 @@ export default defineConfig({
         description: 'Pause or resume reading; wait for the spoken playback menu',
       },
     },
-    host_permissions: ['http://localhost:8000/*'],
+    host_permissions: backendHosts(mode),
     ...(browser === 'firefox' && {
       browser_specific_settings: {
         gecko: { id: 'accessible-shopping@megathon26.local', strict_min_version: '128.0' },

@@ -20,10 +20,21 @@ export const RENDER_CSS = `
 .asl-output th, .asl-output td { border: 1px solid var(--asl-fg); padding: 4px 8px; text-align: start; }
 .asl-output caption { font-weight: 700; text-align: start; margin-block-end: 4px; }
 .asl-chips { display: flex; flex-wrap: wrap; gap: 8px; }
-.asl-toolbar { display: flex; flex-wrap: wrap; gap: 8px; }
+.asl-chips[hidden] { display: none; }
+.asl-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.asl-toolbar .asl-back { flex: 1 0 100%; text-align: start; padding-inline: 4px 12px; background: transparent;
+  border-color: transparent; font-weight: 600; }
+.asl-toolbar .asl-back::before { content: ''; display: inline-block; inline-size: 7px; block-size: 7px;
+  margin-inline-end: 8px; border-inline-start: 2px solid currentColor; border-block-end: 2px solid currentColor;
+  transform: translateY(-2px) rotate(45deg); }
+.asl-toolbar .asl-back:hover { border-color: var(--asl-line-strong, var(--asl-fg)); }
 .asl-chips button, .asl-simpler, .asl-toolbar button {
-  min-inline-size: 44px; min-block-size: 44px; padding: 8px 14px; cursor: pointer; font: inherit;
-  color: var(--asl-fg); background: var(--asl-bg); border: 2px solid var(--asl-fg); border-radius: 22px;
+  min-inline-size: 44px; min-block-size: 44px; padding: 8px 12px; cursor: pointer; font: inherit;
+  color: var(--asl-fg); background: var(--asl-tile, var(--asl-bg));
+  border: 1px solid var(--asl-line-strong, var(--asl-fg)); border-radius: 10px;
+}
+@media (prefers-contrast: more) {
+  .asl-chips button, .asl-simpler, .asl-toolbar button { border: 2px solid var(--asl-fg); }
 }
 .asl-simpler[aria-pressed='true'] { background: var(--asl-fg); color: var(--asl-bg); }
 @media (forced-colors: active) {
@@ -136,7 +147,7 @@ function renderBody(output: AccessibleOutput, simpler: boolean, opts: RenderOpti
   const followups = output.followups.slice(0, opts.maxOptions ?? output.followups.length);
   if (followups.length > 0) {
     const chips = el('div', undefined, {
-      class: 'asl-chips',
+      class: 'asl-chips asl-followups',
       role: 'group',
       'aria-label': label('render.suggestions', lang),
     });
@@ -163,6 +174,11 @@ export function renderOutput(
   // Toolbar buttons are interface, so they follow the UI language; the answer itself (and its
   // Pro/Con labels) follows the answer's language.
   const toolbar = el('div', undefined, { class: 'asl-toolbar', lang: getUiLang() });
+  if (opts.onBack) {
+    const back = el('button', label('render.back'), { type: 'button', class: 'asl-back' });
+    back.addEventListener('click', () => opts.onBack?.());
+    toolbar.append(back);
+  }
   let reading = false;
   let readButton: HTMLButtonElement | null = null;
   if (opts.onReadAloud) {
@@ -183,11 +199,6 @@ export function renderOutput(
     });
     toggle.addEventListener('click', () => handle.setSimpler(!simpler));
     toolbar.append(toggle);
-  }
-  if (opts.onBack) {
-    const back = el('button', label('render.back'), { type: 'button' });
-    back.addEventListener('click', () => opts.onBack?.());
-    toolbar.append(back);
   }
   if (toolbar.childElementCount > 0) article.append(toolbar);
   article.append(body);

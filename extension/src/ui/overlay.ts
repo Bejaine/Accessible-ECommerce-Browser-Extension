@@ -16,6 +16,7 @@ import { SIMPLE_VIEW_CSS } from './simpleView';
 import { PLAYBACK_CSS } from './playbackBar';
 import { DWELL_CSS } from './dwell';
 import { CHECKOUT_CSS } from './checkoutWizard';
+import { MENU_CSS } from './menu';
 import { initAnnouncer } from './announce';
 import { label } from './strings';
 
@@ -28,6 +29,7 @@ export const OVERLAY_CSS = `
   --asl-scale: 1;
   --asl-bg: #ffffff; --asl-fg: #111111; --asl-muted: #444444;
   --asl-accent: #0b57d0; --asl-accent-fg: #ffffff; --asl-border: #111111;
+  --asl-line: #d6d6d6; --asl-line-strong: #6b6b6b; --asl-tile: #f4f5f7;
   font: calc(16px * var(--asl-scale)) / 1.5 system-ui, -apple-system, 'Segoe UI', sans-serif;
   color: var(--asl-fg);
 }
@@ -35,6 +37,7 @@ export const OVERLAY_CSS = `
   .asl-root {
     --asl-bg: #1b1b1f; --asl-fg: #f2f2f2; --asl-muted: #c8c8c8;
     --asl-accent: #8ab4f8; --asl-accent-fg: #111111; --asl-border: #f2f2f2;
+    --asl-line: #3c3c43; --asl-line-strong: #9a9aa3; --asl-tile: #26262c;
   }
 }
 .asl-toggle, .asl-panel {
@@ -46,7 +49,7 @@ export const OVERLAY_CSS = `
   color: var(--asl-accent-fg); background: var(--asl-accent); border: 2px solid var(--asl-border);
 }
 .asl-panel {
-  box-sizing: border-box; inline-size: min(380px, calc(100vw - 32px));
+  box-sizing: border-box; inline-size: min(400px, calc(100vw - 32px));
   max-block-size: calc(100vh - 32px); overflow: auto;
   background: var(--asl-bg); color: var(--asl-fg);
   border: 2px solid var(--asl-border); border-radius: 12px; padding: 12px 16px 16px;
@@ -72,7 +75,7 @@ button:focus-visible { outline: 3px solid var(--asl-fg); outline-offset: 3px; }
   * { transition: none !important; animation: none !important; scroll-behavior: auto !important; }
 }
 @media (prefers-contrast: more) {
-  .asl-root { --asl-muted: var(--asl-fg); }
+  .asl-root { --asl-muted: var(--asl-fg); --asl-line: var(--asl-fg); --asl-line-strong: var(--asl-fg); }
   .asl-panel, .asl-toggle, .asl-close { border-width: 3px; }
 }
 @media (forced-colors: active) {
@@ -131,7 +134,8 @@ export function mountOverlay(container: HTMLElement, lang?: string): Overlay {
     SIMPLE_VIEW_CSS +
     PLAYBACK_CSS +
     DWELL_CSS +
-    CHECKOUT_CSS;
+    CHECKOUT_CSS +
+    MENU_CSS;
 
   const root = el('div', { class: 'asl-root' });
 

@@ -35,6 +35,7 @@ import { renderOutput, type RenderedOutput } from '../render';
 import { announce, resetAnnouncer, setAnnounceVoice } from '../ui/announce';
 import { createConfirmCard, formatMoney } from '../ui/confirmCard';
 import { createMicButton } from '../ui/micButton';
+import { createMenuSection, createTurnStatus, createTypeBox } from '../ui/menu';
 import { createSettings } from '../ui/settings';
 import {
   createPlaybackBar,
@@ -49,7 +50,7 @@ import { createColourLabels, type ColourLabels } from '../ui/colourLabels';
 import { renderSimpleView, simpleSummary } from '../ui/simpleView';
 import { createCheckoutWizard } from '../ui/checkoutWizard';
 import { createControls, type Controls } from '../ui/controls';
-import { BACKEND_CHIPS } from '../ui/phrases';
+import { BACKEND_CHIPS, PHRASES, phraseLabel } from '../ui/phrases';
 import { mountOverlay, type Overlay } from '../ui/overlay';
 import { createSpeechSpeed, formatRate } from '../ui/speechSpeed';
 import { label, setUiLang } from '../ui/strings';
@@ -115,6 +116,8 @@ export interface App {
   toggleAssistant(): void;
   /** The single playback key (Alt+Shift+K): pause / resume, or pick from the spoken mini-menu. */
   playbackKey(): void;
+  /** Continue the order task the previous page started (says so, then a "Continue" turn). */
+  continueTask(): Promise<void>;
   /** Step-by-step checkout for the page's summary (or a given one, e.g. a fixture in dev). */
   showCheckout(summary?: CheckoutSummary): void;
   speaker: Speaker;
@@ -134,6 +137,8 @@ export interface AppOptions {
   sessionId?: string;
   /** Keeps an order task going across page loads; without it tasks stop at a page change. */
   continuity?: TaskContinuity;
+  /** The previous page took an order-task step: continue it here (no "resume reading" offer). */
+  continueTask?: boolean;
 }
 
 export function mountApp(
@@ -192,9 +197,24 @@ export function mountApp(
   >();
 
   // --- Output ---
+  /** While an answer (or another view) is open, the menu shrinks to the status and Ask. */
+  function setAnswering(on: boolean): void {
+    overlay.controls.classList.toggle('asl-answering', on);
+  }
+
   function showOutput(output: AccessibleOutput): void {
     lastOutput = output;
-    view = renderOutput(overlay.content, output, {
+    setAnswering(true);
+    // "Did you mean X or Y?" options are shown once, as the two big buttons, not also as chips.
+    const options = new Set(turn.alternatives.map((a) => a.label.trim().toLowerCase()));
+    const shown =
+      options.size > 0
+        ? {
+            ...output,
+            followups: output.followups.filter((f) => !options.has(f.trim().toLowerCase())),
+          }
+        : output;
+    view = renderOutput(overlay.content, shown, {
       maxOptions: mode.max_options,
       onFollowup: (text) => bus.emit({ type: 'followup', text }),
       onBack: backToMenu,
@@ -229,7 +249,9 @@ export function mountApp(
     view = null;
     overlay.content.replaceChildren();
     overlay.setWide(false);
-    overlay.controls.querySelector<HTMLElement>('button')?.focus();
+    setAnswering(false);
+    // Back to the top of the menu: the Speak button (never a hidden status button).
+    overlay.controls.querySelector<HTMLElement>('.asl-mic')?.focus();
   }
 
   // --- Turns and confirmations ---
@@ -237,6 +259,23 @@ export function mountApp(
     onYes: () => void turn.confirm(),
     onNo: () => turn.cancel(),
   });
+  // "Did you mean…", "Try again" and the order task's step, above everything else.
+  const turnStatus = createTurnStatus({
+    onChoose: (i) => void turn.chooseAlternative(i),
+    onRetry: () => void turn.retry(),
+  });
+  function renderTurnStatus(): void {
+    const { question, step } = turnStatus.render({
+      alternatives: turn.alternatives,
+      canRetry: turn.canRetry,
+      workflow: turn.workflow,
+    });
+    // The answer usually asks the question itself; only say it when it didn't.
+    const summary = lastOutput?.summary.toLowerCase() ?? '';
+    const asked = turn.alternatives.every((a) => summary.includes(a.label.toLowerCase()));
+    if (question && !asked) announce(question);
+    if (step) announce(step);
+  }
   const turn = createTurnPipeline({
     backend,
     session,
@@ -248,12 +287,16 @@ export function mountApp(
     showConfirmation: (confirmation) => {
       if (confirmation && !overlay.isOpen) overlay.open();
       confirmCard.show(confirmation, confirmation !== null);
+      // The card has the Yes / No buttons; the answer's own yes/no chips would only repeat them.
+      const chips = overlay.content.querySelector<HTMLElement>('.asl-followups');
+      if (chips) chips.hidden = confirmation !== null;
     },
     announce: (text, assertive) => announce(text, { assertive }),
     confirmEveryAction: () => confirmEveryAction(profile),
     continuity: options.continuity,
     // ORDER_n / ADDR_n back to the real order number and address, on the device only.
     restore: (text) => restorePlaceholders(text),
+    onUpdate: () => renderTurnStatus(),
   });
 
   // --- Speech speed (starting defaults come from conditions; the user changes it here) ---
@@ -334,7 +377,7 @@ export function mountApp(
   settings.render(profile, mode);
   // --- Page tools: simplified view, action menu, colour labels ---
   const pageTools = document.createElement('div');
-  pageTools.className = 'asl-chips';
+  pageTools.className = 'asl-list';
   const simpleButton = document.createElement('button');
   simpleButton.type = 'button';
   simpleButton.className = 'asl-menu-toggle';
@@ -346,7 +389,7 @@ export function mountApp(
   checkoutButton.className = 'asl-menu-toggle';
   checkoutButton.textContent = label('checkout.open');
   checkoutButton.addEventListener('click', () => showCheckout());
-  pageTools.append(simpleButton, checkoutButton);
+  pageTools.append(simpleButton, checkoutButton, actionMenu.element);
   let colourLabels: ColourLabels | null = null;
 
   function updateColourLabels(): void {
@@ -360,10 +403,26 @@ export function mountApp(
   }
 
   function refreshPageTools(): void {
+    const previous = page;
     page = extractPageContext();
+    // Typing a card number or CVV: nothing is read from the page then (secure zone), so keep the
+    // checkout summary read before (it holds no payment details) instead of hiding the steps.
+    if (page.secure_zone_active && !page.checkout && previous.checkout) {
+      page = { ...page, checkout: previous.checkout };
+    }
     actionMenu.render(page.targets);
     simpleButton.hidden = !(page.page_type === 'product' && page.products[0]);
     checkoutButton.hidden = !page.checkout;
+    pageSection.setHidden(
+      simpleButton.hidden &&
+        checkoutButton.hidden &&
+        !page.targets.some((t) => !t.state?.disabled && t.label.trim()),
+    );
+    typeBox.setSuggestions([
+      ...PHRASES.map((p) => phraseLabel(p.id, lang())),
+      ...page.targets.filter((t) => !t.state?.disabled).map((t) => t.label),
+      ...page.products.map((p) => p.title ?? ''),
+    ]);
     updateColourLabels();
   }
 
@@ -373,6 +432,7 @@ export function mountApp(
     speaker.stop();
     view = null;
     overlay.setWide(true);
+    setAnswering(true);
     overlay.content.replaceChildren(
       renderSimpleView(product, page.targets, {
         onSelect: (target) => bus.emit({ type: 'select-target', target }),
@@ -413,6 +473,7 @@ export function mountApp(
       onBack: backToMenu,
       announce: (text) => announce(text),
     });
+    setAnswering(true);
     overlay.content.replaceChildren(wizard.element);
     wizard.go('items'); // focus and announce the first step now that it's attached
   }
@@ -429,19 +490,50 @@ export function mountApp(
     () => colourLabels?.destroy(),
   );
 
+  // --- Menu layout: status, then labelled sections in a fixed order (src/ui/menu.ts) ---
+  const status = document.createElement('div');
+  status.className = 'asl-status';
+  status.append(confirmCard.element, suggestionCard.element, turnStatus.element);
+  const typeBox = createTypeBox((text) => void say(text, 'text'));
+  const askSection = createMenuSection('menu.ask', [typeBox.element], 'asl-ask');
+  const phraseSlot = document.createElement('div');
+  phraseSlot.style.display = 'contents';
+  const quickSection = createMenuSection('menu.quick', [phraseSlot]);
+  const pageSection = createMenuSection('menu.page', [pageTools]);
+  speed.element.classList.add('asl-row');
+  const readingSection = createMenuSection('menu.reading', [speed.element]);
+  const settingsGroup = document.createElement('div');
+  settingsGroup.className = 'asl-group';
+  settingsGroup.append(settings.element);
   overlay.controls.append(
-    confirmCard.element,
-    suggestionCard.element,
-    pageTools,
-    actionMenu.element,
-    speed.element,
-    settings.element,
+    status,
+    askSection.element,
+    quickSection.element,
+    pageSection.element,
+    readingSection.element,
+    settingsGroup,
   );
 
   // --- Phrase board and switch scanning (rebuilt when the mode changes) ---
   function buildControls(p: Profile): Controls {
     const c = createControls({
-      container: overlay.controls,
+      container: phraseSlot,
+      barContainer: status,
+      // "Did you mean…" options are scanned first while they are offered.
+      extraGroups: () =>
+        turnStatus.optionButtons.length > 0
+          ? [
+              {
+                id: 'alternatives',
+                label: label('alt.title', lang()),
+                items: turnStatus.optionButtons.map((b, i) => ({
+                  id: `alt-${i}`,
+                  label: b.textContent ?? '',
+                  activate: () => b.click(),
+                })),
+              },
+            ]
+          : [],
       mode,
       switchKey: p.prefs.switch_key,
       auditory: isAuditoryScanning(p),
@@ -538,8 +630,9 @@ export function mountApp(
       resume.save(snap);
     }),
   );
+  // During an order task the next page continues it instead (one voice at a time).
   void resume.take().then((snap) => {
-    if (!snap || speaker.state !== 'idle') return;
+    if (!snap || speaker.state !== 'idle' || options.continueTask) return;
     speaker.offerResume(snap);
     announce(label('playback.resume_offer', lang()));
   });
@@ -654,6 +747,19 @@ export function mountApp(
       case 'undo':
         suggester.undo();
         return true;
+      case 'first':
+      case 'second':
+      case 'alt:0':
+      case 'alt:1': {
+        const i = id === 'first' || id === 'alt:0' ? 0 : 1;
+        if (!turn.alternatives[i]) return false;
+        void turn.chooseAlternative(i);
+        return true;
+      }
+      case 'retry':
+        if (!turn.canRetry) return false;
+        void turn.retry();
+        return true;
       default:
         return false;
     }
@@ -666,7 +772,11 @@ export function mountApp(
   ): Promise<void> {
     const current = extractPageContext();
     const matcher = createMatcher(
-      buildCandidates({ targets: current.targets, products: current.products }),
+      buildCandidates({
+        targets: current.targets,
+        products: current.products,
+        alternatives: turn.alternatives.map((a) => a.label),
+      }),
     );
     const decision = matcher.match(text);
     if (decision.action === 'act') {
@@ -749,7 +859,7 @@ export function mountApp(
   let fallback = createInputFallback(mode);
   offs.push(store.subscribe(() => (fallback = createInputFallback(mode))));
   const micButton = createMicButton(() => void listen());
-  overlay.controls.prepend(micButton.element);
+  askSection.element.querySelector('h3')!.after(micButton.element);
 
   function notUnderstood(): void {
     const step = fallback.recordFailure();
@@ -903,6 +1013,10 @@ export function mountApp(
     showCheckout: (summary) => {
       overlay.open();
       showCheckout(summary);
+    },
+    async continueTask() {
+      announce(label('task.continuing', lang()));
+      await turn.continueTask();
     },
     toggleAssistant() {
       if (overlay.isOpen) {

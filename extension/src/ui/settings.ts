@@ -14,17 +14,46 @@ import { label, type UiKey } from './strings';
 export const SETTINGS_CSS = `
 .asl-settings-toggle { min-block-size: 44px; padding: 8px 16px; font: inherit; cursor: pointer;
   border-radius: 8px; color: var(--asl-fg); background: var(--asl-bg); border: 2px solid var(--asl-fg); }
-.asl-settings { display: grid; gap: 12px; padding: 12px; border: 2px solid var(--asl-fg); border-radius: 12px; }
+.asl-settings { display: grid; gap: 16px; padding-block: 8px 4px; }
 .asl-settings[hidden] { display: none; }
-.asl-settings fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 4px; }
-.asl-settings legend { font-weight: 700; margin-block-end: 4px; }
-.asl-settings label { display: flex; align-items: center; gap: 12px; min-block-size: 44px; cursor: pointer;
-  flex-wrap: wrap; }
-.asl-settings input[type='checkbox'] { inline-size: 24px; block-size: 24px; }
-.asl-settings select { min-block-size: 44px; font: inherit; }
-.asl-settings .asl-hint { font-size: 0.9em; color: var(--asl-muted); }
-.asl-settings .asl-chips button { min-block-size: 44px; }
+.asl-settings > p { margin: 0; color: var(--asl-muted); font-size: 0.9375em; }
+.asl-settings fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 4px; min-inline-size: 0; }
+.asl-settings legend { padding: 0; font-weight: 700; margin-block-end: 4px; }
+.asl-settings .asl-check { display: grid; grid-template-columns: 24px minmax(0, 1fr); column-gap: 12px;
+  align-items: center; min-block-size: 44px; cursor: pointer; }
+.asl-settings .asl-check .asl-hint { grid-column: 2; }
+.asl-settings .asl-check .asl-hint:empty { display: none; }
+.asl-settings .asl-field { display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-block-size: 44px; }
+.asl-settings input[type='checkbox'] { inline-size: 22px; block-size: 22px; margin: 0; }
+.asl-settings select { min-block-size: 44px; font: inherit; color: var(--asl-fg); background: var(--asl-bg);
+  border: 1px solid var(--asl-line-strong, var(--asl-fg)); border-radius: 10px; padding: 4px 8px; }
+.asl-settings .asl-hint { font-size: 0.875em; color: var(--asl-muted); }
+.asl-settings .asl-row > span { flex: 1 1 auto; text-align: center; font-weight: 600; }
+.asl-settings .asl-field > span { flex: 1 1 auto; }
+.asl-settings .asl-row > button, .asl-settings .asl-field > button, .asl-settings .asl-wide-button {
+  min-block-size: 44px; padding: 8px 12px; font: inherit; cursor: pointer; border-radius: 10px;
+  color: var(--asl-fg); background: var(--asl-tile, var(--asl-bg));
+  border: 1px solid var(--asl-line-strong, var(--asl-fg)); }
+.asl-settings .asl-wide-button { inline-size: 100%; text-align: start; }
+@media (prefers-contrast: more) {
+  .asl-settings .asl-row > button, .asl-settings .asl-field > button, .asl-settings .asl-wide-button,
+  .asl-settings select { border: 2px solid var(--asl-fg); }
+}
+@media (forced-colors: active) {
+  .asl-settings .asl-row > button, .asl-settings .asl-field > button, .asl-settings .asl-wide-button {
+    background: ButtonFace; color: ButtonText; border-color: ButtonText; }
+}
 `;
+
+/** A titled group of settings. */
+function group(legendKey: UiKey, ...children: HTMLElement[]): HTMLFieldSetElement {
+  const fieldset = document.createElement('fieldset');
+  const legend = document.createElement('legend');
+  legend.textContent = label(legendKey);
+  fieldset.append(legend, ...children);
+  return fieldset;
+}
 
 const MODES: { condition: keyof Profile['conditions']; key: UiKey }[] = [
   { condition: 'visual', key: 'mode.visual' },
@@ -71,6 +100,7 @@ function button(text: string, onClick: () => void): HTMLButtonElement {
 
 function checkbox(text: string, onChange: (checked: boolean) => void) {
   const row = document.createElement('label');
+  row.className = 'asl-check';
   const box = document.createElement('input');
   box.type = 'checkbox';
   box.addEventListener('change', () => onChange(box.checked));
@@ -146,6 +176,7 @@ export function createSettings(opts: SettingsOptions): Settings {
   });
   dwell.hint.textContent = label('settings.dwell_hint');
   const dwellRow = document.createElement('label');
+  dwellRow.className = 'asl-field';
   const dwellName = document.createElement('span');
   dwellName.textContent = label('settings.dwell_time');
   const dwellSelect = document.createElement('select');
@@ -161,7 +192,7 @@ export function createSettings(opts: SettingsOptions): Settings {
 
   // Text size.
   const textRow = document.createElement('div');
-  textRow.className = 'asl-chips';
+  textRow.className = 'asl-row';
   textRow.setAttribute('role', 'group');
   textRow.setAttribute('aria-label', label('settings.text_size'));
   const textValue = document.createElement('span');
@@ -177,6 +208,7 @@ export function createSettings(opts: SettingsOptions): Settings {
 
   // Language.
   const langRow = document.createElement('label');
+  langRow.className = 'asl-field';
   const langName = document.createElement('span');
   langName.textContent = label('settings.language');
   const select = document.createElement('select');
@@ -212,27 +244,25 @@ export function createSettings(opts: SettingsOptions): Settings {
     document.addEventListener('keydown', capture, true);
   });
   const switchRow = document.createElement('div');
-  switchRow.className = 'asl-chips';
+  switchRow.className = 'asl-field';
   switchRow.append(switchLabel, changeSwitch);
 
-  const actions = document.createElement('div');
-  actions.className = 'asl-chips';
-  actions.append(
-    button(label('settings.scan'), opts.onStartScanning),
-    button(label('settings.setup'), opts.onRunSetup),
-  );
+  const scan = button(label('settings.scan'), opts.onStartScanning);
+  scan.className = 'asl-wide-button';
+  const setup = button(label('settings.setup'), opts.onRunSetup);
+  setup.className = 'asl-wide-button';
 
+  const textName = document.createElement('span');
+  textName.className = 'asl-hint';
+  textName.textContent = label('settings.text_size');
   panel.append(
     current,
     modes,
-    voice.row,
-    short.row,
-    dwell.row,
-    dwellRow,
-    textRow,
-    langRow,
-    switchRow,
-    actions,
+    group('settings.group_reading', voice.row, short.row),
+    group('settings.group_display', textName, textRow, langRow),
+    group('settings.group_pointer', dwell.row, dwellRow),
+    group('settings.group_switch', switchRow, scan),
+    setup,
   );
   wrap.append(toggle, panel);
 
