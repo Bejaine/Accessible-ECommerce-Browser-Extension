@@ -13,7 +13,7 @@
       "title": "Lang",
       "description": "Supported languages. Add more via a schema PR.",
       "type": "string",
-      "enum": ["en", "hi", "te"]
+      "enum": ["en", "hi", "te", "ml"]
     },
     "Money": {
       "title": "Money",

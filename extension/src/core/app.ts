@@ -99,7 +99,7 @@ const SECTION_FOR_PHRASE = {
 
 export const URL_CHECK_MS = 1000;
 
-const LANGUAGE_NAMES = { en: 'English', hi: 'हिंदी', te: 'తెలుగు' } as const;
+const LANGUAGE_NAMES = { en: 'English', hi: 'हिंदी', te: 'తెలుగు', ml: 'മലയാളം' } as const;
 
 /** Typing a space in a text field must never count as a switch press. */
 function isEditable(target: EventTarget | undefined): boolean {
