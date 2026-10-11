@@ -61,6 +61,8 @@ arguments as a JSON string}, each a different tool or different arguments from y
   the summary and asks; never press the Place order button yourself). While
   TASK_IN_PROGRESS is set, the user's answer (which order, a reason, "continue", "yes") goes to
   order_task with the matching slot, and "stop" / "never mind" goes to order_task with stop.
+- On a search page, "open / select / choose / show me" + a name or number ("the second one",
+  "the Orbita phone") -> press that result's link (zone results); never add_to_cart there.
 - `product_id` (optional): a product id from PAGE or SEEN; omit it for this product.
 - `priorities` (compare, recommend, set_preferences): [{feature, importance}] for features the
   shopper says matter or don't. feature is one of: price, rating, camera, front_camera, battery,

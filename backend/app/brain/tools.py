@@ -14,8 +14,8 @@ from dataclasses import dataclass, field
 from typing import Any
 from urllib.parse import quote_plus
 
+from app.brain import brevity, features, prepare, session, vision, workflows
 from app.brain import compare as compare_mod
-from app.brain import features, prepare, session, vision, workflows
 from app.brain.format import brief, join_words, money, number, short_title, spec_value
 from app.brain.grounding import Unresolved, resolve
 from app.brain.llm import LLMError
@@ -422,10 +422,69 @@ async def where_am_i(ctx: Context) -> ToolResult:
     return ToolResult("Describe this page", result.output)
 
 
+async def read_results(ctx: Context, start: int | None = None, more: bool = False) -> ToolResult:
+    """Read the results list aloud, a few at a time, numbered so "open the second one" works."""
+    products = ctx.page.products
+    if not products:
+        return ToolResult(
+            "Read the results",
+            plain_output("I can't find any results on this page.", followups=["Search again"]),
+        )
+    s = session.get(ctx.req.session_id)
+    url = str(ctx.page.url)
+    if start is None:
+        last = s.results if s.results and s.results["url"] == url else None
+        start = last["next"] if more and last else 1
+    start = min(max(start, 1), len(products))
+    count = 3 if brevity.wants_short(ctx.req.prefs) else 5
+    shown = products[start - 1 : start - 1 + count]
+    end = start + len(shown) - 1
+    s.results = {"url": url, "next": end + 1}
+    b = OutputBuilder()
+    b.derive(len(products), start, end, *range(start, end + 1))
+    items = []
+    for n, p in enumerate(shown, start):
+        name = short_title(p.title) if p.title else f"Result {n}"
+        if p.title:
+            b.ground(name, "title", p.id)
+        parts = [f"{n}. {name}"]
+        index = None
+        if p.price is not None:
+            said = money(p.price.amount, p.price.currency)
+            index = b.ground(said, "price.amount", p.id)
+            parts.append(said)
+        if p.rating is not None:
+            stars = number(p.rating.value)
+            b.ground(stars, "rating.value", p.id)
+            parts.append(f"rated {stars} out of 5")
+        if p.sponsored:
+            parts.append("sponsored")
+        items.append({"text": ", ".join(parts), "kind": "row", "grounding_index": index})
+    b.section("Results", items)
+    more_left = end < len(products)
+    # The names go in the summary: in short mode only the summary is spoken.
+    names = join_words(
+        [f"{n}, {short_title(p.title)}" for n, p in enumerate(shown, start) if p.title]
+    )
+    summary = (
+        f"Results {start} to {end} of {len(products)}: {names}."
+        if len(products) > 1
+        else f"There is 1 result: {names}."
+    )
+    summary += " Say open and a number or a name."
+    followups = ["Read more results"] if more_left else []
+    followups += ["Cheapest", "Best rated"]
+    result = b.checked(ctx.products, summary, followups=followups)
+    return ToolResult("Read the results", result.output, dropped=result.dropped)
+
+
 # --- acting tools ----------------------------------------------------------------------------
 
 
 async def add_to_cart(ctx: Context, quantity: int = 1, product_id: str | None = None) -> ToolResult:
+    if ctx.page.page_type.value == "search":
+        text = "Let's open the product first. Say open and its number or name."
+        return ToolResult("Add to cart", plain_output(text, followups=["Read the results"]))
     p = _product(ctx, product_id)
     button = ctx.find_target(CART)
     if button is None:
@@ -546,7 +605,9 @@ async def search(ctx: Context, query: str) -> ToolResult:
             f"Search results for {query}",
         )
         return ToolResult(
-            f"Search for {query}", plain_output(f"Searching for {query}."), actions=[action]
+            f"Search for {query}",
+            plain_output(f"Searching for {query}.", followups=["Read the results"]),
+            actions=[action],
         )
     box = next(
         (t for t in ctx.page.targets if t.zone.value == "search" and t.kind.value == "input"), None
@@ -621,7 +682,8 @@ CHIPS: dict[str, tuple[str, dict[str, Any]]] = {
     "describe the photos": ("describe_photo", {"number": 1}),
     "describe the next photo": ("describe_photo", {"number": 2}),
     "add to cart": ("add_to_cart", {}),
-    "read the results": ("where_am_i", {}),
+    "read the results": ("read_results", {}),
+    "read more results": ("read_results", {"more": True}),
     "cheapest": ("recommend", {"prefer": "cheapest"}),
     "best rated": ("recommend", {"prefer": "best_rated"}),
     "where am i?": ("where_am_i", {}),
@@ -642,6 +704,7 @@ READ_TOOLS = {
     "compare",
     "recommend",
     "where_am_i",
+    "read_results",
     "unclear",
     "set_preferences",
 }
@@ -668,7 +731,11 @@ def label_for(name: str, args: dict[str, Any]) -> str:
             "cancel": "Cancel an order",
             "return": "Return an order",
         }.get(args.get("task"), "Help with an order")
-    return {"compare": "Compare products", "where_am_i": "Describe this page"}.get(name, "Help")
+    return {
+        "compare": "Compare products",
+        "where_am_i": "Describe this page",
+        "read_results": "Read the results",
+    }.get(name, "Help")
 
 
 Tool = Callable[..., Awaitable[ToolResult]]
@@ -682,6 +749,7 @@ TOOLS: dict[str, Tool] = {
     "set_preferences": set_preferences,
     "order_task": order_task,
     "where_am_i": where_am_i,
+    "read_results": read_results,
     "add_to_cart": add_to_cart,
     "press": press,
     "search": search,
@@ -826,6 +894,13 @@ TOOL_SPECS = [
         [],
     ),
     _spec("where_am_i", "Describe the current page and what can be done on it.", {}, []),
+    _spec(
+        "read_results",
+        "Read the list of search results aloud ('read the results', 'what did you find', "
+        "'read more' / 'next results' with more=true).",
+        {"start": {"type": "integer"}, "more": {"type": "boolean"}},
+        [],
+    ),
     _spec(
         "add_to_cart",
         "Add the product to the cart (the user will be asked to confirm).",
