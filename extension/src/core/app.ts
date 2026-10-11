@@ -35,6 +35,7 @@ import { renderOutput, type RenderedOutput } from '../render';
 import { announce, resetAnnouncer, setAnnounceVoice } from '../ui/announce';
 import { createConfirmCard, formatMoney } from '../ui/confirmCard';
 import { createMicButton } from '../ui/micButton';
+import { createActiveFeatures } from '../ui/activeFeatures';
 import { createMenuSection, createTurnStatus, createTypeBox } from '../ui/menu';
 import { createSettings } from '../ui/settings';
 import {
@@ -67,6 +68,7 @@ import {
 import {
   assistantVoiceOn,
   interruptBySpeaking,
+  spaceToSpeak,
   OPEN_ONBOARDING,
   saveDevicePrefs,
   type DevicePrefs,
@@ -102,6 +104,18 @@ const LANGUAGE_NAMES = { en: 'English', hi: 'हिंदी', te: 'తెలు
 function isEditable(target: EventTarget | undefined): boolean {
   const el = target instanceof HTMLElement ? target : null;
   return Boolean(el && (el.isContentEditable || el.closest('input, textarea, select')));
+}
+
+/** Simple mode's text size (Prefs.text_scale), applied when the mode turns on. */
+export const SIMPLE_TEXT_SCALE = 1.25;
+
+/** Controls that Space already presses (buttons, links, checkboxes…): Space stays theirs. */
+const SPACE_OWNERS =
+  'button, a[href], summary, [role="button"], [role="link"], [role="checkbox"], [role="radio"], ' +
+  '[role="switch"], [role="menuitem"], [role="tab"], [role="option"], [role="slider"]';
+function ownsSpace(target: EventTarget | undefined): boolean {
+  const el = target instanceof Element ? target : null;
+  return Boolean(el && (isEditable(el) || el.closest(SPACE_OWNERS)));
 }
 
 export interface App {
@@ -342,7 +356,8 @@ export function mountApp(
     onStartScanning: () => {
       overlay.open();
       backToMenu();
-      controls.startScanning(extractPageContext().targets);
+      refreshPageTools();
+      controls.startScanning(actionMenu.actions);
     },
     onRunSetup: () =>
       void browser.runtime
@@ -353,6 +368,13 @@ export function mountApp(
       set: (on) => {
         devicePrefs.assistantVoice = on ? 'on' : 'off';
         if (!on) speaker.stop();
+        void saveDevicePrefs(devicePrefs);
+      },
+    },
+    spaceToSpeak: {
+      get: () => spaceToSpeak(devicePrefs),
+      set: (on) => {
+        devicePrefs.spaceToSpeak = on;
         void saveDevicePrefs(devicePrefs);
       },
     },
@@ -396,7 +418,11 @@ export function mountApp(
   simpleButton.className = 'asl-menu-toggle';
   simpleButton.textContent = label('simple.open');
   simpleButton.addEventListener('click', () => showSimpleView());
-  const actionMenu = createActionMenu((target) => bus.emit({ type: 'select-target', target }));
+  // Curated: one entry per destination, main actions first (src/ui/pageActions.ts).
+  const actionMenu = createActionMenu((target) => bus.emit({ type: 'select-target', target }), {
+    hrefOf: (id) => resolveTarget(id)?.getAttribute('href') ?? null,
+    display: (text) => restorePlaceholders(text),
+  });
   const checkoutButton = document.createElement('button');
   checkoutButton.type = 'button';
   checkoutButton.className = 'asl-menu-toggle';
@@ -439,6 +465,9 @@ export function mountApp(
     updateColourLabels();
   }
 
+  /** True while the panel opens by itself (simple mode on page load): don't move focus. */
+  let quietOpen = false;
+
   function showSimpleView(): void {
     const product = page.page_type === 'product' ? page.products[0] : undefined;
     if (!product) return;
@@ -454,7 +483,7 @@ export function mountApp(
       }),
     );
     overlay.content.querySelector<HTMLElement>('h3')?.setAttribute('tabindex', '-1');
-    overlay.content.querySelector<HTMLElement>('h3')?.focus();
+    if (!quietOpen) overlay.content.querySelector<HTMLElement>('h3')?.focus();
     announce(simpleSummary(product));
   }
 
@@ -496,7 +525,9 @@ export function mountApp(
     });
     setAnswering(true);
     overlay.content.replaceChildren(wizard.element);
-    wizard.go('items'); // focus and announce the first step now that it's attached
+    // Focus and announce the first step now that it's attached (opened by itself: just say so).
+    if (quietOpen) announce(label('checkout.open'));
+    else wizard.go('items');
   }
 
   offs.push(
@@ -632,6 +663,17 @@ export function mountApp(
     playback(action);
   });
   overlay.floating.append(playbackBar.element);
+
+  // Which accessibility features are on, in a small note in the corner (rule 5: visible, undoable).
+  const activeFeatures = createActiveFeatures({
+    onChange: () => {
+      overlay.open();
+      showSettings();
+    },
+  });
+  overlay.floating.append(activeFeatures.element);
+  activeFeatures.render(profile);
+  offs.push(store.subscribe((next) => activeFeatures.render(next)));
   offs.push(speaker.onChange((_, state, sentence) => playbackBar.update(state, sentence)));
 
   // Resume where it stopped after a page change: keep the answer's position on the device while
@@ -878,6 +920,57 @@ export function mountApp(
   refreshPageTools();
   preparePage();
 
+  // --- Simple mode (ageing): once the mode is on, its accommodations apply by themselves ---
+  // Larger text when it turns on (restored when it turns off, unless the user changed it), and
+  // on product and checkout pages the panel opens straight into the simplified view or the
+  // checkout steps, without moving keyboard focus.
+  function openForSimpleMode(): void {
+    if (!profile.conditions.ageing.active || overlay.isOpen) return;
+    refreshPageTools();
+    const useful = (page.page_type === 'product' && page.products[0]) || page.checkout;
+    if (!useful) return;
+    quietOpen = true;
+    try {
+      overlay.open({ focus: false });
+    } finally {
+      quietOpen = false;
+    }
+  }
+  async function simpleModeChanged(on: boolean): Promise<void> {
+    devicePrefs.simpleApplied = on;
+    if (on) {
+      openForSimpleMode();
+      if (profile.prefs.text_scale < SIMPLE_TEXT_SCALE) {
+        devicePrefs.textScaleBeforeSimple = profile.prefs.text_scale;
+        await store.update((d) => {
+          d.prefs.text_scale = SIMPLE_TEXT_SCALE;
+        });
+      }
+      void saveDevicePrefs(devicePrefs);
+    } else {
+      const before = devicePrefs.textScaleBeforeSimple;
+      if (typeof before === 'number' && profile.prefs.text_scale === SIMPLE_TEXT_SCALE) {
+        await store.update((d) => {
+          d.prefs.text_scale = before;
+        });
+      }
+      devicePrefs.textScaleBeforeSimple = null;
+      void saveDevicePrefs(devicePrefs);
+    }
+  }
+  let simpleOn = profile.conditions.ageing.active;
+  offs.push(
+    store.subscribe((next) => {
+      if (next.conditions.ageing.active === simpleOn) return;
+      simpleOn = next.conditions.ageing.active;
+      void simpleModeChanged(simpleOn);
+    }),
+  );
+  // Already in simple mode when the page loads: apply it once on this device (bigger text);
+  // after that the user's own text size is kept. The panel opens into the simple view either way.
+  if (simpleOn && !devicePrefs.simpleApplied) void simpleModeChanged(true);
+  else openForSimpleMode();
+
   // --- Voice (Track A's microphone): listen -> /speech/asr -> local fast path or a turn ---
   let fallback = createInputFallback(mode);
   offs.push(store.subscribe(() => (fallback = createInputFallback(mode))));
@@ -1008,10 +1101,31 @@ export function mountApp(
 
   // --- Keys: a pending confirmation first (switch = yes, Escape = no), then a suggestion ---
   const onKey = (e: KeyboardEvent) => {
-    const isSwitch = e.code === profile.prefs.switch_key && !isEditable(e.composedPath()[0]);
-    if (e.key !== 'Escape' && !isSwitch) return;
+    const target = e.composedPath()[0];
+    const isSwitch = e.code === profile.prefs.switch_key && !isEditable(target);
     const suggestionWaiting =
       suggester.state.kind === 'countdown' || suggester.state.kind === 'question';
+    // Space to speak (the single key for voice): when nothing else is waiting for a key, and not
+    // while typing, on a control Space presses, or during switch scanning (Space is the switch).
+    if (
+      e.code === 'Space' &&
+      !e.repeat &&
+      !e.altKey &&
+      !e.ctrlKey &&
+      !e.metaKey &&
+      !e.shiftKey &&
+      spaceToSpeak(devicePrefs) &&
+      !turn.pending &&
+      !suggestionWaiting &&
+      !controls.scanning &&
+      !ownsSpace(target)
+    ) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      void listen();
+      return;
+    }
+    if (e.key !== 'Escape' && !isSwitch) return;
     if (!turn.pending && !suggestionWaiting) return;
     e.preventDefault();
     e.stopImmediatePropagation();

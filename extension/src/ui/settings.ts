@@ -84,6 +84,8 @@ export interface SettingsOptions {
   onRunSetup: () => void;
   /** The assistant's own voice (device preference). */
   voice: { get(): boolean; set(on: boolean): void };
+  /** Space starts and stops listening (device preference). */
+  spaceToSpeak?: { get(): boolean; set(on: boolean): void };
   /** Speaking while the assistant reads pauses it (barge-in; device preference). */
   interrupt?: { get(): boolean; set(on: boolean): void };
   /** "Back to menu" from the settings page. */
@@ -177,6 +179,11 @@ export function createSettings(opts: SettingsOptions): Settings {
     saved('settings.voice', checked);
   });
   voice.hint.textContent = label('settings.voice_hint');
+  const space = checkbox(label('settings.space'), (checked) => {
+    opts.spaceToSpeak?.set(checked);
+    saved('settings.space', checked);
+  });
+  space.hint.textContent = label('settings.space_hint');
   const interrupt = checkbox(label('settings.interrupt'), (checked) => {
     opts.interrupt?.set(checked);
     saved('settings.interrupt', checked);
@@ -296,6 +303,7 @@ export function createSettings(opts: SettingsOptions): Settings {
     group(
       'settings.group_reading',
       voice.row,
+      ...(opts.spaceToSpeak ? [space.row] : []),
       ...(opts.interrupt ? [interrupt.row] : []),
       short.row,
     ),
@@ -321,6 +329,7 @@ export function createSettings(opts: SettingsOptions): Settings {
       }
       voice.box.checked = opts.voice.get();
       interrupt.box.checked = opts.interrupt?.get() ?? false;
+      space.box.checked = opts.spaceToSpeak?.get() ?? false;
       const dwellMs = opts.dwell.get();
       dwell.box.checked = dwellMs !== null;
       dwellRow.hidden = dwellMs === null;

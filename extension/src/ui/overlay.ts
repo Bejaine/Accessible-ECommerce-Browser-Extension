@@ -17,6 +17,7 @@ import { PLAYBACK_CSS } from './playbackBar';
 import { DWELL_CSS } from './dwell';
 import { CHECKOUT_CSS } from './checkoutWizard';
 import { MENU_CSS } from './menu';
+import { ACTIVE_FEATURES_CSS } from './activeFeatures';
 import { initAnnouncer } from './announce';
 import { label } from './strings';
 
@@ -99,7 +100,8 @@ export interface Overlay {
   /** Themed root outside the panel, for floating UI (playback bar) that stays visible when closed. */
   readonly floating: HTMLElement;
   readonly isOpen: boolean;
-  open(): void;
+  /** `focus: false` opens without moving keyboard focus (e.g. opened for simple mode on load). */
+  open(opts?: { focus?: boolean }): void;
   close(): void;
   toggle(): void;
   /** Clamped to 1-3 (Prefs.text_scale). */
@@ -141,7 +143,8 @@ export function mountOverlay(container: HTMLElement, lang?: string): Overlay {
     PLAYBACK_CSS +
     DWELL_CSS +
     CHECKOUT_CSS +
-    MENU_CSS;
+    MENU_CSS +
+    ACTIVE_FEATURES_CSS;
 
   const root = el('div', { class: 'asl-root' });
 
@@ -179,13 +182,13 @@ export function mountOverlay(container: HTMLElement, lang?: string): Overlay {
   let isOpen = false;
   const openListeners = new Set<() => void>();
 
-  function open(): void {
+  function open({ focus = true }: { focus?: boolean } = {}): void {
     if (isOpen) return;
     isOpen = true;
     panel.hidden = false;
     toggleBtn.hidden = true;
     toggleBtn.setAttribute('aria-expanded', 'true');
-    heading.focus();
+    if (focus) heading.focus();
     openListeners.forEach((l) => l());
   }
 
@@ -198,7 +201,7 @@ export function mountOverlay(container: HTMLElement, lang?: string): Overlay {
     toggleBtn.focus();
   }
 
-  toggleBtn.addEventListener('click', open);
+  toggleBtn.addEventListener('click', () => open());
   closeBtn.addEventListener('click', close);
   panel.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {

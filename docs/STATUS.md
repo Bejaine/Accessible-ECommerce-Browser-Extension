@@ -39,6 +39,12 @@
   and Firefox for Android on a phone; inference calibration recordings (tooling tested).
 
 ## Requests for other tracks
+- D → B (page map, measured on fixtures/pages with the real URLs): Amazon.in product pages give
+  196 of 200 targets in the `product` zone (breadcrumbs, warranty plans, "Customers also bought"
+  links), and Flipkart puts site navigation (Home, Login, Become a Seller) in `product`. The
+  overlay now curates (one entry per destination, no price/count-only labels, buttons before
+  links: 200 → 93–121 entries, ~6–10 main actions), but zoning only the buy box as `product` would
+  make switch scanning and the backend's view much better.
 - D → A (FYI, handled in core): `browserEngines().device` pauses with speechSynthesis.pause(), which
   Chrome on Linux and Android ignore (the voice kept talking after Pause). Core now passes
   `engines: playerEngines()` (src/core/deviceVoice.ts): pause cancels the sentence, resume repeats

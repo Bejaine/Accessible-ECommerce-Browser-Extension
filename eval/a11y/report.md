@@ -1,6 +1,6 @@
 # Overlay accessibility audit (real Chrome)
 
-Generated 2026-10-11T02:13:59.038Z by `make a11y` (eval/a11y/run.mjs): Chrome/149.0.7827.102, headless,
+Generated 2026-10-11T02:35:04.372Z by `make a11y` (eval/a11y/run.mjs): Chrome/149.0.7827.102, headless,
 extension loaded through web-ext, MockMart pages, in-browser mock backend. axe-core 4.14.0
 with all rules (incl. colour contrast) on the overlay's shadow root.
 
@@ -34,6 +34,10 @@ with all rules (incl. colour contrast) on the overlay's shadow root.
 | Simple view | dark | none | all ≥ 44 px |
 | Simple view | light + forced colours | none | all ≥ 44 px |
 | Simple view | dark + forced colours | none | all ≥ 44 px |
+| Features note | light | none | all ≥ 44 px |
+| Features note | dark | none | all ≥ 44 px |
+| Features note | light + forced colours | none | all ≥ 44 px |
+| Features note | dark + forced colours | none | all ≥ 44 px |
 | Checkout steps | light | none | all ≥ 44 px |
 | Checkout steps | dark | none | all ≥ 44 px |
 | Checkout steps | light + forced colours | none | all ≥ 44 px |
@@ -42,7 +46,9 @@ with all rules (incl. colour contrast) on the overlay's shadow root.
 ## Keyboard and screen-reader view
 
 - Opening with Enter on the toggle moves focus to: **Shopping assistant**
-- Tab order (16 stops): Close shopping assistant → Speak → Type a request → Send → What's the price? → What do reviews say? → Tell me the specs → Add to cart → Repeat that → More phrases → Simple view → Actions on this page (14) → Slower → Faster → Settings → (left the panel: <a class="logo" href="index.html">MockMart</a>)
+- Tab order (16 stops): Close shopping assistant → Speak → Type a request → Send → What's the price? → What do reviews say? → Tell me the specs → Add to cart → Repeat that → More phrases → Simple view → Actions on this page (11) → Slower → Faster → Settings → (left the panel: <body data-page="product">
+    <header class="site">
+    <a class="logo" href="i)
 - Stops without a visible focus ring (≥ 2 px outline): none
 - Overlay controls without a name in Chrome's accessibility tree: 0
 - Escape closes the panel and returns focus to the toggle: yes

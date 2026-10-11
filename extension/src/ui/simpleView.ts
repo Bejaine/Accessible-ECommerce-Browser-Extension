@@ -22,6 +22,13 @@ export const SIMPLE_VIEW_CSS = `
 
 export const MAX_SPECS = 5;
 
+/** Yes / No for true / false specs ("Induction compatible: No"), anything else as given. */
+export function specValue(value: unknown): string {
+  if (value === true || value === 'true') return label('simple.yes');
+  if (value === false || value === 'false') return label('simple.no');
+  return String(value);
+}
+
 const missing = (field: UiKey) => label('simple.missing').replace('{field}', label(field));
 
 /** The few facts a simple view leads with, as one sentence (also spoken). */
@@ -95,7 +102,7 @@ export function renderSimpleView(
     const list = document.createElement('ul');
     for (const s of specs) {
       const li = document.createElement('li');
-      li.textContent = `${s.label}: ${s.value}${s.unit ? ` ${s.unit}` : ''}`;
+      li.textContent = `${s.label}: ${specValue(s.value)}${s.unit ? ` ${s.unit}` : ''}`;
       list.append(li);
     }
     children.push(h, list);
