@@ -425,6 +425,18 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - Chips an order task offered (reasons, orders) skip the LLM, like the fixed chips. When the
   user picked an offered return reason, the finishing confirmation selects it on the page.
 
+## 2026-10-11 — Menu layout and colour tokens (Track D; affects anyone adding overlay UI)
+- The overlay menu is a fixed order of labelled sections (`src/ui/menu.ts`): status (confirmation,
+  suggestion, did-you-mean, try again, order step) → answer → Ask → Quick questions → On this page →
+  Reading → Settings. New controls go into a section, never loose into `overlay.controls`.
+- While an answer, the simplified view or the checkout steps are open, only status + Ask remain
+  (`.asl-answering`); "Back to menu" restores the rest.
+- Colours only via tokens on `.asl-root` (`--asl-fg/bg/muted/accent/tile/line/line-strong`), light
+  and dark measured: text ≥ 6.4:1, control borders ≥ 4.9:1. Under forced colours every overlay
+  button uses system button colours (one `!important` rule in overlay.ts).
+- Did-you-mean options appear once (two big buttons; not repeated as follow-up chips); the
+  question is announced only if the answer's summary didn't already ask it.
+
 ## 2026-10-11 — Groq per-minute budget (Track C; affects the demo)
 - Live test hit Groq's free-tier limit of 8k tokens/min per model (not the daily one): opening a
   product (3 summary calls) plus speaking used up both models and /turn returned 503.

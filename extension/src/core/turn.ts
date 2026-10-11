@@ -11,6 +11,7 @@ import type {
   PageContext,
   Profile,
   TurnRequest,
+  TurnResponse,
 } from '@shared/index';
 import { label, type UiKey } from '../ui/strings';
 import type { BackendClient } from './backend';
@@ -62,6 +63,8 @@ export interface TurnDeps {
    * anything sent back to the backend.
    */
   restore?: (text: string) => string;
+  /** Something the UI shows changed: alternatives, retry, the order task's step, busy. */
+  onUpdate?: () => void;
 }
 
 export interface TurnPipeline {
@@ -75,6 +78,8 @@ export interface TurnPipeline {
   /** The last turn failed with a retryable error: send it again. */
   retry(): Promise<void>;
   readonly canRetry: boolean;
+  /** The order task in progress and its step (TurnResponse.workflow), or null. */
+  readonly workflow: TurnResponse['workflow'];
   /** The user said yes / pressed the switch / pressed Yes. */
   confirm(): Promise<void>;
   cancel(): void;
@@ -162,6 +167,8 @@ export function createTurnPipeline(deps: TurnDeps): TurnPipeline {
   let alternatives: IntentAlternative[] = [];
   let failed: TurnInputSpec | null = null;
   let autoContinues = 0;
+  let workflow: TurnResponse['workflow'] = null;
+  const updated = () => deps.onUpdate?.();
   const restore = deps.restore ?? ((text: string) => text);
 
   /** `alreadySaid`: the answer's summary was just announced; don't say the same prompt twice. */
@@ -238,6 +245,8 @@ export function createTurnPipeline(deps: TurnDeps): TurnPipeline {
     if (page.secure_zone_active) return;
     busy = true;
     failed = null;
+    alternatives = [];
+    updated();
     const profile = deps.getProfile();
     const lang = profile.prefs.lang;
     const request: TurnRequest = {
@@ -266,6 +275,7 @@ export function createTurnPipeline(deps: TurnDeps): TurnPipeline {
       }
       const wasInTask = inTask;
       inTask = response.workflow !== null;
+      workflow = response.workflow;
       if (wasInTask && !inTask) void deps.continuity?.clear();
       alternatives =
         response.intent.confidence < 0.8 && response.actions.length === 0
@@ -289,6 +299,7 @@ export function createTurnPipeline(deps: TurnDeps): TurnPipeline {
       deps.announce(message, true);
     } finally {
       busy = false;
+      updated();
     }
   }
 
@@ -305,6 +316,9 @@ export function createTurnPipeline(deps: TurnDeps): TurnPipeline {
     get canRetry() {
       return failed !== null;
     },
+    get workflow() {
+      return workflow;
+    },
     async send(input) {
       autoContinues = 0; // the user did something
       await turn(input);
@@ -315,6 +329,7 @@ export function createTurnPipeline(deps: TurnDeps): TurnPipeline {
       if (!choice) return;
       alternatives = [];
       autoContinues = 0;
+      updated();
       if (choice.actions.length > 0)
         await handleActions(choice.actions, deps.getProfile().prefs.lang);
       else await turn({ kind: 'phrase', text: choice.label });

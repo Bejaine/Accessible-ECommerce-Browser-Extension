@@ -11,7 +11,12 @@ import { label } from './strings';
 import { attachSwitch } from './switchInput';
 
 export interface ControlsOptions {
+  /** Where the phrase board goes. */
   container: HTMLElement;
+  /** Where the scan bar goes (default: `container`). */
+  barContainer?: HTMLElement;
+  /** Groups scanned before the page's zones (e.g. "Did you mean…" options). */
+  extraGroups?: () => ScanGroup[];
   mode: ResolvedMode;
   /** Prefs.switch_key (KeyboardEvent.code). */
   switchKey: string;
@@ -72,7 +77,8 @@ export function createControls(opts: ControlsOptions): Controls {
         }),
     },
   });
-  opts.container.append(board.element, bar.element);
+  opts.container.append(board.element);
+  (opts.barContainer ?? opts.container).append(bar.element);
 
   function phraseGroup(): ScanGroup {
     return {
@@ -103,7 +109,11 @@ export function createControls(opts: ControlsOptions): Controls {
         code: opts.switchKey,
         onPress: () => scanner.press(),
       });
-      scanner.start([...groupsFromTargets(targets, opts.onSelectTarget, lang), phraseGroup()]);
+      scanner.start([
+        ...(opts.extraGroups?.() ?? []),
+        ...groupsFromTargets(targets, opts.onSelectTarget, lang),
+        phraseGroup(),
+      ]);
       if (scanner.level === 'stopped') stopScanning();
     },
     stopScanning,

@@ -28,7 +28,10 @@ export type CommandId =
   | 'yes'
   | 'no'
   | 'help'
-  | 'undo';
+  | 'undo'
+  | 'first'
+  | 'second'
+  | 'retry';
 
 /** English command phrases. Other languages come from src/i18n (requested from Track A). */
 export const COMMANDS: Record<CommandId, string[]> = {
@@ -47,6 +50,10 @@ export const COMMANDS: Record<CommandId, string[]> = {
   no: ['no', 'nope', 'cancel', "don't"],
   help: ['help', 'what can i say'],
   undo: ['undo', 'turn it off', 'switch it off'],
+  // "Did you mean X or Y?" answers, and retrying a failed turn.
+  first: ['first one', 'the first', 'first', 'पहला', 'మొదటిది'],
+  second: ['second one', 'the second', 'second', 'दूसरा', 'రెండవది'],
+  retry: ['try again', 'retry', 'फिर से', 'మళ్ళీ ప్రయత్నించు'],
 };
 
 export interface Candidate {
@@ -80,7 +87,13 @@ export function normalise(text: string): string {
 }
 
 export function buildCandidates(
-  opts: { targets?: ActionTarget[]; products?: ProductJSON[]; commands?: boolean } = {},
+  opts: {
+    targets?: ActionTarget[];
+    products?: ProductJSON[];
+    commands?: boolean;
+    /** "Did you mean X or Y?" labels: saying one picks it (command id `alt:<index>`). */
+    alternatives?: string[];
+  } = {},
 ): Candidate[] {
   const out: Candidate[] = [];
   if (opts.commands !== false) {
@@ -88,6 +101,9 @@ export function buildCandidates(
       for (const text of phrases) out.push({ kind: 'command', id, text });
     }
   }
+  (opts.alternatives ?? []).forEach((text, i) => {
+    if (text.trim()) out.push({ kind: 'command', id: `alt:${i}`, text });
+  });
   for (const t of opts.targets ?? []) {
     if (!t.state?.disabled && t.label.trim()) out.push({ kind: 'target', id: t.id, text: t.label });
   }

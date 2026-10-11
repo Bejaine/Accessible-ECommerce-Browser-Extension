@@ -192,7 +192,10 @@ describe('settings panel', () => {
       [...el.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent === name)!;
     named('Larger').click();
     await vi.waitFor(() => expect(store.get().prefs.text_scale).toBe(1.25));
-    const boxes = [...el.querySelectorAll<HTMLInputElement>(':scope > section > label input')];
+    const reading = [...el.querySelectorAll('fieldset')].find(
+      (f) => f.querySelector('legend')?.textContent === 'Voice and answers',
+    )!;
+    const boxes = [...reading.querySelectorAll<HTMLInputElement>('label input')];
     boxes[0]!.click(); // assistant voice
     expect(voice).toBe(true);
     boxes[1]!.click(); // short answers

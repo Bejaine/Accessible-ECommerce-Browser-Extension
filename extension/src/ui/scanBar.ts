@@ -16,6 +16,10 @@ export const SCAN_BAR_CSS = `
   font: inherit; font-weight: 600; cursor: pointer; border-radius: 8px;
   color: var(--asl-fg); background: var(--asl-bg); border: 2px solid var(--asl-fg); }
 .asl-scan-actions .asl-scan-choose { color: var(--asl-accent-fg); background: var(--asl-accent); flex: 1; }
+@media (forced-colors: active) {
+  .asl-scan-actions button, .asl-scan-actions .asl-scan-choose { color: ButtonText; background: ButtonFace; border-color: ButtonText; }
+  .asl-scanbar { border-color: CanvasText; }
+}
 `;
 
 export interface ScanBar {
