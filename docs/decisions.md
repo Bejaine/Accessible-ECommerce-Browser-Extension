@@ -503,3 +503,12 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - Code that maps every `Lang` must handle `ml` (TypeScript flags it): `core/app.ts`
   `LANGUAGE_NAMES` gained `ml: 'മലയാളം'`. Malayalam UI strings, onboarding, numbers and masking
   follow in a separate Track A PR.
+
+## 2026-10-11 — Read the results after a search (Track D core, for Track C)
+- The per-tab continuity marker has a kind: `continue` (order task) or `read_results` (search).
+  SessionReply gains `next_step`; `continue_task` stays for compatibility, and a marker stored as a
+  bare timestamp still means `continue`.
+- A reply counts as a search when `intent.name === 'search'` and it has a `navigate` action (also
+  for a chosen did-you-mean alternative). The results page sends Track C's "read the results"
+  chip only if it really is a search page; no resume-reading offer competes with it.
+

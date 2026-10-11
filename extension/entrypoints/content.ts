@@ -27,8 +27,9 @@ export default defineContentScript({
     const demo = (import.meta.env.VITE_BACKEND ?? 'mock') === 'mock';
     // One shopping session for every page; an order task may continue on this page.
     const sendContinuity = (message: ContinuityMessage) => browser.runtime.sendMessage(message);
-    const { session_id: sessionId, continue_task: continueTask } =
-      await requestSession(sendContinuity);
+    const { session_id: sessionId, next_step: nextStep } = await requestSession(sendContinuity);
+    const continueTask = nextStep === 'continue';
+    const readResults = nextStep === 'read_results';
     const continuity = createTaskContinuity(sendContinuity);
     // Selectors learned from earlier LLM fallbacks on this site, before the first extraction.
     await loadLearnedAdapters(browser.storage.local).catch(() => undefined);
@@ -47,6 +48,7 @@ export default defineContentScript({
             sessionId,
             continuity,
             continueTask,
+            readResults,
           });
         app = mount();
         // The whole interface follows the chosen language: remount when it changes.
@@ -75,6 +77,8 @@ export default defineContentScript({
     // The previous page took an order-task step (e.g. the confirmed "Place order" click): read
     // this page and let the backend finish or verify the task.
     if (continueTask) void (app as App | null)?.continueTask();
+    // The previous page ran a search: read the results here (a chip, no LLM call).
+    if (readResults) void (app as App | null)?.readResults();
 
     // Keyboard shortcut (Alt+Shift+A, from the background script): open or close from anywhere.
     browser.runtime.onMessage.addListener((msg: { type?: string }) => {

@@ -72,7 +72,7 @@ describe('turn pipeline', () => {
   let profile: Profile;
 
   const continuity: TaskContinuity = {
-    mark: async () => void log.push('mark'),
+    mark: async (step = 'continue') => void log.push(step === 'continue' ? 'mark' : `mark:${step}`),
     clear: async () => void log.push('clear'),
   };
 
@@ -118,6 +118,70 @@ describe('turn pipeline', () => {
     });
   });
   afterEach(() => vi.useRealTimers());
+
+  describe('after a search, the results page reads its results (Track C)', () => {
+    const navigate: ClientAction = {
+      schema_version: '1.0',
+      id: 'nav',
+      type: 'navigate',
+      target_id: null,
+      value: 'https://www.amazon.in/s?k=earbuds',
+      expected_effect: { kind: 'url_change', detail: 'Search results for earbuds' },
+    };
+    const searched = () =>
+      response({
+        intent: { name: 'search', confidence: 0.95, alternatives: [] },
+        actions: [navigate],
+        output: output('Searching for earbuds.', { followups: ['Read the results'] }),
+      });
+
+    it('marks the tab before navigating, so the next page reads the results', async () => {
+      replies.push(searched());
+      // The navigation ends this page's script: perform never returns.
+      perform.mockImplementation(() => new Promise(() => undefined));
+      const turn = pipeline();
+      void turn.send({ kind: 'voice', text: 'search for earbuds' });
+      await vi.waitFor(() => expect(log).toContain('mark:read_results'));
+      expect(log.indexOf('mark:read_results')).toBeLessThan(log.length);
+      expect(perform).toHaveBeenCalledWith(navigate, { confirmed: false });
+    });
+
+    it('a page that stays (single-page shop) reads the results itself', async () => {
+      replies.push(searched(), response({ output: output('3 results: 1. Zentra Buds…') }));
+      const turn = pipeline();
+      await turn.send({ kind: 'voice', text: 'search for earbuds' });
+      expect(log).toEqual(expect.arrayContaining(['mark:read_results', 'do:nav', 'clear']));
+      await vi.advanceTimersByTimeAsync(400);
+      expect(requests.at(-1)!.input).toMatchObject({
+        kind: 'phrase',
+        phrase_id: 'read the results',
+        text: 'Read the results',
+      });
+    });
+
+    it('a failed navigation clears the marker; other navigations are not searches', async () => {
+      replies.push(searched());
+      perform.mockResolvedValueOnce({ ok: false, reason: 'target_not_found' });
+      const turn = pipeline();
+      await turn.send({ kind: 'voice', text: 'search for earbuds' });
+      expect(log).toEqual(expect.arrayContaining(['mark:read_results', 'clear']));
+      log = [];
+      replies.push(
+        response({
+          intent: { name: 'go_to_cart', confidence: 0.9, alternatives: [] },
+          actions: [navigate],
+        }),
+      );
+      await turn.send({ kind: 'voice', text: 'go to my cart' });
+      expect(log.some((l) => l.startsWith('mark'))).toBe(false);
+    });
+
+    it('readResults() sends the chip', async () => {
+      replies.push(response());
+      await pipeline().readResults();
+      expect(requests[0]!.input).toMatchObject({ kind: 'phrase', phrase_id: 'read the results' });
+    });
+  });
 
   it('sends nothing while the user is in a secure zone', async () => {
     currentPage = page({ secure_zone_active: true });
