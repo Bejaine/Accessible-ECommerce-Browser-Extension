@@ -6,6 +6,7 @@ import {
   requestSession,
   type ContinuityMessage,
 } from '@/src/core/continuity';
+import { loadLearnedAdapters } from '@/src/extract';
 import {
   createProfileStore,
   loadDevicePrefs,
@@ -29,6 +30,8 @@ export default defineContentScript({
     const { session_id: sessionId, continue_task: continueTask } =
       await requestSession(sendContinuity);
     const continuity = createTaskContinuity(sendContinuity);
+    // Selectors learned from earlier LLM fallbacks on this site, before the first extraction.
+    await loadLearnedAdapters(browser.storage.local).catch(() => undefined);
 
     let app: App | null = null;
     const ui = await createShadowRootUi(ctx, {

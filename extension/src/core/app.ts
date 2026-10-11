@@ -20,8 +20,7 @@ import { phraseAudioUrl } from '../audio/phrases';
 import { createPlayer, type Player } from '../audio/player';
 import { createSpeechSources } from '../audio/sources';
 import {
-  applyFallback,
-  buildFallbackRequest,
+  completeWithFallback,
   extractPageContext,
   muteMicInSecureZone,
   resolveTarget,
@@ -702,12 +701,17 @@ export function mountApp(
     }
     void (async () => {
       let full = product;
-      // Track B's tier 3: ask /extract/fallback for fields the page's own tiers missed. Never in
-      // demo mode: the mock answers for the fixture phone, not this page (rule 1).
-      const request = demo ? null : buildFallbackRequest(document, product);
-      if (request) {
+      // Track B's tier 3: ask /extract/fallback for fields the page's own tiers missed, and
+      // learn where they were for the next page of this site. Never in demo mode: the mock
+      // answers for the fixture phone, not this page (rule 1).
+      if (!demo) {
         try {
-          full = applyFallback(product, await backend.extractFallback(request));
+          full = await completeWithFallback(
+            document,
+            product,
+            (req) => backend.extractFallback(req),
+            browser.storage.local,
+          );
           const i = page.products.findIndex((p) => p.id === product.id);
           if (i >= 0) page.products[i] = full;
         } catch {
