@@ -34,6 +34,9 @@ describe('turns from the overlay buttons', () => {
   };
 
   async function mount(b: BackendClient = createMockBackend()) {
+    // One app at a time: a second mount without unmounting would leave the first one's key
+    // listeners on the document.
+    (app as App | undefined)?.unmount();
     const container = document.createElement('div');
     host.shadowRoot!.replaceChildren(container);
     bus = createBus();

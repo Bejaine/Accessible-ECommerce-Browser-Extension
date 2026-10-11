@@ -240,6 +240,19 @@ async function main() {
   await tap(product, '/^Stop scanning/');
   await tap(product, '/^Simple view/');
   await allThemes(product, 'Simple view');
+  // The "Accessibility features on" note: turn a feature on, close the panel.
+  await tap(product, '/^Back to menu/');
+  await product.ev(`${R}.querySelector('.asl-settings-toggle').click()`);
+  await sleep(400);
+  await product.ev(
+    `[...${R}.querySelectorAll('label')].find((l) => /Easy-press mode/.test(l.textContent)).querySelector('input').click()`,
+  );
+  await sleep(400);
+  await product.ev(`${R}.querySelector('.asl-close').click()`);
+  await sleep(400);
+  if (await product.ev(`${R}.querySelector('.asl-active').hidden`))
+    throw new Error('note not shown');
+  await allThemes(product, 'Features note');
   await product.ev(`document.querySelector('#add-to-cart').click()`);
   await sleep(500);
   product.close();

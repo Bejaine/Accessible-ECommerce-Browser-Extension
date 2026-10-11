@@ -99,6 +99,16 @@ export interface DevicePrefs {
   dwellMs?: number | null;
   /** Speaking while the assistant reads pauses it (barge-in). Unset: on for desktop, off on phones. */
   interruptBySpeaking?: boolean;
+  /** Space (outside text fields and controls) starts and stops listening. Default on. */
+  spaceToSpeak?: boolean;
+  /** Simple mode raised the text size from this value (restored when simple mode is turned off). */
+  textScaleBeforeSimple?: number | null;
+  /** Simple mode's accommodations were applied on this device (so a later choice is kept). */
+  simpleApplied?: boolean;
+}
+
+export function spaceToSpeak(prefs: DevicePrefs): boolean {
+  return prefs.spaceToSpeak ?? true;
 }
 
 /**

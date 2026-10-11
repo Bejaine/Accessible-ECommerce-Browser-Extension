@@ -456,3 +456,18 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - Settings is a page in the panel (Back to menu, "Right now" summary, sections Modes / Voice /
   Text and language / Pointer and switch, then Run setup again), not an inline drop-down.
 
+## 2026-10-11 — Space to speak, simple mode by itself, curated actions, features note (Track D)
+- Space starts/stops listening when nothing else needs it: not while typing, not on a control that
+  Space presses (button, link, checkbox…), not during switch scanning, and not while a confirmation
+  or suggestion waits (Space = yes there). A setting turns it off (it replaces Space-to-scroll).
+- Once simple mode is on (accepted suggestion or chosen), its accommodations apply by themselves:
+  text 1.25× (once per device; restored when the mode is turned off, a later user choice is kept),
+  and product/checkout pages open the panel into the simple view / checkout steps without moving
+  focus.
+- "Actions on this page" is curated client-side (src/ui/pageActions.ts): one entry per destination,
+  most descriptive label, no labels without letters / price / rating-count noise; main actions
+  (controls in product/cart/checkout/orders) first, the rest under "More on this page". The page
+  map itself is unchanged (matcher and backend still see all targets).
+- A corner note lists the features that are on by their feature names ("Read-aloud mode"), never
+  conditions or people, marks automatic ones, offers Change and Hide; hidden while the panel is open.
+

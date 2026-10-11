@@ -18,7 +18,7 @@ const product = productFixture as unknown as ProductJSON;
 const targets = turnRequest.page.targets as ActionTarget[];
 
 describe('action menu', () => {
-  it('lists the page actions by zone as large buttons and hands the choice to the turn', () => {
+  it('lists main actions first, the rest by area behind "More on this page"', () => {
     const onSelect = vi.fn();
     const menu = createActionMenu(onSelect);
     menu.render(targets);
@@ -26,8 +26,20 @@ describe('action menu', () => {
     expect(toggle.textContent).toBe(`Actions on this page (${targets.length})`);
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     toggle.click();
-    const headings = [...menu.element.querySelectorAll('h3')].map((h) => h.textContent);
-    expect(headings).toEqual(['Search', 'Product', 'Cart']);
+    expect(menu.element.querySelector('h3')?.textContent).toBe('Main actions');
+    const main = [...menu.element.querySelectorAll('.asl-actions-menu > section li button')].map(
+      (b) => b.textContent,
+    );
+    expect(main).toEqual(['Midnight Black', 'Sage Green', 'Quantity', 'Add to Cart', 'Buy Now']);
+    const more = [...menu.element.querySelectorAll<HTMLButtonElement>('button')].find((b) =>
+      b.textContent?.startsWith('More on this page'),
+    )!;
+    expect(more.textContent).toBe('More on this page (2)');
+    more.click();
+    expect([...menu.element.querySelectorAll('h4')].map((h) => h.textContent)).toEqual([
+      'Cart',
+      'Search',
+    ]);
     const swatch = [...menu.element.querySelectorAll('li button')].find((b) =>
       b.textContent?.startsWith('Sage Green'),
     ) as HTMLButtonElement;
@@ -35,14 +47,53 @@ describe('action menu', () => {
     expect(onSelect).toHaveBeenCalledWith(expect.objectContaining({ id: 't-swatch-green' }));
   });
 
-  it('shows a zone in pages and never lists disabled targets', () => {
+  it('one entry per destination, no price- or count-only labels, addresses shown as text', () => {
+    const base = targets[6]!; // a link in the cart zone
+    const link = (id: string, label: string, zone = 'results'): ActionTarget => ({
+      ...base,
+      id,
+      label,
+      zone: zone as ActionTarget['zone'],
+    });
+    const hrefs: Record<string, string> = {
+      a: '/Zentra-Pulse/dp/B0X/ref=sr_1_1?q=phone',
+      b: '/Zentra-Pulse/dp/B0X/ref=sr_1_1_img',
+      c: '/Zentra-Pulse/dp/B0X#reviews',
+      d: '/Other/dp/B0Y',
+    };
+    const menu = createActionMenu(vi.fn(), {
+      hrefOf: (id) => hrefs[id] ?? null,
+      display: (text) => text.replace('ADDR_1', 'Flat 4, MG Road'),
+    });
+    menu.render([
+      link('a', 'Zentra'),
+      link('b', 'Zentra Pulse 5G (8 GB RAM, 128 GB)'), // same product, better label: kept
+      link('c', '4.2 out of 5 stars'),
+      link('d', 'Other phone'),
+      link('p', '₹13,999'),
+      link('r', '21,106 ratings'),
+      link('n', '8,263'),
+      link('k', '+7 other colors/patterns'),
+      link('addr', 'Delivering to ADDR_1', 'product'),
+    ]);
+    expect(menu.actions.map((t) => t.label)).toEqual([
+      'Delivering to ADDR_1',
+      'Zentra Pulse 5G (8 GB RAM, 128 GB)',
+      'Other phone',
+    ]);
+    menu.element.querySelector<HTMLButtonElement>('.asl-menu-toggle')!.click();
+    expect(menu.element.textContent).toContain('Delivering to Flat 4, MG Road');
+    expect(menu.element.textContent).not.toContain('ADDR_1');
+  });
+
+  it('shows an area in pages and never lists disabled targets', () => {
     const many: ActionTarget[] = Array.from({ length: PER_ZONE + 3 }, (_, i) => ({
-      ...targets[4]!,
+      ...targets[6]!,
       id: `t${i}`,
       label: `Item ${i}`,
     }));
     many.push({
-      ...targets[4]!,
+      ...targets[6]!,
       id: 'off',
       label: 'Disabled',
       state: { disabled: true, selected: false, expanded: false },

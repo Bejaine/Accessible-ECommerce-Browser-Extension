@@ -230,15 +230,16 @@ describe('personas on MockMart', () => {
     async () => {
       await record(
         'Older, blind, hand tremor (ageing + visual + motor)',
-        'Shortcut, simplified view, large buttons',
+        'Opens by itself in simple mode, large buttons',
         async () => {
           const { shadow, store, mode } = await mountOn('product.html?id=zx-pulse-5g', [
             'ageing',
             'visual',
             'motor',
           ]);
-          app!.toggleAssistant(); // Alt+Shift+A
-          expect(shadow.querySelector('.asl-simple')).not.toBeNull(); // opens straight into the simple view
+          // Simple mode: the panel opened by itself on this product page, in the simple view.
+          expect(app!.overlay.isOpen).toBe(true);
+          expect(shadow.querySelector('.asl-simple')).not.toBeNull();
           buttonNamed(shadow, /^Add to Cart$/i)!.click();
           await until(() => app!.turn.pending !== null, 10_000, 'confirmation');
           buttonNamed(shadow, /^Yes$/)!.click();
@@ -247,7 +248,7 @@ describe('personas on MockMart', () => {
           expect(mode.max_options).toBe(3);
           return {
             steps: 3,
-            detail: `simplified view; speech ${store.get().prefs.tts_rate}x; ${mode.max_options} options/step; cart 1 item`,
+            detail: `opened by itself in the simplified view; text ${store.get().prefs.text_scale}x; speech ${store.get().prefs.tts_rate}x; ${mode.max_options} options/step; cart 1 item`,
           };
         },
       );
