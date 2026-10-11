@@ -1,13 +1,17 @@
 // First-run onboarding (docs/conditions.md "Onboarding and language"): language, "read aloud?",
 // "do colours look alike?". Shown once, on its own extension page, never on shop pages.
-// Every question can be answered by a number key (or Y/N), a tap, a single switch (Space steps
-// through the choices, then picks), or by voice. Answers seed the profile as the user's choices.
+// Every question can be answered by a number key (or Y/N), a tap, a single switch (a Space tap
+// steps through the choices, then picks), or by voice: hold Space and say the answer (as on shop
+// pages). Answers seed the profile as the user's choices.
 import type { Lang } from '@shared/index';
 import { setConditionActive } from '../core/composer';
 import { markOnboarded, type ProfileStore } from '../core/profile';
 import { announce, initAnnouncer } from './announce';
 import { createScanner, type ScanItem } from './scanner';
 import { label, type UiKey } from './strings';
+
+/** Holding Space at least this long means "talk" (same as on shop pages). */
+export const HOLD_MS = 400;
 
 export type StepId = 'language' | 'read_aloud' | 'colour' | 'done';
 
@@ -32,7 +36,9 @@ export interface OnboardingOptions {
   /** Called after the last step or Skip (e.g. close the tab). */
   onDone: () => void;
   /** Voice answer: resolves with a transcript, or null if nothing usable was heard. */
-  listen?: () => Promise<string | null>;
+  listen?: (opts?: { hold?: boolean }) => Promise<string | null>;
+  /** End listening now, keeping what was said (Space released). */
+  stopListening?: () => void;
   /** Speak prompts aloud, each line in its own language (the page talks by default). */
   speak?: (lines: { text: string; lang: Lang }[]) => void;
   scanIntervalMs?: number;
@@ -217,15 +223,34 @@ export function startOnboarding(opts: OnboardingOptions): Onboarding {
     return true;
   }
 
-  async function voice(): Promise<void> {
-    const text = await opts.listen?.().catch(() => null);
+  async function voice(hold = false): Promise<void> {
+    const text = await opts.listen?.({ hold }).catch(() => null);
     if (!text || !(await answerText(text)))
       announce(label('onboarding.not_understood', lang), { assertive: true });
   }
 
-  // Keys: numbers (and Y/N) choose; Space is the single switch (first press starts stepping
-  // through the choices aloud, the next press picks the highlighted one).
+  // Keys: numbers (and Y/N) choose. Space: a tap is the single switch (first tap starts stepping
+  // through the choices aloud, the next tap picks the highlighted one); holding it is "talk".
   let scanning = false;
+  let space: { timer: ReturnType<typeof setTimeout>; held: boolean } | null = null;
+  function switchPress(): void {
+    const opts_ = options();
+    if (opts_.length === 0) return;
+    if (!scanning || scanner.level === 'stopped') {
+      scanning = true;
+      const items: ScanItem[] = opts_.map((o, i) => ({
+        id: o.id,
+        label: o.label,
+        activate: () => {
+          scanning = false;
+          void choose(i);
+        },
+      }));
+      scanner.start([{ id: step, label: step, items }]);
+    } else {
+      scanner.press();
+    }
+  }
   const onKey = (e: KeyboardEvent) => {
     const opts_ = options();
     const n = Number.parseInt(e.key, 10);
@@ -237,22 +262,30 @@ export function startOnboarding(opts: OnboardingOptions): Onboarding {
       void choose(e.key === 'y' ? 0 : 1);
     } else if (e.code === 'Space' && opts_.length > 0) {
       e.preventDefault();
-      if (!scanning || scanner.level === 'stopped') {
-        scanning = true;
-        const items: ScanItem[] = opts_.map((o, i) => ({
-          id: o.id,
-          label: o.label,
-          activate: () => {
-            scanning = false;
-            void choose(i);
-          },
-        }));
-        scanner.start([{ id: step, label: step, items }]);
-      } else {
-        scanner.press();
-      }
+      if (e.repeat || space) return;
+      const press = {
+        held: false,
+        timer: setTimeout(() => {
+          if (space !== press || !opts.listen) return;
+          press.held = true;
+          scanner.stop();
+          scanning = false;
+          void voice(true);
+        }, HOLD_MS),
+      };
+      space = press;
     }
   };
+  const onKeyUp = (e: KeyboardEvent) => {
+    if (e.code !== 'Space' || !space) return;
+    e.preventDefault();
+    const press = space;
+    space = null;
+    clearTimeout(press.timer);
+    if (press.held) opts.stopListening?.();
+    else switchPress();
+  };
+  document.addEventListener('keyup', onKeyUp);
   document.addEventListener('keydown', onKey);
 
   render();
@@ -265,7 +298,9 @@ export function startOnboarding(opts: OnboardingOptions): Onboarding {
     answerText,
     dispose() {
       scanner.stop();
+      clearTimeout(space?.timer);
       document.removeEventListener('keydown', onKey);
+      document.removeEventListener('keyup', onKeyUp);
     },
   };
 }

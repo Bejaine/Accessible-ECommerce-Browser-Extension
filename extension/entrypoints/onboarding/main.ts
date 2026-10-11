@@ -30,12 +30,14 @@ void (async () => {
       window.close();
     },
     speak: (lines) => speaker.sayLines(lines),
-    listen: async () => {
+    // Hold Space (or press Speak) and say the answer; letting go of Space sends it.
+    listen: async ({ hold = false } = {}) => {
       speaker.stop();
-      const utterance = await mic.listen();
+      const utterance = await mic.listen({ mode: hold ? 'speech' : 'default' });
       if (!utterance.audioBase64) return null;
       const asr = await backend.asr(toAsrRequest(utterance, store.get().prefs.lang));
       return asr.text || null;
     },
+    stopListening: () => mic.stop(),
   });
 })();

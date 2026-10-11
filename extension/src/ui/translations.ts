@@ -183,9 +183,11 @@ const hi: Table = {
   'active.change': 'बदलें',
   'active.hide': 'छिपाएँ',
   'active.hide_name': 'यह सूचना छिपाएँ',
-  'settings.space': 'बोलने के लिए Space दबाएँ',
-  'settings.space_hint': 'Space से सुनना शुरू और बंद होता है, लिखते समय या बटन पर नहीं।',
-  'settings.interrupt': 'बोलकर सहायक को रोकें',
+  'settings.space': 'बोलने के लिए Space दबाए रखें',
+  'settings.space_hint':
+    'बोलते समय Space दबाए रखें, या सुनना शुरू करने के लिए एक बार दबाएँ। लिखते समय नहीं।',
+  'ask.space_hint': 'या पेज पर कहीं भी Space दबाए रखकर बोलें।',
+  'settings.interrupt': 'पढ़ते समय हमेशा सुनें',
   'settings.interrupt_hint': 'हेडफ़ोन के साथ सबसे अच्छा: फ़ोन के स्पीकर पर यह खुद को सुन सकता है।',
   'settings.group_display': 'अक्षर और भाषा',
   'settings.group_pointer': 'पॉइंटर और स्विच',
@@ -233,7 +235,7 @@ const hi: Table = {
   'onboarding.read_aloud': 'क्या मैं चीज़ें पढ़कर सुनाऊँ?',
   'onboarding.colours': 'क्या आपको कभी रंग एक जैसे लगते हैं?',
   'onboarding.how':
-    'कोई नंबर दबाएँ, विकल्प छुएँ, जवाब बोलें, या एक बटन से चुनने के लिए Space दबाएँ।',
+    'कोई नंबर दबाएँ, विकल्प छुएँ, Space दबाए रखकर जवाब बोलें, या एक बटन से चुनने के लिए Space एक बार दबाएँ।',
   'onboarding.yes': 'हाँ',
   'onboarding.no': 'नहीं',
   'onboarding.done': 'सब तैयार है। आप इन्हें कभी भी शॉपिंग सहायक की सेटिंग्स में बदल सकते हैं।',
@@ -428,7 +430,7 @@ const te: Table = {
   'settings.space': 'మాట్లాడటానికి Space నొక్కండి',
   'settings.space_hint':
     'Space వినడం మొదలుపెడుతుంది, ఆపుతుంది; టైప్ చేస్తున్నప్పుడు లేదా బటన్ మీద కాదు.',
-  'settings.interrupt': 'మాట్లాడి సహాయకుడిని ఆపండి',
+  'settings.interrupt': 'చదువుతున్నప్పుడు ఎప్పుడూ వినండి',
   'settings.interrupt_hint': 'హెడ్‌ఫోన్‌లతో ఉత్తమం: ఫోన్ స్పీకర్‌లో అది తనను తాను వినవచ్చు.',
   'settings.group_display': 'అక్షరాలు మరియు భాష',
   'settings.group_pointer': 'పాయింటర్ మరియు స్విచ్',
@@ -476,7 +478,7 @@ const te: Table = {
   'onboarding.read_aloud': 'నేను విషయాలు చదివి వినిపించాలా?',
   'onboarding.colours': 'మీకు ఎప్పుడైనా రంగులు ఒకేలా కనిపిస్తాయా?',
   'onboarding.how':
-    'ఒక నంబర్ నొక్కండి, ఎంపికను తాకండి, సమాధానం చెప్పండి, లేదా ఒక బటన్‌తో ఎంచుకోవడానికి Space నొక్కండి.',
+    'ఒక నంబర్ నొక్కండి, ఎంపికను తాకండి, Space నొక్కి ఉంచి సమాధానం చెప్పండి, లేదా ఒక బటన్‌తో ఎంచుకోవడానికి Space ఒకసారి నొక్కండి.',
   'onboarding.yes': 'అవును',
   'onboarding.no': 'కాదు',
   'onboarding.done': 'అంతా సిద్ధం. వీటిని ఎప్పుడైనా షాపింగ్ సహాయకుడి సెట్టింగ్‌లలో మార్చవచ్చు.',

@@ -1,6 +1,6 @@
 # Overlay accessibility audit (real Chrome)
 
-Generated 2026-10-11T02:35:04.372Z by `make a11y` (eval/a11y/run.mjs): Chrome/149.0.7827.102, headless,
+Generated 2026-10-11T02:55:25.706Z by `make a11y` (eval/a11y/run.mjs): Chrome/149.0.7827.102, headless,
 extension loaded through web-ext, MockMart pages, in-browser mock backend. axe-core 4.14.0
 with all rules (incl. colour contrast) on the overlay's shadow root.
 

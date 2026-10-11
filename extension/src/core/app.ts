@@ -106,17 +106,32 @@ function isEditable(target: EventTarget | undefined): boolean {
   return Boolean(el && (el.isContentEditable || el.closest('input, textarea, select')));
 }
 
+const USED_VOICE_KEY = 'asl-used-voice';
+function readUsedVoice(): boolean {
+  try {
+    return sessionStorage.getItem(USED_VOICE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+function rememberUsedVoice(): void {
+  try {
+    sessionStorage.setItem(USED_VOICE_KEY, '1');
+  } catch {
+    // private mode: this page only
+  }
+}
+
+/** Holding Space at least this long means "talk"; a shorter press is a tap. */
+export const HOLD_MS = 400;
+
 /** Simple mode's text size (Prefs.text_scale), applied when the mode turns on. */
 export const SIMPLE_TEXT_SCALE = 1.25;
 
-/** Controls that Space already presses (buttons, links, checkboxes…): Space stays theirs. */
+/** Controls a Space tap presses (links keep Space for the page). */
 const SPACE_OWNERS =
   'button, a[href], summary, [role="button"], [role="link"], [role="checkbox"], [role="radio"], ' +
   '[role="switch"], [role="menuitem"], [role="tab"], [role="option"], [role="slider"]';
-function ownsSpace(target: EventTarget | undefined): boolean {
-  const el = target instanceof Element ? target : null;
-  return Boolean(el && (isEditable(el) || el.closest(SPACE_OWNERS)));
-}
 
 export interface App {
   overlay: Overlay;
@@ -200,7 +215,13 @@ export function mountApp(
         }),
     });
   speaker.setRate(profile.prefs.tts_rate);
-  const voiceOn = () => assistantVoiceOn(profile, devicePrefs);
+  // The user spoke to the assistant (Space or Speak): from then on, answers and prompts are read
+  // aloud in this tab's session, unless the assistant's voice was turned off in Settings.
+  let usedVoice = readUsedVoice();
+  const voiceOn = () =>
+    devicePrefs.assistantVoice === 'auto' && usedVoice
+      ? true
+      : assistantVoiceOn(profile, devicePrefs);
   setAnnounceVoice((text) => {
     if (voiceOn()) speaker.prompt(text, lang());
   });
@@ -375,6 +396,7 @@ export function mountApp(
       get: () => spaceToSpeak(devicePrefs),
       set: (on) => {
         devicePrefs.spaceToSpeak = on;
+        spaceHint.hidden = !on;
         void saveDevicePrefs(devicePrefs);
       },
     },
@@ -771,6 +793,13 @@ export function mountApp(
       case 'pause':
         speaker.pause();
         return true;
+      case 'read_aloud':
+        // Read the last answer aloud; with none yet, what this product page says.
+        if (lastOutput) speaker.speakOutput(lastOutput, { verbosity: mode.verbosity });
+        else if (page.page_type === 'product' && page.products[0])
+          speaker.say(simpleSummary(page.products[0]), lang());
+        else announce(label('repeat.nothing', lang()));
+        return true;
       case 'resume':
         playback('toggle');
         return true;
@@ -977,7 +1006,11 @@ export function mountApp(
   let fallback = createInputFallback(mode);
   offs.push(store.subscribe(() => (fallback = createInputFallback(mode))));
   const micButton = createMicButton(() => void listen());
-  askSection.element.querySelector('h3')!.after(micButton.element);
+  const spaceHint = document.createElement('p');
+  spaceHint.className = 'asl-hint asl-space-hint';
+  spaceHint.textContent = label('ask.space_hint', lang());
+  spaceHint.hidden = !spaceToSpeak(devicePrefs);
+  askSection.element.querySelector('h3')!.after(micButton.element, spaceHint);
 
   function notUnderstood(): void {
     const step = fallback.recordFailure();
@@ -1036,7 +1069,12 @@ export function mountApp(
   );
   offs.push(() => secureZone.stop());
 
-  async function listen(): Promise<void> {
+  /**
+   * Listen once (Speak button, a Space tap) or while Space is held (`hold`: patient silence
+   * timeout; letting go of Space ends it). What was being read pauses and carries on if nothing
+   * usable was heard; a playback word ("next", "pause", "repeat") then acts on it.
+   */
+  async function listen({ hold = false }: { hold?: boolean } = {}): Promise<void> {
     if (mic.listening) {
       mic.stop();
       return;
@@ -1048,24 +1086,36 @@ export function mountApp(
       typeBox.input.focus();
       return;
     }
+    usedVoice = true;
+    rememberUsedVoice();
+    const wasPlaying = speaker.state === 'playing';
+    if (wasPlaying) speaker.pause(); // don't let the assistant's voice be heard by the mic
+    const carryOn = () => {
+      if (wasPlaying && (speaker.state as string) === 'paused') speaker.resume();
+    };
     micButton.setListening(true);
-    speaker.stop(); // don't let the assistant's voice be heard by the mic
     announce(t('mic.listening', lang()), { speak: false });
     try {
       const utterance = await mic.listen({
-        mode: profile.conditions.speech.active ? 'speech' : 'default',
+        mode: hold || profile.conditions.speech.active ? 'speech' : 'default',
         onLevel: (level) => micButton.level(level),
       });
       micButton.setListening(false);
       if (utterance.reason === 'muted') return;
       if (!utterance.audioBase64) {
+        carryOn();
         // Silence with a near-zero level is a mic/environment problem, not unclear speech.
-        announce(t('mic.no_speech', lang()));
+        if (!wasPlaying) announce(t('mic.no_speech', lang()));
         return;
       }
-      if (await handleUtterance(utterance)) enableBargeIn();
+      // Show the answer too (the panel may be closed when Space is used); focus stays put.
+      if (!overlay.isOpen) overlay.open({ focus: false });
+      const heard = await handleUtterance(utterance);
+      if (!heard) carryOn();
+      else enableBargeIn();
     } catch (error) {
       micButton.setListening(false);
+      carryOn();
       const message =
         error instanceof MicError ? t(`mic.${error.code}`, lang()) : label('turn.failed', lang());
       announce(message, { assertive: true });
@@ -1101,32 +1151,75 @@ export function mountApp(
     () => suggester.dispose(),
   );
 
+  // --- Space: hold to talk, tap for its usual job (docs/decisions.md) ---
+  // Hold (≥ HOLD_MS): whatever is being read pauses, the mic listens while Space is held, and
+  // letting go sends what was said. Tap: yes to a pending confirmation (when Space is the switch
+  // key), a pending suggestion's switch answer, presses the focused button, or on the page starts
+  // hands-free listening (ends on silence). Not while typing, and not during switch scanning
+  // (Space is then only the switch, so resting on it never starts talking).
+  let space: {
+    timer: ReturnType<typeof setTimeout>;
+    held: boolean;
+    target: EventTarget | undefined;
+  } | null = null;
+  function spaceDown(e: KeyboardEvent, target: EventTarget | undefined): boolean {
+    if (e.code !== 'Space' || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return false;
+    if (!spaceToSpeak(devicePrefs) || controls.scanning || isEditable(target)) return false;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    if (e.repeat || space) return true;
+    const press = {
+      held: false,
+      target,
+      timer: setTimeout(() => {
+        if (space !== press) return;
+        press.held = true;
+        void listen({ hold: true });
+      }, HOLD_MS),
+    };
+    space = press;
+    return true;
+  }
+  function spaceUp(e: KeyboardEvent): void {
+    if (e.code !== 'Space' || !space) return;
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    const press = space;
+    space = null;
+    clearTimeout(press.timer);
+    if (press.held) {
+      if (mic.listening) mic.stop(); // send what was said while Space was held
+      return;
+    }
+    const isSwitch = profile.prefs.switch_key === 'Space';
+    if (isSwitch && turn.pending) {
+      void turn.confirm();
+      return;
+    }
+    if (isSwitch && suggester.state.kind === 'question') {
+      suggester.answer('neither');
+      return;
+    }
+    if (isSwitch && suggester.state.kind === 'countdown') {
+      suggester.decline();
+      return;
+    }
+    const control =
+      press.target instanceof Element ? press.target.closest<HTMLElement>(SPACE_OWNERS) : null;
+    if (control && !control.matches('a[href], [role="link"]')) {
+      control.click(); // Space on a button presses it, as usual
+      return;
+    }
+    void listen(); // tap on the page: hands-free listening (a second tap stops it)
+  }
+
   // --- Keys: a pending confirmation first (switch = yes, Escape = no), then a suggestion ---
   const onKey = (e: KeyboardEvent) => {
     const target = e.composedPath()[0];
     const isSwitch = e.code === profile.prefs.switch_key && !isEditable(target);
     const suggestionWaiting =
       suggester.state.kind === 'countdown' || suggester.state.kind === 'question';
-    // Space to speak (the single key for voice): when nothing else is waiting for a key, and not
-    // while typing, on a control Space presses, or during switch scanning (Space is the switch).
-    if (
-      e.code === 'Space' &&
-      !e.repeat &&
-      !e.altKey &&
-      !e.ctrlKey &&
-      !e.metaKey &&
-      !e.shiftKey &&
-      spaceToSpeak(devicePrefs) &&
-      !turn.pending &&
-      !suggestionWaiting &&
-      !controls.scanning &&
-      !ownsSpace(target)
-    ) {
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      void listen();
-      return;
-    }
+    if (spaceDown(e, target)) return;
     if (e.key !== 'Escape' && !isSwitch) return;
     if (!turn.pending && !suggestionWaiting) return;
     e.preventDefault();
@@ -1141,7 +1234,12 @@ export function mountApp(
     }
   };
   document.addEventListener('keydown', onKey, { capture: true });
-  offs.push(() => document.removeEventListener('keydown', onKey, { capture: true }));
+  document.addEventListener('keyup', spaceUp, { capture: true });
+  offs.push(
+    () => document.removeEventListener('keydown', onKey, { capture: true }),
+    () => document.removeEventListener('keyup', spaceUp, { capture: true }),
+    () => clearTimeout(space?.timer),
+  );
 
   return {
     overlay,

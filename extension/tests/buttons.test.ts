@@ -49,6 +49,7 @@ describe('every button does something, in every state', () => {
 
   async function mountIn(state: State, opts: { demo?: boolean } = {}) {
     fakeBrowser.reset();
+    sessionStorage.clear(); // "used voice this session" must not leak between tests
     host?.remove();
     host = document.createElement('div');
     document.body.appendChild(host);
@@ -216,6 +217,7 @@ describe('every button does something, in every state', () => {
 
   it('the interface follows the chosen language', async () => {
     fakeBrowser.reset();
+    sessionStorage.clear(); // "used voice this session" must not leak between tests
     const s = await createProfileStore();
     await s.update((d) => {
       d.prefs.lang = 'hi' as Lang;

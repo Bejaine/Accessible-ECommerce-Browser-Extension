@@ -81,9 +81,13 @@ describe('content-script app: inference -> suggestion -> mode -> undo', () => {
   it('the switch key (outside text fields) cancels a pending suggestion', () => {
     motorEvidence();
     vi.advanceTimersByTime(SUGGEST_CHECK_MS);
+    // A tap: Space down and up (holding it would be "talk").
     const press = new KeyboardEvent('keydown', { code: 'Space', bubbles: true, cancelable: true });
     document.body.dispatchEvent(press);
     expect(press.defaultPrevented).toBe(true);
+    document.body.dispatchEvent(
+      new KeyboardEvent('keyup', { code: 'Space', bubbles: true, cancelable: true }),
+    );
     expect(app.suggester.state.kind).toBe('idle');
   });
 

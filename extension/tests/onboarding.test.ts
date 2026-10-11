@@ -8,7 +8,7 @@ import {
   type ProfileStore,
 } from '../src/core/profile';
 import { resetAnnouncer } from '../src/ui/announce';
-import { startOnboarding, type Onboarding } from '../src/ui/onboarding';
+import { HOLD_MS, startOnboarding, type Onboarding } from '../src/ui/onboarding';
 import { createSettings } from '../src/ui/settings';
 import { label } from '../src/ui/strings';
 
@@ -19,8 +19,11 @@ describe('first-run onboarding', () => {
   let onDone: ReturnType<typeof vi.fn<() => void>>;
 
   const buttons = () => [...root.querySelectorAll<HTMLButtonElement>('.asl-option')];
-  const key = (k: string, code = k) =>
+  /** A key press: down and up (a quick Space press is a tap; holding it would be "talk"). */
+  const key = (k: string, code = k) => {
     document.dispatchEvent(new KeyboardEvent('keydown', { key: k, code, cancelable: true }));
+    document.dispatchEvent(new KeyboardEvent('keyup', { key: k, code, cancelable: true }));
+  };
   const live = () => root.querySelector('#asl-live')?.textContent ?? '';
 
   beforeEach(async () => {
@@ -100,6 +103,28 @@ describe('first-run onboarding', () => {
     expect(root.querySelector('.asl-highlight')?.textContent).toBe('2. हिंदी');
     expect(live()).toContain('हिंदी');
     key(' ', 'Space');
+    await vi.waitFor(() => expect(store.get().prefs.lang).toBe('hi'));
+  });
+
+  it('hold Space and say the answer; letting go sends it (tap is still the switch)', async () => {
+    let stop: (() => void) | null = null;
+    const listen = vi.fn(
+      ({ hold = false } = {}) =>
+        new Promise<string | null>((resolve) => {
+          expect(hold).toBe(true);
+          stop = () => resolve('hindi');
+        }),
+    );
+    onboarding = startOnboarding({ root, store, onDone, listen, stopListening: () => stop?.() });
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: ' ', code: 'Space', cancelable: true }),
+    );
+    await vi.advanceTimersByTimeAsync(HOLD_MS + 10);
+    expect(listen).toHaveBeenCalledOnce();
+    expect(root.querySelector('.asl-highlight')).toBeNull(); // holding is not the switch
+    document.dispatchEvent(
+      new KeyboardEvent('keyup', { key: ' ', code: 'Space', cancelable: true }),
+    );
     await vi.waitFor(() => expect(store.get().prefs.lang).toBe('hi'));
   });
 

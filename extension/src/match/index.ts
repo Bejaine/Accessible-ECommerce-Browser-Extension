@@ -31,7 +31,8 @@ export type CommandId =
   | 'undo'
   | 'first'
   | 'second'
-  | 'retry';
+  | 'retry'
+  | 'read_aloud';
 
 /** English command phrases. Other languages come from src/i18n (requested from Track A). */
 export const COMMANDS: Record<CommandId, string[]> = {
@@ -54,6 +55,20 @@ export const COMMANDS: Record<CommandId, string[]> = {
   first: ['first one', 'the first', 'first', 'पहला', 'మొదటిది'],
   second: ['second one', 'the second', 'second', 'दूसरा', 'రెండవది'],
   retry: ['try again', 'retry', 'फिर से', 'మళ్ళీ ప్రయత్నించు'],
+  read_aloud: [
+    'read aloud',
+    'read it',
+    'read it aloud',
+    'read it out',
+    'read out loud',
+    'read this',
+    'read that',
+    'read that out',
+    'पढ़कर सुनाओ',
+    'पढ़ो',
+    'చదివి వినిపించు',
+    'చదువు',
+  ],
 };
 
 export interface Candidate {
