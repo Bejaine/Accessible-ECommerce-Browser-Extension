@@ -131,10 +131,13 @@ const FALLBACK = {
   'onboarding.skip': 'Skip setup',
   'onboarding.not_understood': "Sorry, I didn't catch that. You can press a number instead.",
   'settings.title': 'Settings',
-  'settings.group_reading': 'Voice and answers',
+  'settings.group_reading': 'Voice',
   'settings.group_display': 'Text and language',
-  'settings.group_pointer': 'Pointer',
+  'settings.group_pointer': 'Pointer and switch',
   'settings.group_switch': 'Switch access',
+  'settings.now': 'Right now',
+  'settings.interrupt': 'Stop the assistant by speaking',
+  'settings.interrupt_hint': 'Best with headphones: on a phone speaker it can hear itself.',
   'settings.modes': 'Modes',
   'settings.language': 'Language',
   'settings.colour': 'Colour names on swatches',
@@ -172,8 +175,7 @@ const FALLBACK = {
   'settings.press_key': 'Press the key you want to use as your switch.',
   'settings.by_you': '(you turned this on)',
   'settings.by_suggestion': '(turned on automatically; you can turn it off)',
-  'settings.current':
-    'Right now: {options} choices at a time, speech {rate}, scanning every {scan} seconds.',
+  'settings.current': '{options} choices at a time, speech {rate}, scanning every {scan} seconds.',
   'onboarding.purpose.en':
     'Setting up the Shopping assistant: three quick questions so it suits you. You can change everything later in Settings.',
   'onboarding.purpose.hi':

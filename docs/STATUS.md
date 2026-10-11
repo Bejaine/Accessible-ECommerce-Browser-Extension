@@ -39,6 +39,12 @@
   and Firefox for Android on a phone; inference calibration recordings (tooling tested).
 
 ## Requests for other tracks
+- D → A (FYI, handled in core): `browserEngines().device` pauses with speechSynthesis.pause(), which
+  Chrome on Linux and Android ignore (the voice kept talking after Pause). Core now passes
+  `engines: playerEngines()` (src/core/deviceVoice.ts): pause cancels the sentence, resume repeats
+  it; a sentence right after cancel() waits 120 ms. Barge-in is opted in through a device setting
+  "Stop the assistant by speaking" (default on for desktop, off on touch devices) and transcripts
+  where `isEcho()` is true are dropped. Feel free to adopt either in `src/audio/`.
 - Integration → A: Hindi/Telugu for two new UI strings in `src/ui/strings.ts`: `turn.busy`
   ("Lots of requests right now. Please try again in a moment.") and `turn.unavailable` ("I couldn't
   do that right now. You can try again, or use the phrase buttons.").

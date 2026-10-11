@@ -52,13 +52,16 @@ export function createPlayerSpeaker(
   let sentence: string | null = null;
   let lang: Lang = 'en';
   /** An answer interrupted by a prompt, and whether it was playing. */
-  let interrupted: { snap: PlayerSnapshot; playing: boolean } | null = null;
+  let interrupted: { snap: PlayerSnapshot; playing: boolean; sentence: string | null } | null =
+    null;
   let inPrompt = false;
   /** Remaining lines for sayLines(). */
   let lines: { text: string; lang: Lang }[] = [];
   const noVoice = new Set<Lang>();
+  // Report the speaker's state, not the player's: an answer paused behind a finished prompt is
+  // still "paused" (the bar keeps its Resume button), even though the player itself is idle.
   const emit = () =>
-    listeners.forEach((l) => l(player.state === 'playing', player.state, sentence));
+    listeners.forEach((l) => l(player.state === 'playing', speaker.state, sentence));
 
   function playOne(text: string, l: Lang): void {
     lang = l;
@@ -87,11 +90,26 @@ export function createPlayerSpeaker(
           interrupted = null;
           player.restore(snap);
         } else {
+          if (interrupted) sentence = interrupted.sentence; // show the answer's sentence again
           emit();
         }
       }
     }
   });
+
+  /**
+   * Playback controls act on the answer: if a prompt is playing over it (or it waits paused
+   * behind a finished prompt), go back to the answer first.
+   */
+  function onAnswer(action: () => void): void {
+    if (interrupted && (inPrompt || player.state === 'idle')) {
+      const { snap } = interrupted;
+      interrupted = null;
+      inPrompt = false;
+      player.restore(snap);
+    }
+    action();
+  }
 
   /** New content replaces whatever was playing (and any interrupted answer). */
   function fresh(): void {
@@ -127,7 +145,7 @@ export function createPlayerSpeaker(
     prompt(text, l) {
       const snap = player.snapshot();
       if (snap && !inPrompt && player.state !== 'idle') {
-        interrupted = { snap, playing: player.state === 'playing' };
+        interrupted = { snap, playing: player.state === 'playing', sentence };
       }
       inPrompt = true;
       lines = [];
@@ -146,19 +164,19 @@ export function createPlayerSpeaker(
       player.resume();
     },
     repeatSentence() {
-      player.repeatSentence();
+      onAnswer(() => player.repeatSentence());
     },
     repeatAll() {
-      player.repeatAll();
+      onAnswer(() => player.repeatAll());
     },
     back() {
-      player.back();
+      onAnswer(() => player.back());
     },
     nextSection() {
-      player.nextSection();
+      onAnswer(() => player.nextSection());
     },
     previousSection() {
-      player.previousSection();
+      onAnswer(() => player.previousSection());
     },
     stop() {
       fresh();
@@ -186,7 +204,7 @@ export function createPlayerSpeaker(
     },
     offerResume(snap) {
       if (player.state !== 'idle') return; // something newer is already playing
-      interrupted = { snap, playing: false };
+      interrupted = { snap, playing: false, sentence: null };
       emit();
     },
     get state() {

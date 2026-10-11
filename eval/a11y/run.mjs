@@ -228,8 +228,13 @@ async function main() {
   await tap(product, '/^No$/');
   await tap(product, '/^Back to menu/');
   await product.ev(`${R}.querySelector('.asl-settings-toggle').click()`);
+  await sleep(500);
+  await allThemes(product, 'Settings page');
+  await tap(product, '/^Back to menu/');
   await tap(product, '/^Actions on this page/');
-  await allThemes(product, 'Settings + action menu');
+  await allThemes(product, 'Action menu');
+  await product.ev(`${R}.querySelector('.asl-settings-toggle').click()`);
+  await sleep(500);
   await tap(product, '/^Start switch scanning/');
   await allThemes(product, 'Switch scanning');
   await tap(product, '/^Stop scanning/');

@@ -66,6 +66,7 @@ import {
 } from './composer';
 import {
   assistantVoiceOn,
+  interruptBySpeaking,
   OPEN_ONBOARDING,
   saveDevicePrefs,
   type DevicePrefs,
@@ -75,6 +76,7 @@ import { createInputFallback } from './fallback';
 import type { TaskContinuity } from './continuity';
 import { createSession } from './session';
 import { createPlayerSpeaker, type Speaker } from './voice';
+import { playerEngines } from './deviceVoice';
 import { createResumeStore } from './resume';
 import { createTurnPipeline, localOutput, type PerformFn, type TurnPipeline } from './turn';
 
@@ -171,7 +173,8 @@ export function mountApp(
       phraseUrl: phraseAudioUrl,
       onFallback: () => announce(t('lite.device_voice', lang()), { speak: false }),
     });
-    player = createPlayer({ sources, rate: profile.prefs.tts_rate });
+    // The device voice pauses by stopping and repeating the sentence (src/core/deviceVoice.ts).
+    player = createPlayer({ sources, rate: profile.prefs.tts_rate, engines: playerEngines() });
   }
   const speaker: Speaker =
     options.speaker ??
@@ -198,8 +201,9 @@ export function mountApp(
 
   // --- Output ---
   /** While an answer (or another view) is open, the menu shrinks to the status and Ask. */
-  function setAnswering(on: boolean): void {
+  function setAnswering(on: boolean, settingsPage = false): void {
     overlay.controls.classList.toggle('asl-answering', on);
+    overlay.controls.classList.toggle('asl-settings-open', on && settingsPage);
   }
 
   function showOutput(output: AccessibleOutput): void {
@@ -334,8 +338,10 @@ export function mountApp(
 
   const settings = createSettings({
     store,
+    onBack: () => backToMenu(),
     onStartScanning: () => {
       overlay.open();
+      backToMenu();
       controls.startScanning(extractPageContext().targets);
     },
     onRunSetup: () =>
@@ -347,6 +353,13 @@ export function mountApp(
       set: (on) => {
         devicePrefs.assistantVoice = on ? 'on' : 'off';
         if (!on) speaker.stop();
+        void saveDevicePrefs(devicePrefs);
+      },
+    },
+    interrupt: {
+      get: () => interruptBySpeaking(devicePrefs),
+      set: (on) => {
+        devicePrefs.interruptBySpeaking = on;
         void saveDevicePrefs(devicePrefs);
       },
     },
@@ -445,6 +458,14 @@ export function mountApp(
     announce(simpleSummary(product));
   }
 
+  function showSettings(): void {
+    view = null;
+    overlay.setWide(false);
+    setAnswering(true, true);
+    overlay.content.replaceChildren(settings.element);
+    settings.element.querySelector<HTMLElement>('h3')?.focus();
+  }
+
   /** Step-by-step checkout from PageContext.checkout (simple mode opens it directly). */
   function showCheckout(override?: CheckoutSummary): void {
     const summary = override ?? page.checkout;
@@ -502,9 +523,11 @@ export function mountApp(
   const pageSection = createMenuSection('menu.page', [pageTools]);
   speed.element.classList.add('asl-row');
   const readingSection = createMenuSection('menu.reading', [speed.element]);
+  // Settings is its own page in the panel (like an answer), opened from this row.
   const settingsGroup = document.createElement('div');
-  settingsGroup.className = 'asl-group';
-  settingsGroup.append(settings.element);
+  settingsGroup.className = 'asl-group asl-list';
+  settingsGroup.append(settings.button);
+  settings.button.addEventListener('click', () => showSettings());
   overlay.controls.append(
     status,
     askSection.element,
@@ -873,8 +896,10 @@ export function mountApp(
   }
 
   /** ASR, then the local matcher or a turn. False if nothing usable was heard. */
-  async function handleUtterance(utterance: Utterance): Promise<boolean> {
+  async function handleUtterance(utterance: Utterance, duringPlayback = false): Promise<boolean> {
     const asr = await backend.asr(toAsrRequest(utterance, lang()));
+    // The mic heard the assistant's own voice (speakers, no headphones): drop it, carry on reading.
+    if (duringPlayback && bargeIn?.isEcho(asr.text)) return false;
     if (!asr.text.trim()) {
       if (utterance.micLevel > 0.1) engine.add('unheard_speech');
       notUnderstood();
@@ -895,9 +920,11 @@ export function mountApp(
       mic,
       player,
       mode: () => (profile.conditions.speech.active ? 'speech' : 'default'),
+      // Off unless the user wants it (Settings): on a phone speaker the mic hears the answer.
+      enabled: () => interruptBySpeaking(devicePrefs),
       onUtterance: (utterance) => {
         if (!utterance.audioBase64) return;
-        void handleUtterance(utterance)
+        void handleUtterance(utterance, true)
           .then((heard) => heard || bargeIn?.resumeAfterBargeIn())
           .catch(() => bargeIn?.resumeAfterBargeIn());
       },
@@ -920,8 +947,10 @@ export function mountApp(
       return;
     }
     if (demo) {
-      // The mock backend can't recognise speech: say so instead of pretending to listen.
+      // The mock backend can't recognise speech: say so instead of pretending to listen, and
+      // offer typing right away.
       announce(label('mic.demo', lang()), { assertive: true });
+      typeBox.input.focus();
       return;
     }
     micButton.setListening(true);

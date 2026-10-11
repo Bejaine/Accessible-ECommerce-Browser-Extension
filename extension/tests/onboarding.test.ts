@@ -160,13 +160,18 @@ describe('settings panel', () => {
     store.subscribe(render);
     render();
 
-    const toggle = el.querySelector<HTMLButtonElement>('.asl-settings-toggle')!;
-    expect(toggle.getAttribute('aria-expanded')).toBe('false');
-    toggle.click();
-    expect(toggle.getAttribute('aria-expanded')).toBe('true');
-    expect(el.querySelector('section p')?.textContent).toBe(
-      'Right now: 5 choices at a time, speech 1.0×, scanning every 1.5 seconds.',
+    // A page with a heading, "Back to menu", a summary of what is in effect, then sections.
+    expect(settings.button.textContent).toBe('Settings');
+    expect(el.querySelector('h3')?.textContent).toBe('Settings');
+    expect(el.querySelector('.asl-now-box')?.textContent).toBe(
+      'Right now5 choices at a time, speech 1.0×, scanning every 1.5 seconds.',
     );
+    expect([...el.querySelectorAll('fieldset > legend')].map((l) => l.textContent)).toEqual([
+      'Modes',
+      'Voice',
+      'Text and language',
+      'Pointer and switch',
+    ]);
 
     // An automatically applied mode says so, and can be turned off here.
     await store.update((d) => setConditionActive(d, 'motor', true, 'inferred', 0.8));
@@ -184,7 +189,7 @@ describe('settings panel', () => {
       expect(store.get().conditions.ageing).toMatchObject({ active: true, source: 'user' }),
     );
     expect(ageing.textContent).toContain('(you turned this on)');
-    expect(el.querySelector('section p')?.textContent).toContain(
+    expect(el.querySelector('.asl-now-box')?.textContent).toContain(
       '3 choices at a time, speech 0.75×',
     );
 
@@ -193,7 +198,7 @@ describe('settings panel', () => {
     named('Larger').click();
     await vi.waitFor(() => expect(store.get().prefs.text_scale).toBe(1.25));
     const reading = [...el.querySelectorAll('fieldset')].find(
-      (f) => f.querySelector('legend')?.textContent === 'Voice and answers',
+      (f) => f.querySelector('legend')?.textContent === 'Voice',
     )!;
     const boxes = [...reading.querySelectorAll<HTMLInputElement>('label input')];
     boxes[0]!.click(); // assistant voice
