@@ -97,6 +97,46 @@ def test_return_asks_why_then_confirms_without_calling_a_price_a_total(ctx, page
     assert [a["target_id"] for a in r2.confirmation["pending_actions"]] == ["t-return-2"]
 
 
+def test_return_finish_chooses_the_offered_reason_on_the_page(ctx, page):
+    run(tools.order_task(ctx(page), task="return"))
+    run(tools.order_task(ctx(page), reason="It arrived damaged"))  # a reason chip
+    form = json.loads(json.dumps(page))
+    form["orders"] = []
+    form["targets"] = [
+        {"schema_version": "1.0", "id": "t-reason", "kind": "select", "label": "Reason",
+         "zone": "orders", "state": None, "colour_name": None},
+        {"schema_version": "1.0", "id": "t-ok", "kind": "button", "label": "Confirm return",
+         "zone": "orders", "state": None, "colour_name": None},
+    ]  # fmt: skip
+    r = run(tools.order_task(ctx(form)))
+    assert r.confirmation["risk"] == "high"
+    actions = r.confirmation["pending_actions"]
+    assert [(a["type"], a["target_id"], a["value"]) for a in actions] == [
+        ("select", "t-reason", "It arrived damaged"),
+        ("click", "t-ok", None),
+    ]
+    assert (
+        r.output.summary
+        == 'To finish, choose the reason "It arrived damaged" and press "Confirm return"?'
+    )
+
+
+def test_return_finish_with_a_free_reason_leaves_the_choice_to_the_user(ctx, page):
+    run(tools.order_task(ctx(page), task="return"))
+    run(tools.order_task(ctx(page), reason="it came broken"))
+    form = json.loads(json.dumps(page))
+    form["orders"] = []
+    form["targets"] = [
+        {"schema_version": "1.0", "id": "t-reason", "kind": "select", "label": "Reason",
+         "zone": "orders", "state": None, "colour_name": None},
+        {"schema_version": "1.0", "id": "t-ok", "kind": "button", "label": "Confirm return",
+         "zone": "orders", "state": None, "colour_name": None},
+    ]  # fmt: skip
+    r = run(tools.order_task(ctx(form)))
+    assert [a["target_id"] for a in r.confirmation["pending_actions"]] == ["t-ok"]
+    assert r.output.summary.endswith("Choose the reason on this page: it came broken.")
+
+
 def test_asks_which_order_when_several_fit(ctx, page):
     page["orders"][1]["available_actions"] = ["track", "return"]
     r = run(tools.order_task(ctx(page), task="track"))
