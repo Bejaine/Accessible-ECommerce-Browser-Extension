@@ -3,7 +3,7 @@
 import { Window } from 'happy-dom';
 import { describe, expect, it } from 'vitest';
 import { orderPlaceholder } from '../../src/extract/orders';
-import { resolveOrderId } from '../../src/extract';
+import { extractPageContext, resolveOrderId } from '../../src/extract';
 
 /** A new page in the same tab: a fresh document, the tab's sessionStorage carried over. */
 function nextPage(prev: Window | null): Window {
@@ -31,4 +31,12 @@ describe('order placeholders across pages', () => {
     const doc = nextPage(null).document as unknown as Document;
     expect(orderPlaceholder(doc, 'MS-1002')).toBe('ORDER_1');
   });
+});
+
+it('an Amazon order-details URL leaves the device with ORDER_n', () => {
+  const doc = nextPage(null).document as unknown as Document;
+  const url = 'https://www.amazon.in/gp/your-account/order-details?orderID=403-1234567-7654321';
+  const ctx = extractPageContext(doc, { url });
+  expect(ctx.page_type).toBe('order_detail');
+  expect(ctx.url).toBe('https://www.amazon.in/gp/your-account/order-details?orderID=ORDER_1');
 });
