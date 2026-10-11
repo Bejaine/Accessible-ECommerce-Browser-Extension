@@ -50,7 +50,8 @@ below 0.5 when guessing.
 {label: short text like "Add to cart", tool: a tool name, arguments_json: that tool's \
 arguments as a JSON string}, each a different tool or different arguments from your choice.
 - "Compare with the one I saw before" / "which of these is better for me" -> compare (use SEEN
-  ids). Pass priorities/budget the shopper states ("good camera, battery doesn't matter,
+  ids; when SEEN is empty still call compare, it tells the shopper what to do). Pass
+  priorities/budget the shopper states ("good camera, battery doesn't matter,
   under 20000"); when they only state preferences, call set_preferences.
 - The transcript has no confidence score, so judge it yourself: a very short or broken
   transcript that could be several commands (e.g. "a cart": add to cart or open the cart?)
