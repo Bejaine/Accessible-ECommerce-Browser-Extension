@@ -35,6 +35,47 @@ describe('content-script app: inference -> suggestion -> mode -> undo', () => {
     }
   };
 
+  describe('answering a suggestion by voice', () => {
+    it('"yes" turns the suggested mode on now (not "nothing to confirm")', async () => {
+      motorEvidence();
+      vi.advanceTimersByTime(SUGGEST_CHECK_MS);
+      expect(app.suggester.state.kind).toBe('countdown');
+      await app.say('yes', 'voice');
+      await vi.waitFor(() => expect(store.get().conditions.motor.active).toBe(true));
+      expect(app.suggester.state.kind).toBe('applied');
+    });
+
+    it('"no thanks" cancels it', async () => {
+      motorEvidence();
+      vi.advanceTimersByTime(SUGGEST_CHECK_MS);
+      await app.say('no thanks', 'voice');
+      expect(app.suggester.state.kind).toBe('idle');
+      vi.advanceTimersByTime(15_000);
+      expect(store.get().conditions.motor.active).toBe(false);
+    });
+
+    it('the question takes "read aloud", "easier to press" or "neither"', async () => {
+      const ask = () => {
+        for (let i = 0; i < 20; i++) app.engine.add('click_without_pointer');
+        app.suggester.check();
+        expect(app.suggester.state.kind).toBe('question');
+      };
+      ask();
+      await app.say('read aloud', 'voice');
+      await vi.waitFor(() => expect(store.get().conditions.visual.active).toBe(true));
+
+      app.unmount();
+      fakeBrowser.reset();
+      store = await createProfileStore();
+      const container = document.createElement('div');
+      shadow().replaceChildren(container);
+      app = mountApp(container, store, createBus(), createMockBackend());
+      ask();
+      await app.say('easier to press', 'voice');
+      await vi.waitFor(() => expect(store.get().conditions.motor.active).toBe(true));
+    });
+  });
+
   it('suggests, counts down, applies to the stored profile, rebuilds the mode, and undoes', async () => {
     motorEvidence();
     vi.advanceTimersByTime(SUGGEST_CHECK_MS);

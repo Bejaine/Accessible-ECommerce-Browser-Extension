@@ -782,11 +782,24 @@ export function mountApp(
   function runCommand(id: string): boolean {
     switch (id) {
       case 'yes':
-        void turn.confirm();
+        // A pending confirmation first; else a suggestion counting down: turn it on now.
+        if (turn.pending) void turn.confirm();
+        else if (suggester.state.kind === 'countdown') suggester.accept();
+        else if (suggester.state.kind === 'question') announce(label('suggest.question', lang()));
+        else void turn.confirm(); // says there is nothing to confirm
         return true;
       case 'no':
         if (turn.pending) turn.cancel();
+        else if (suggester.state.kind === 'question') suggester.answer('neither');
         else suggester.decline();
+        return true;
+      case 'easier_to_press':
+        if (suggester.state.kind !== 'question') return false;
+        suggester.answer('motor');
+        return true;
+      case 'neither':
+        if (suggester.state.kind !== 'question') return false;
+        suggester.answer('neither');
         return true;
       case 'repeat':
         if (speaker.state !== 'idle') speaker.repeatSentence();
@@ -800,6 +813,11 @@ export function mountApp(
         speaker.pause();
         return true;
       case 'read_aloud':
+        // The suggestion question "read things aloud, or make buttons easier to press?"
+        if (suggester.state.kind === 'question') {
+          suggester.answer('visual');
+          return true;
+        }
         // Read the last answer aloud; with none yet, what this product page says.
         if (lastOutput) speaker.speakOutput(lastOutput, { verbosity: mode.verbosity });
         else if (page.page_type === 'product' && page.products[0])
