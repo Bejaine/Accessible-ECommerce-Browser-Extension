@@ -52,7 +52,7 @@ const FALLBACK = {
   'mode.ageing.desc': 'Larger text, slower speech and fewer choices at a time.',
   'suggest.title': 'Suggestion',
   'suggest.offer':
-    '{mode} might make this easier. Turning it on in {seconds} seconds. Say no or press Escape to cancel.',
+    '{mode} might make this easier. Turning it on in {seconds} seconds. Say yes to turn it on now, or no (or press Escape) to cancel.',
   'suggest.seconds': '{seconds} seconds',
   'suggest.countdown': 'Turning on in {seconds} s',
   'suggest.on': '{mode} is on. Say undo or press Undo to turn it off.',
@@ -63,7 +63,8 @@ const FALLBACK = {
   'suggest.decline': 'No thanks',
   'suggest.undo': 'Undo',
   'suggest.dismiss': 'OK',
-  'suggest.question': 'Would you like me to read things aloud, or make buttons easier to press?',
+  'suggest.question':
+    'Would you like me to read things aloud, or make buttons easier to press? You can say read aloud, easier to press, or neither.',
   'suggest.answer_visual': 'Read things aloud',
   'suggest.answer_motor': 'Easier to press',
   'suggest.answer_neither': 'Neither',
@@ -128,7 +129,7 @@ const FALLBACK = {
   'onboarding.yes': 'Yes',
   'onboarding.no': 'No',
   'onboarding.done':
-    'All set. You can change these any time in Settings, inside the Shopping assistant.',
+    'All set. You can change these any time in Settings, inside the Shopping assistant. Say finish, or press Space, to start shopping.',
   'onboarding.finish': 'Finish',
   'onboarding.skip': 'Skip setup',
   'onboarding.not_understood': "Sorry, I didn't catch that. You can press a number instead.",

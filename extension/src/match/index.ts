@@ -32,7 +32,9 @@ export type CommandId =
   | 'first'
   | 'second'
   | 'retry'
-  | 'read_aloud';
+  | 'read_aloud'
+  | 'easier_to_press'
+  | 'neither';
 
 /** English command phrases. Other languages come from src/i18n (requested from Track A). */
 export const COMMANDS: Record<CommandId, string[]> = {
@@ -47,14 +49,25 @@ export const COMMANDS: Record<CommandId, string[]> = {
   previous_section: ['previous', 'previous section'],
   slower: ['slower', 'slow down'],
   faster: ['faster', 'speed up'],
-  yes: ['yes', 'yeah', 'yep', 'confirm', 'okay'],
-  no: ['no', 'nope', 'cancel', "don't"],
+  yes: ['yes', 'yeah', 'yep', 'confirm', 'okay', 'turn it on', 'हाँ', 'हां', 'అవును'],
+  no: ['no', 'nope', 'cancel', "don't", 'no thanks', 'नहीं', 'కాదు', 'వద్దు'],
   help: ['help', 'what can i say'],
   undo: ['undo', 'turn it off', 'switch it off'],
   // "Did you mean X or Y?" answers, and retrying a failed turn.
   first: ['first one', 'the first', 'first', 'पहला', 'మొదటిది'],
   second: ['second one', 'the second', 'second', 'दूसरा', 'రెండవది'],
   retry: ['try again', 'retry', 'फिर से', 'మళ్ళీ ప్రయత్నించు'],
+  // Answers to "read things aloud, or make buttons easier to press?" (the suggestion question).
+  easier_to_press: [
+    'easier to press',
+    'make buttons easier',
+    'easier buttons',
+    'bigger buttons',
+    'buttons',
+    'बटन आसान',
+    'బటన్లు సులభం',
+  ],
+  neither: ['neither', 'none of them', 'neither of them', 'कोई नहीं', 'ఏదీ వద్దు'],
   read_aloud: [
     'read aloud',
     'read it',
@@ -64,6 +77,7 @@ export const COMMANDS: Record<CommandId, string[]> = {
     'read this',
     'read that',
     'read that out',
+    'read things aloud',
     'पढ़कर सुनाओ',
     'पढ़ो',
     'చదివి వినిపించు',

@@ -10,6 +10,24 @@ import { announce, initAnnouncer } from './announce';
 import { createScanner, type ScanItem } from './scanner';
 import { label, type UiKey } from './strings';
 
+/** Said on the last step, they finish setup (English, Hindi, Telugu). */
+export const FINISH_WORDS = [
+  'finish',
+  'done',
+  'start shopping',
+  'close',
+  'yes',
+  'okay',
+  'ok',
+  'पूरा',
+  'हो गया',
+  'खत्म',
+  'हाँ',
+  'పూర్తి',
+  'అయిపోయింది',
+  'అవును',
+];
+
 /** Holding Space at least this long means "talk" (same as on shop pages). */
 export const HOLD_MS = 400;
 
@@ -156,7 +174,7 @@ export function startOnboarding(opts: OnboardingOptions): Onboarding {
 
     const actions = document.createElement('div');
     actions.className = 'asl-actions';
-    if (opts.listen && step !== 'done') {
+    if (opts.listen) {
       const speak = document.createElement('button');
       speak.type = 'button';
       speak.className = 'asl-speak';
@@ -215,6 +233,12 @@ export function startOnboarding(opts: OnboardingOptions): Onboarding {
 
   async function answerText(text: string): Promise<boolean> {
     const said = text.trim().toLowerCase();
+    if (step === 'done') {
+      // The last step: "finish", "done", "start shopping", "yes"… ends setup.
+      if (!FINISH_WORDS.some((w) => said === w || said.includes(w))) return false;
+      await finish();
+      return true;
+    }
     const index = options().findIndex((o) =>
       o.words.some((w) => said === w || said.split(/\s+/).includes(w)),
     );
@@ -260,7 +284,7 @@ export function startOnboarding(opts: OnboardingOptions): Onboarding {
     } else if (step !== 'language' && (e.key === 'y' || e.key === 'n')) {
       e.preventDefault();
       void choose(e.key === 'y' ? 0 : 1);
-    } else if (e.code === 'Space' && opts_.length > 0) {
+    } else if (e.code === 'Space' && (opts_.length > 0 || step === 'done')) {
       e.preventDefault();
       if (e.repeat || space) return;
       const press = {
@@ -283,6 +307,8 @@ export function startOnboarding(opts: OnboardingOptions): Onboarding {
     space = null;
     clearTimeout(press.timer);
     if (press.held) opts.stopListening?.();
+    else if (step === 'done')
+      void finish(); // one switch press finishes setup
     else switchPress();
   };
   document.addEventListener('keyup', onKeyUp);

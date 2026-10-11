@@ -54,7 +54,7 @@ describe('suggest-then-switch', () => {
     suggester.check();
     expect(suggester.state).toEqual({ kind: 'countdown', condition: 'motor', secondsLeft: 10 });
     expect(announce).toHaveBeenCalledWith(
-      'Easy-press mode might make this easier. Turning it on in 10 seconds. Say no or press Escape to cancel.',
+      'Easy-press mode might make this easier. Turning it on in 10 seconds. Say yes to turn it on now, or no (or press Escape) to cancel.',
       true,
     );
     vi.advanceTimersByTime(5000);
@@ -137,7 +137,7 @@ describe('suggest-then-switch', () => {
     suggester.check();
     expect(suggester.state.kind).toBe('question');
     expect(lastAnnounce()).toBe(
-      'Would you like me to read things aloud, or make buttons easier to press?',
+      'Would you like me to read things aloud, or make buttons easier to press? You can say read aloud, easier to press, or neither.',
     );
     vi.advanceTimersByTime(120_000);
     expect(suggester.state.kind).toBe('question');

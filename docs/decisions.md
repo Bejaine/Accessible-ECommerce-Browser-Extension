@@ -512,3 +512,11 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   for a chosen did-you-mean alternative). The results page sends Track C's "read the results"
   chip only if it really is a search page; no resume-reading offer competes with it.
 
+## 2026-10-11 — Suggestions and the end of setup answer to voice (Track D)
+- During a mode suggestion's countdown, "yes" / "turn it on" turns it on now and "no" / "no
+  thanks" cancels (Hindi/Telugu too); a pending confirmation still comes first. The question "read
+  things aloud, or make buttons easier to press?" takes "read aloud", "easier to press", "neither".
+  The announcements now say so.
+- The setup page's last step offers Speak and hold-Space: "finish", "done", "start shopping",
+  "yes" (+ Hindi/Telugu) end setup; a Space tap finishes it with one switch.
+

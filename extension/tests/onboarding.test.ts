@@ -128,6 +128,37 @@ describe('first-run onboarding', () => {
     await vi.waitFor(() => expect(store.get().prefs.lang).toBe('hi'));
   });
 
+  it('the last step can be finished by voice ("finish") or one Space press', async () => {
+    const answers = ['english', 'no', 'no', 'finish'];
+    onboarding = startOnboarding({
+      root,
+      store,
+      onDone,
+      listen: async () => answers.shift() ?? null,
+    });
+    for (const next of ['read_aloud', 'colour', 'done']) {
+      root.querySelector<HTMLButtonElement>('.asl-speak')!.click();
+      await vi.waitFor(() => expect(onboarding.step).toBe(next));
+    }
+    expect(root.querySelector('.asl-speak')).not.toBeNull(); // voice is offered on the last step too
+    root.querySelector<HTMLButtonElement>('.asl-speak')!.click();
+    await vi.waitFor(() => expect(onDone).toHaveBeenCalled());
+
+    onDone.mockClear();
+    onboarding.dispose();
+    onboarding = startOnboarding({ root, store, onDone });
+    for (const [k, next] of [
+      ['1', 'read_aloud'],
+      ['n', 'colour'],
+      ['n', 'done'],
+    ] as const) {
+      key(k);
+      await vi.waitFor(() => expect(onboarding.step).toBe(next));
+    }
+    key(' ', 'Space');
+    await vi.waitFor(() => expect(onDone).toHaveBeenCalled());
+  });
+
   it('voice: a recognised answer is accepted; anything else asks for a number instead', async () => {
     const answers = ['telugu', 'pineapple'];
     onboarding = startOnboarding({
