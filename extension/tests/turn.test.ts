@@ -217,7 +217,11 @@ describe('turns from the overlay buttons', () => {
     await mount(failing);
     bus.emit({ type: 'phrase', id: 'price', text: "What's the price?" });
     await settle();
-    expect(q('.asl-summary')?.textContent).toBe('The assistant is busy. Please try again.');
-    expect(live()).toContain('The assistant is busy');
+    // A calm message chosen by the error code; the backend's own text is never read out.
+    expect(q('.asl-summary')?.textContent).toBe(
+      'Lots of requests right now. Please try again in a moment.',
+    );
+    expect(live()).toContain('Lots of requests right now');
+    expect(app.turn.canRetry).toBe(true);
   });
 });

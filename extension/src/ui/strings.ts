@@ -93,6 +93,8 @@ const FALLBACK = {
     "I pressed it, but I couldn't see the page change. Please check before going on.",
   'turn.working': 'One moment.',
   'turn.failed': "Sorry, I couldn't get an answer just now. Please try again in a moment.",
+  'turn.busy': 'Lots of requests right now. Please try again in a moment.',
+  'turn.unavailable': "I couldn't do that right now. You can try again, or use the phrase buttons.",
   'mic.speak': 'Speak',
   'mic.stop': 'Stop listening',
   'mic.not_understood': "Sorry, I didn't catch that. Please try again.",

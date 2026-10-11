@@ -25,6 +25,7 @@ import {
   extractPageContext,
   muteMicInSecureZone,
   resolveTarget,
+  restorePlaceholders,
 } from '../extract';
 import { t } from '../i18n';
 import { attachCollectors } from '../infer/collectors';
@@ -71,6 +72,7 @@ import {
   type ProfileStore,
 } from './profile';
 import { createInputFallback } from './fallback';
+import type { TaskContinuity } from './continuity';
 import { createSession } from './session';
 import { createPlayerSpeaker, type Speaker } from './voice';
 import { createResumeStore } from './resume';
@@ -129,6 +131,10 @@ export interface AppOptions {
   devicePrefs?: DevicePrefs;
   /** True when the backend is the in-browser mock: no real speech recognition or voices. */
   demo?: boolean;
+  /** The shopping session shared by every page (from the background; src/core/continuity.ts). */
+  sessionId?: string;
+  /** Keeps an order task going across page loads; without it tasks stop at a page change. */
+  continuity?: TaskContinuity;
 }
 
 export function mountApp(
@@ -143,7 +149,7 @@ export function mountApp(
   const engine = createScoreEngine();
   const devicePrefs: DevicePrefs = options.devicePrefs ?? { assistantVoice: 'auto' };
   const demo = options.demo ?? false;
-  const session = createSession();
+  const session = createSession(options.sessionId);
   const offs: (() => void)[] = [];
   let profile = store.get();
   let mode = resolveMode(profile);
@@ -246,6 +252,9 @@ export function mountApp(
     },
     announce: (text, assertive) => announce(text, { assertive }),
     confirmEveryAction: () => confirmEveryAction(profile),
+    continuity: options.continuity,
+    // ORDER_n / ADDR_n back to the real order number and address, on the device only.
+    restore: (text) => restorePlaceholders(text),
   });
 
   // --- Speech speed (starting defaults come from conditions; the user changes it here) ---
