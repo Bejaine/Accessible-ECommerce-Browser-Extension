@@ -96,6 +96,8 @@ const FALLBACK = {
   'turn.busy': 'Lots of requests right now. Please try again in a moment.',
   'turn.unavailable': "I couldn't do that right now. You can try again, or use the phrase buttons.",
   'mic.speak': 'Speak',
+  'cue.listening': 'Listening…',
+  'cue.stopped': 'Got it.',
   'menu.ask': 'Ask',
   'menu.quick': 'Quick questions',
   'menu.page': 'On this page',

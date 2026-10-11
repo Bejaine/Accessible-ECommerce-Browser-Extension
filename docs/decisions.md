@@ -486,3 +486,12 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
 - "Always listen while it reads" (barge-in) is now off by default: holding Space is the dependable
   way to talk over an answer; continuous listening needs headphones.
 
+## 2026-10-11 — Listening cues (Track D)
+- A rising two-note chime (0.2 s) when the assistant starts listening, a falling one when it stops,
+  on shop pages and the setup page; also with the assistant's voice off (a screen reader gives no
+  cue). Tones, not words, so they never sound like an answer.
+- Played through Track A's player (rule 12) as phrase keys `cue.listen` / `cue.done`: core's
+  `phraseUrl` answers those keys with the bundled chimes (src/ui/cues.ts, made by
+  dev/make-cues.mjs). Inlined as data URLs: a shop page can't load extension files that aren't in
+  `web_accessible_resources`. A paused answer stays paused under a cue and resumes after it.
+

@@ -36,6 +36,7 @@ import { announce, resetAnnouncer, setAnnounceVoice } from '../ui/announce';
 import { createConfirmCard, formatMoney } from '../ui/confirmCard';
 import { createMicButton } from '../ui/micButton';
 import { createActiveFeatures } from '../ui/activeFeatures';
+import { CUE_KEYS, CUE_MS, cueUrl, type Cue } from '../ui/cues';
 import { createMenuSection, createTurnStatus, createTypeBox } from '../ui/menu';
 import { createSettings } from '../ui/settings';
 import {
@@ -199,7 +200,8 @@ export function mountApp(
     const sources = createSpeechSources({
       tts: (text, l) => backend.tts({ schema_version: '1.0', text, lang: l }),
       lite: () => demo || profile.prefs.lite_mode,
-      phraseUrl: phraseAudioUrl,
+      // Pre-recorded UI phrases, plus the listening cues (bundled chimes).
+      phraseUrl: (key, l) => cueUrl(key) ?? phraseAudioUrl(key, l),
       onFallback: () => announce(t('lite.device_voice', lang()), { speak: false }),
     });
     // The device voice pauses by stopping and repeating the sentence (src/core/deviceVoice.ts).
@@ -1069,6 +1071,15 @@ export function mountApp(
   );
   offs.push(() => secureZone.stop());
 
+  /** A listening cue (a short chime) through the player. */
+  function playCue(cue: Cue): void {
+    speaker.cue(
+      CUE_KEYS[cue],
+      label(cue === 'listen' ? 'cue.listening' : 'cue.stopped', lang()),
+      lang(),
+    );
+  }
+
   /**
    * Listen once (Speak button, a Space tap) or while Space is held (`hold`: patient silence
    * timeout; letting go of Space ends it). What was being read pauses and carries on if nothing
@@ -1090,8 +1101,15 @@ export function mountApp(
     rememberUsedVoice();
     const wasPlaying = speaker.state === 'playing';
     if (wasPlaying) speaker.pause(); // don't let the assistant's voice be heard by the mic
+    // An audible cue (a rising chime) that listening has started. It plays while the mic opens
+    // (that takes about as long), and echo cancellation removes sound the page itself plays.
+    playCue('listen');
+    // Carry on reading after the "done" chime has played.
     const carryOn = () => {
-      if (wasPlaying && (speaker.state as string) === 'paused') speaker.resume();
+      if (!wasPlaying) return;
+      setTimeout(() => {
+        if ((speaker.state as string) === 'paused') speaker.resume();
+      }, CUE_MS);
     };
     micButton.setListening(true);
     announce(t('mic.listening', lang()), { speak: false });
@@ -1102,6 +1120,7 @@ export function mountApp(
       });
       micButton.setListening(false);
       if (utterance.reason === 'muted') return;
+      playCue('done'); // a falling chime: listening has stopped
       if (!utterance.audioBase64) {
         carryOn();
         // Silence with a near-zero level is a mic/environment problem, not unclear speech.
@@ -1115,6 +1134,7 @@ export function mountApp(
       else enableBargeIn();
     } catch (error) {
       micButton.setListening(false);
+      playCue('done');
       carryOn();
       const message =
         error instanceof MicError ? t(`mic.${error.code}`, lang()) : label('turn.failed', lang());

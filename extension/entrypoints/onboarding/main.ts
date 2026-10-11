@@ -5,7 +5,9 @@ import { phraseAudioUrl } from '@/src/audio/phrases';
 import { createPlayer } from '@/src/audio/player';
 import { createSpeechSources } from '@/src/audio/sources';
 import { createPlayerSpeaker } from '@/src/core/voice';
+import { CUE_KEYS, cueUrl } from '@/src/ui/cues';
 import { startOnboarding } from '@/src/ui/onboarding';
+import { label } from '@/src/ui/strings';
 
 // First-run setup page, opened once by the background script on install (or from Settings).
 void (async () => {
@@ -19,7 +21,7 @@ void (async () => {
   const sources = createSpeechSources({
     tts: (text, lang) => backend.tts({ schema_version: '1.0', text, lang }),
     lite: () => demo || store.get().prefs.lite_mode,
-    phraseUrl: phraseAudioUrl,
+    phraseUrl: (key, lang) => cueUrl(key) ?? phraseAudioUrl(key, lang),
   });
   const speaker = createPlayerSpeaker(createPlayer({ sources, rate: store.get().prefs.tts_rate }));
   startOnboarding({
@@ -33,7 +35,11 @@ void (async () => {
     // Hold Space (or press Speak) and say the answer; letting go of Space sends it.
     listen: async ({ hold = false } = {}) => {
       speaker.stop();
+      // Rising chime: listening (plays while the mic opens). Falling chime: stopped.
+      const lang = store.get().prefs.lang;
+      speaker.cue(CUE_KEYS.listen, label('cue.listening', lang), lang);
       const utterance = await mic.listen({ mode: hold ? 'speech' : 'default' });
+      speaker.cue(CUE_KEYS.done, label('cue.stopped', lang), lang);
       if (!utterance.audioBase64) return null;
       const asr = await backend.asr(toAsrRequest(utterance, store.get().prefs.lang));
       return asr.text || null;
