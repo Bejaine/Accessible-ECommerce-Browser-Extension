@@ -64,10 +64,18 @@ export function readCartCount(doc: Document): number | null {
   const fromBadge = badge?.getAttribute('data-cart-count') ?? badge?.textContent;
   const m = fromBadge?.match(/\d+/);
   if (m) return Number(m[0]);
-  for (const a of Array.from(doc.querySelectorAll('a[href*="cart" i], [aria-label*="cart" i]'))) {
+  const cartLinks = Array.from(doc.querySelectorAll('a[href*="cart" i], [aria-label*="cart" i]'));
+  for (const a of cartLinks) {
     const label = `${a.getAttribute('aria-label') ?? ''} ${a.textContent ?? ''}`;
     const n = label.match(/(\d+)\s*items?\b/i) ?? label.match(/\bcart\D{0,3}(\d+)\b/i);
     if (n?.[1]) return Number(n[1]);
+  }
+  // A badge inside the cart link that is only a number (Flipkart's header cart).
+  for (const a of cartLinks) {
+    const badge = Array.from(a.querySelectorAll('*')).find(
+      (el) => el.children.length === 0 && /^\d{1,3}$/.test(el.textContent?.trim() ?? ''),
+    );
+    if (badge) return Number(badge.textContent!.trim());
   }
   return null;
 }
@@ -91,11 +99,34 @@ function setValue(
   el.dispatchEvent(new Event('change', { bubbles: true }));
 }
 
+/** Real controls; anything else is a plain element a site made clickable with script. */
+const NATIVE = 'a[href], button, input, select, textarea, label, summary, [role]';
+
 function click(el: Element): void {
   const win = el.ownerDocument.defaultView;
   (el as HTMLElement).scrollIntoView?.({ block: 'center' });
   (el as HTMLElement).focus?.();
   const Pointer = win?.PointerEvent ?? win?.MouseEvent;
+  if (!el.matches(NATIVE) && Pointer && win?.MouseEvent) {
+    // A <div> control (React Native Web on Flipkart) listens for the whole sequence a person's
+    // click produces, at a point inside it; native controls keep the short sequence below.
+    const box = (el as HTMLElement).getBoundingClientRect?.();
+    const at = {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      button: 0,
+      clientX: box ? box.left + box.width / 2 : 0,
+      clientY: box ? box.top + box.height / 2 : 0,
+    };
+    const pointer = { ...at, pointerId: 1, pointerType: 'mouse', isPrimary: true };
+    el.dispatchEvent(new Pointer('pointerdown', { ...pointer, buttons: 1 }));
+    el.dispatchEvent(new win.MouseEvent('mousedown', { ...at, buttons: 1 }));
+    el.dispatchEvent(new Pointer('pointerup', pointer));
+    el.dispatchEvent(new win.MouseEvent('mouseup', at));
+    el.dispatchEvent(new win.MouseEvent('click', at));
+    return;
+  }
   if (Pointer) {
     el.dispatchEvent(new Pointer('pointerdown', { bubbles: true, cancelable: true }));
     el.dispatchEvent(new Pointer('pointerup', { bubbles: true, cancelable: true }));

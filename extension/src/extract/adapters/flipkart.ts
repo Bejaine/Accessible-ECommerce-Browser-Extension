@@ -220,4 +220,6 @@ export const flipkartAdapter: SiteAdapter = {
   pageType: (url) => pageType(url),
   product,
   searchResults,
+  // Flipkart's product pages are React Native Web: "Add to cart", "Buy now" etc. are <div>s.
+  pseudoButtons: true,
 };

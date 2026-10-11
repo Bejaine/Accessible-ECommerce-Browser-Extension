@@ -95,6 +95,27 @@ describe('click', () => {
   });
 });
 
+describe('click on <div> controls (React Native Web, Flipkart)', () => {
+  it('sends the full sequence a real click makes, once, and native buttons keep theirs', async () => {
+    document.body.innerHTML = `
+      <div id="pressable"><div id="box"><div dir="auto">Add to cart</div></div></div>
+      <button id="native">Add to cart</button>`;
+    const seen: string[] = [];
+    for (const type of ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click']) {
+      // The handler sits on an ancestor, as React's do; events must bubble to it.
+      $('#pressable').addEventListener(type, (e) =>
+        seen.push(`${type}:${(e as MouseEvent).button}`),
+      );
+      $('#native').addEventListener(type, () => seen.push(`native-${type}`));
+    }
+    expect((await performAction(action('click', $('#box')))).ok).toBe(true);
+    expect(seen).toEqual(['pointerdown:0', 'mousedown:0', 'pointerup:0', 'mouseup:0', 'click:0']);
+    seen.length = 0;
+    expect((await performAction(action('click', $('#native')))).ok).toBe(true);
+    expect(seen).toEqual(['native-pointerdown', 'native-pointerup', 'native-click']);
+  });
+});
+
 describe('fill', () => {
   it('sets the value React-safely (native setter + input/change events)', async () => {
     document.body.innerHTML = '<input id="q" name="q">';
@@ -162,6 +183,12 @@ describe('navigate', () => {
 });
 
 describe('readCartCount', () => {
+  it("reads a number-only badge inside the cart link (Flipkart's header)", () => {
+    document.body.innerHTML =
+      '<a href="/viewcart?marketplace=FLIPKART" title="Cart"><img alt="Cart"><span>Cart</span><div>3</div></a>';
+    expect(readCartCount(document)).toBe(3);
+  });
+
   it('reads Amazon, data-attribute and labelled-link badges', () => {
     document.body.innerHTML = '<span id="nav-cart-count">3</span>';
     expect(readCartCount(document)).toBe(3);

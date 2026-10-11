@@ -13,4 +13,6 @@ export interface SiteAdapter {
   searchResults(doc: Document, url: string, now: Date): ProductJSON[];
   /** Orders on an order list or order detail page (real ids stay on the device). */
   orders?(doc: Document, url: string): OrderDraft[];
+  /** The site builds controls from plain <div>s (React Native Web): find them by text too. */
+  pseudoButtons?: boolean;
 }

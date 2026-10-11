@@ -212,6 +212,52 @@ export interface PageMapOptions {
   url: string;
   /** Elements that must survive the cap (e.g. the checkout's Place-order button). */
   pinned?: Element[];
+  /**
+   * Also list controls built from plain <div>s (React Native Web on Flipkart): no button, role
+   * or href, so they are invisible to INTERACTIVE. Only for sites whose adapter asks for it.
+   */
+  pseudoButtons?: boolean;
+}
+
+/** Whole-text labels of shop actions; a short text that reads exactly like one is a control. */
+const ACTION_TEXT =
+  /^(add to (cart|bag|basket|wishlist)|go to (cart|bag)|buy now|buy (this|with emi)|place order|continue|remove|save for later|move to (cart|wishlist)|apply|check|change|deliver here|notify me|compare|view (details|all|more|offers|all reviews|cart)|see (all|more|details)|show (all|more)|read more|more details|all details|specifications|ratings (&|and) reviews|all reviews|select|cancel|return|track|need help\??)$/i;
+const MAX_PSEUDO_LABEL = 80;
+
+/** Text of an element, whitespace-collapsed, or '' (cheap: textContent). */
+function flatText(el: Element): string {
+  return (el.textContent ?? '').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Non-native controls: elements with an explicit click signal (tabindex ≥ 0, onclick), and the
+ * box around a text that reads like an action. The box is the outermost ancestor showing exactly
+ * that text, so a synthetic click lands where a person would click and bubbles to the handler.
+ */
+function pseudoButtons(doc: Document): Element[] {
+  const out = new Set<Element>();
+  const free = (el: Element): boolean => !el.closest(INTERACTIVE) && !el.querySelector(INTERACTIVE);
+  for (const el of Array.from(doc.querySelectorAll('[tabindex], [onclick]'))) {
+    if (el.matches(INTERACTIVE)) continue;
+    if (Number(el.getAttribute('tabindex') ?? '0') < 0) continue;
+    if (free(el)) out.add(el);
+  }
+  for (const leaf of Array.from(doc.querySelectorAll('div, span, p'))) {
+    if (leaf.children.length > 0) continue;
+    const text = flatText(leaf);
+    if (!text || text.length > 40 || !ACTION_TEXT.test(text) || !free(leaf)) continue;
+    let box: Element = leaf;
+    for (let i = 0; i < 8; i++) {
+      const up: Element | null = box.parentElement;
+      if (!up || up === doc.body || flatText(up) !== text || !free(up)) break;
+      box = up;
+    }
+    // A pressable that announces itself (tabindex/onclick) close above wins.
+    const explicit = box.closest('[tabindex]:not([tabindex^="-"]), [onclick]');
+    out.add(explicit && free(explicit) && flatText(explicit) === text ? explicit : box);
+  }
+  // Keep the outermost of nested candidates.
+  return Array.from(out).filter((el) => !Array.from(out).some((o) => o !== el && o.contains(el)));
 }
 
 /**
@@ -222,14 +268,23 @@ export function buildPageMap(doc: Document, opts: PageMapOptions): ActionTarget[
   const seen = new Set<string>();
   const found: ActionTarget[] = [];
   const pinnedIds = new Set((opts.pinned ?? []).map((el) => targetIdFor(el)));
-  for (const el of Array.from(doc.querySelectorAll(INTERACTIVE))) {
+  const native = Array.from(doc.querySelectorAll(INTERACTIVE));
+  const pseudo = new Set(opts.pseudoButtons ? pseudoButtons(doc) : []);
+  // Document order, so pseudo-buttons sit among the native controls of their zone.
+  const elements = pseudo.size
+    ? [...native, ...pseudo].sort((a, b) =>
+        a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1,
+      )
+    : native;
+  for (const el of elements) {
     if (isHidden(el)) continue;
     const href = el.getAttribute('href');
     if (href && /^javascript:/i.test(href) && !el.getAttribute('role')) continue;
     const name = accessibleName(el);
     if (!name) continue;
+    if (pseudo.has(el) && name.length > MAX_PSEUDO_LABEL) continue;
     const label = name.length > MAX_LABEL ? `${name.slice(0, MAX_LABEL - 1)}…` : name;
-    const kind = kindOf(el);
+    const kind = pseudo.has(el) ? 'button' : kindOf(el);
     const key = `${kind}|${label}|${href ?? ''}`;
     if (seen.has(key)) continue;
     seen.add(key);
