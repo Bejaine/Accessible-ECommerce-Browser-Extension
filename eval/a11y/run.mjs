@@ -250,7 +250,8 @@ async function main() {
   await sleep(400);
   await product.ev(`${R}.querySelector('.asl-close').click()`);
   await sleep(400);
-  if (await product.ev(`${R}.querySelector('.asl-active').hidden`)) throw new Error('note not shown');
+  if (await product.ev(`${R}.querySelector('.asl-active').hidden`))
+    throw new Error('note not shown');
   await allThemes(product, 'Features note');
   await product.ev(`document.querySelector('#add-to-cart').click()`);
   await sleep(500);

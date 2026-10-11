@@ -898,6 +898,8 @@ export function mountApp(
           schema_version: '1.0',
           product: full,
           prefs: profile.prefs,
+          // The shopping session, so a product only opened (no turn) can be compared later.
+          session_id: session.id,
         });
         prepared.set(product.id, res.sections);
       } catch {

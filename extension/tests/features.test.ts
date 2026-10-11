@@ -211,3 +211,23 @@ describe('simple view spec values', () => {
     expect([specValue(true), specValue('false'), specValue(5)]).toEqual(['Yes', 'No', '5']);
   });
 });
+
+describe('product prepare carries the shopping session', () => {
+  it('sends the same session id as turns (Track C compares products opened earlier)', async () => {
+    fakeBrowser.reset();
+    currentPage = structuredClone(turnRequest.page) as unknown as PageContext;
+    const store = await createProfileStore();
+    const backend = createMockBackend();
+    const prepare = vi.spyOn(backend, 'prepareProduct');
+    const host = document.createElement('div');
+    document.body.append(host);
+    const app = mountApp(host, store, createBus(), backend, {
+      speaker: recordingSpeaker().speaker,
+      sessionId: 'session-42',
+    });
+    await vi.waitFor(() => expect(prepare).toHaveBeenCalled());
+    expect(prepare.mock.calls[0]![0].session_id).toBe('session-42');
+    app.unmount();
+    host.remove();
+  });
+});
