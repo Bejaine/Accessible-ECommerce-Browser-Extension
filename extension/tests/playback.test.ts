@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fakeBrowser } from 'wxt/testing/fake-browser';
-import type { AccessibleOutput } from '@shared/index';
+import type { AccessibleOutput, Lang } from '@shared/index';
 import reviewsFixture from '../../fixtures/mocks/AccessibleOutput.json';
 import type { Mic } from '../src/audio/mic';
 import { mountApp, type App } from '../src/core/app';
@@ -134,7 +134,7 @@ function fakePlayer() {
   let pos = 0;
   let state: Player['state'] = 'idle';
   let rate = 1;
-  let lang: 'en' | 'hi' | 'te' = 'en';
+  let lang: Lang = 'en';
   const emit = (e: PlayerEvent) => listeners.forEach((l) => l(e));
   const setState = (s: Player['state']) => {
     state = s;
@@ -154,7 +154,7 @@ function fakePlayer() {
     speak();
   };
   const player = {
-    play: (sections: { segments: { text: string }[] }[], l: 'en' | 'hi' | 'te') =>
+    play: (sections: { segments: { text: string }[] }[], l: Lang) =>
       load(
         sections.flatMap((s) => s.segments.map((x) => x.text)),
         l,

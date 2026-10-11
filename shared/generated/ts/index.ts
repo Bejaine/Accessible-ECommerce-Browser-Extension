@@ -7,7 +7,7 @@ export type SchemaVersion = "1.0";
 /**
  * Supported languages. Add more via a schema PR.
  */
-export type Lang = "en" | "hi" | "te";
+export type Lang = "en" | "hi" | "te" | "ml";
 export type ItemKind = "text" | "pro" | "con" | "spec" | "row" | "warning";
 export type TargetKind = "button" | "link" | "input" | "select" | "checkbox" | "radio" | "swatch" | "other";
 /**

@@ -32,6 +32,7 @@ class Lang(StrEnum):
     en = "en"
     hi = "hi"
     te = "te"
+    ml = "ml"
 
 
 class Money(BaseModel):

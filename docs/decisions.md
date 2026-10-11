@@ -495,3 +495,11 @@ Affects: all tracks. Change rules (minor vs major bump) are in shared/README.md.
   dev/make-cues.mjs). Inlined as data URLs: a shop page can't load extension files that aren't in
   `web_accessible_resources`. A paused answer stays paused under a cue and resumes after it.
 
+
+## 2026-10-11 — Schema: Malayalam added to `Lang` (Track A; affects everyone)
+- `Lang` = en | hi | te | **ml**. Additive enum value; `schema_version` stays "1.0", following the
+  `/extract/fallback` precedent, because a 1.1 bump would touch every fixture and constant in all
+  tracks. (shared/README.md asks for a minor bump here: team to confirm.)
+- Code that maps every `Lang` must handle `ml` (TypeScript flags it): `core/app.ts`
+  `LANGUAGE_NAMES` gained `ml: 'മലയാളം'`. Malayalam UI strings, onboarding, numbers and masking
+  follow in a separate Track A PR.
