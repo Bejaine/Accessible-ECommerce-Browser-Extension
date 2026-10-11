@@ -7,7 +7,7 @@ BACKEND_HOST ?= 127.0.0.1
 BIN := $(CURDIR)/$(VENV)/bin
 GEN_PY := $(CURDIR)/shared/generated/py
 
-.PHONY: setup types types-check check lint lint-ts lint-py test test-ext test-backend validate backend ext ext-firefox build eval-inference e2e
+.PHONY: a11y setup types types-check check lint lint-ts lint-py test test-ext test-backend validate backend ext ext-firefox build eval-inference e2e
 
 setup:
 	npm install
@@ -71,3 +71,9 @@ eval-inference:
 # Persona runs on MockMart with the real backend (MOCK=1); writes eval/e2e/report.md.
 e2e:
 	npm run -w extension e2e
+
+# Overlay accessibility audit in headless Chrome (axe + contrast, 44 px targets, Tab order,
+# accessible names, forced colours) -> eval/a11y/report.md
+a11y:
+	npm run -w extension build
+	node eval/a11y/run.mjs

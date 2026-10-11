@@ -79,6 +79,12 @@ button:focus-visible { outline: 3px solid var(--asl-fg); outline-offset: 3px; }
   .asl-panel, .asl-toggle, .asl-close { border-width: 3px; }
 }
 @media (forced-colors: active) {
+  /* Every button in system colours: accent fills would otherwise keep only their text colour.
+     !important because each component's own button rules are more specific. */
+  .asl-root button { color: ButtonText !important; background-color: ButtonFace !important;
+    border-color: ButtonText !important; }
+  .asl-root button[aria-pressed='true'] { color: HighlightText !important;
+    background-color: Highlight !important; }
   .asl-panel { background: Canvas; color: CanvasText; border-color: CanvasText; }
   .asl-toggle, .asl-close { background: ButtonFace; color: ButtonText; border-color: ButtonText; }
   button:focus-visible { outline-color: Highlight; }

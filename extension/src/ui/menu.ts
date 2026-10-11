@@ -83,6 +83,7 @@ export const MENU_CSS = `
   .asl-group .asl-menu-toggle, .asl-group .asl-settings-toggle {
     background: ButtonFace; color: ButtonText; border-color: ButtonText; }
   .asl-type input { border-color: CanvasText; }
+  .asl-type .asl-row > button { background: ButtonFace; color: ButtonText; border-color: ButtonText; }
   .asl-progress { border-color: Highlight; }
 }
 `;
