@@ -121,6 +121,51 @@ def test_answer_question_says_when_page_does_not_list_it(req):
     assert result.output.summary == "The page doesn't list water resistance rating."
 
 
+@pytest.mark.parametrize(
+    ("topic", "summary"),
+    [
+        ("price", "Price: ₹17,999."),
+        ("how much", None),
+        ("stock", "Availability: In stock."),
+        ("delivery", "Delivery: FREE delivery Tuesday, 14 October."),
+        ("star rating", "Rating: 4.2 out of 5 from 3,418 ratings."),
+    ],
+)
+def test_answer_question_without_field_paths(req, topic, summary):
+    """Seen live: the model sent only topic="price" and the answer was "not listed"."""
+    ctx = tools.Context(req)
+    result = run(tools.answer_question(ctx, topic))
+    if summary:
+        assert result.output.summary == summary
+        p = ctx.main_product()
+        assert check(result.output, {p.id: p}).dropped == []
+        assert result.output.grounding
+    else:
+        assert "doesn't list" in result.output.summary, "no fields named: nothing guessed"
+
+
+def test_compare_with_nothing_seen_says_what_to_do(req):
+    session.reset()
+    result = run(tools.compare(tools.Context(req)))
+    assert result.output.summary.startswith("I don't remember another product from this visit.")
+
+
+def test_a_product_only_opened_can_be_compared_later(req, mock_body):
+    """Open A (only /product/prepare runs), open B, say "compare with the last one"."""
+    from app.brain import prepare
+    from app.models import ProductPrepareRequest
+
+    session.reset()
+    first = mock_body("ProductPrepareRequest")
+    first["session_id"] = req.session_id
+    first["product"]["id"] = "amazon.in:B0OPENED001"
+    first["product"]["title"] = "Novix Max 5G"
+    run(prepare.prepare(ProductPrepareRequest.model_validate(first)))
+    result = run(tools.compare(tools.Context(req)))
+    table = result.output.sections[0].table
+    assert table.columns[1:] == ["Zentra Pulse 5G", "Novix Max 5G"]
+
+
 def test_recommend_cheapest_skips_sponsored(search_req):
     session.reset()
     ctx = tools.Context(search_req)
