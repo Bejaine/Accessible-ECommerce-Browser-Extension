@@ -26,4 +26,5 @@
   Cache descriptions by image URL.
 - Workflows (place, track, return, cancel) are step machines: extract → ask → act → verify,
   with a step limit and confirmations; the LLM only fills slots.
-- Declare every library, API and dataset in the README as it's added.
+- Declare every library, API and dataset in `docs/dependencies.md` as it's added (the README holds
+  setup and run instructions only, per the final-submission rules).
