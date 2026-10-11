@@ -93,6 +93,23 @@ def _first_item(o: OrderJSON) -> str:
     return f"{title} and {more} more item{'s' if more > 1 else ''}" if more > 0 else title
 
 
+def chip_answer(
+    state: dict[str, Any] | None, chip: str, orders: list[OrderJSON]
+) -> dict[str, Any] | None:
+    """order_task arguments for a chip this task itself offered (a return reason, or an order by
+    its first item), so tapping it needs no LLM. None when the chip isn't one of those."""
+    if not state:
+        return None
+    said = chip.strip().rstrip(".").lower()
+    if state.get("awaiting") == "reason":
+        reason = next((r for r in RETURN_REASONS if r.lower() == said), None)
+        return {"reason": reason} if reason else None
+    if state.get("awaiting") == "order":
+        order = next((o for o in orders if _first_item(o).lower() == said), None)
+        return {"order_id": order.id} if order else None
+    return None
+
+
 def _state_marker(task: str, step: int) -> dict[str, Any]:
     return {"name": TASKS[task]["name"], "step": step, "total_steps": TASKS[task]["steps"]}
 

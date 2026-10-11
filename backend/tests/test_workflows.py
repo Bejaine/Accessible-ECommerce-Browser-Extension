@@ -209,3 +209,22 @@ def test_continue_chip_moves_the_task_on_without_an_llm(mock_body, monkeypatch):
     data["input"].update(text="Continue")
     done = run(orchestrator.handle_turn(TurnRequest.model_validate(data)))
     assert done.output.summary == "Done: the page now shows this order as cancelled."
+
+
+def test_chips_the_task_offered_are_answered_without_the_llm(page):
+    """Reason and order chips go straight to order_task (the LLM is never consulted)."""
+    from app.models import OrderJSON
+
+    state = {"task": "return", "awaiting": "reason", "order_id": None}
+    assert workflows.chip_answer(state, "It arrived damaged", []) == {
+        "reason": "It arrived damaged"
+    }
+    assert workflows.chip_answer(state, "it arrived damaged.", []) == {
+        "reason": "It arrived damaged"
+    }
+    assert workflows.chip_answer(state, "it came broken", []) is None
+    orders = [OrderJSON.model_validate(o) for o in page["orders"]]
+    state = {"task": "track", "awaiting": "order", "order_id": None}
+    first = workflows._first_item(orders[1])
+    assert workflows.chip_answer(state, first, orders) == {"order_id": orders[1].id}
+    assert workflows.chip_answer(None, first, orders) is None

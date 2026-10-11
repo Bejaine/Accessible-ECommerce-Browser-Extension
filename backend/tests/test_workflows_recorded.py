@@ -56,3 +56,24 @@ def test_cancel_my_order(mock_body):
     assert r.confirmation.risk.value == "high"
     assert r.confirmation.read_back.total.amount == 1999
     assert r.workflow.step == 2 and r.workflow.total_steps == 3
+
+
+def test_reason_chip_is_answered_without_the_llm(mock_body, monkeypatch):
+    def no_llm(*_a, **_k):
+        raise AssertionError("a chip the task offered must not call the LLM")
+
+    monkeypatch.setattr(orchestrator, "complete_tool_call", no_llm)
+
+    def chip(text):
+        data = mock_body("TurnRequest")
+        data["session_id"] = "o-chip"
+        data["history"] = []
+        data["page"] = mock_body("PageContext.orders")
+        data["prefs"]["lang"] = "en"
+        data["input"].update(kind="phrase", text=text, phrase_id=None, lang="en", asr_meta=None)
+        return asyncio.run(orchestrator.handle_turn(TurnRequest.model_validate(data)))
+
+    assert chip("Return an order").output.summary.startswith("Why are you returning")
+    r = chip("It arrived damaged")
+    assert "Reason: it arrived damaged;" in r.output.summary
+    assert r.confirmation.risk.value == "high"
