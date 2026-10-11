@@ -4,6 +4,12 @@ import {
   type BackendRequestMessage,
 } from '@/src/core/backend';
 import {
+  createContinuity,
+  isContinuityMessage,
+  memoryStore,
+  type KeyValueStore,
+} from '@/src/core/continuity';
+import {
   ASSISTANT_COMMAND,
   isOnboarded,
   OPEN_ONBOARDING,
@@ -20,10 +26,16 @@ function openOnboarding() {
 // install, in its own tab (never on shop pages); Settings can open it again.
 export default defineBackground(() => {
   const backend = createBackend();
+  // One shopping session across pages and sites, and order tasks that continue on the next page
+  // (src/core/continuity.ts). storage.session survives the service worker sleeping.
+  const continuity = createContinuity(
+    (browser.storage.session as KeyValueStore | undefined) ?? memoryStore(),
+  );
   // The backend relay goes first: if an optional API below is missing on some browser, the
   // relay must still be registered, or every backend call fails silently.
   browser.runtime.onMessage.addListener(
-    (msg: Partial<BackendRequestMessage> | { type?: string }) => {
+    (msg: Partial<BackendRequestMessage> | { type?: string }, sender) => {
+      if (isContinuityMessage(msg)) return continuity.handle(msg, sender?.tab?.id);
       if (msg?.type === OPEN_ONBOARDING) return openOnboarding().then(() => true);
       if (msg?.type === 'backend' && 'method' in msg && msg.method) {
         return handleBackendMessage(backend, msg as BackendRequestMessage);
