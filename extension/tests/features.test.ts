@@ -326,3 +326,41 @@ describe('product prepare carries the shopping session', () => {
     host.remove();
   });
 });
+
+describe('the page after a search reads its results', () => {
+  async function mountWith(pageType: PageContext['page_type']) {
+    fakeBrowser.reset();
+    sessionStorage.clear();
+    currentPage = {
+      ...(structuredClone(turnRequest.page) as unknown as PageContext),
+      page_type: pageType,
+    };
+    const store = await createProfileStore();
+    const backend = createMockBackend();
+    const turn = vi.spyOn(backend, 'turn');
+    const host = document.createElement('div');
+    document.body.append(host);
+    const app = mountApp(host, store, createBus(), backend, {
+      speaker: recordingSpeaker().speaker,
+      readResults: true,
+    });
+    return { app, turn, done: () => (app.unmount(), host.remove()) };
+  }
+
+  it('on a results page, sends the "Read the results" chip', async () => {
+    const { app, turn, done } = await mountWith('search');
+    await app.readResults();
+    expect(turn.mock.calls[0]![0].input).toMatchObject({
+      kind: 'phrase',
+      phrase_id: 'read the results',
+    });
+    done();
+  });
+
+  it('if the search landed somewhere else (e.g. one product), sends nothing', async () => {
+    const { app, turn, done } = await mountWith('product');
+    await app.readResults();
+    expect(turn).not.toHaveBeenCalled();
+    done();
+  });
+});

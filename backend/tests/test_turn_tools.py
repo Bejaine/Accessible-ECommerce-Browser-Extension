@@ -572,3 +572,59 @@ def test_null_optional_arguments_are_allowed_and_mean_not_given(search_req):
     session.reset()
     result = run(tools.run(tools.Context(search_req), "recommend", sent))
     assert result.output.sections[0].table is not None
+
+
+def test_read_results_reads_the_list_numbered_and_grounded(search_req):
+    session.reset()
+    ctx = tools.Context(search_req)
+    result = run(tools.read_results(ctx))
+    out = result.output
+    assert result.dropped == []
+    assert out.summary == (
+        "Results 1 to 3 of 3: 1, Novix A15 5G, 2, Zentra Pulse 5G and 3, Orbita M3 5G. "
+        "Say open and a number or a name."
+    )
+    assert [i.text for i in out.sections[0].items] == [
+        "1. Novix A15 5G, ₹15,499, rated 4 out of 5, sponsored",
+        "2. Zentra Pulse 5G, ₹17,999, rated 4.2 out of 5",
+        "3. Orbita M3 5G, ₹13,999, rated 3.9 out of 5",
+    ]
+    assert check(out, ctx.products, set(range(1, 4))).dropped == []
+
+
+def test_read_results_pages_with_read_more(search_req):
+    session.reset()
+    search_req.prefs.verbosity = "short"  # three at a time
+    first3 = search_req.page.products
+    many = [first3[i % 3].model_copy(update={"id": f"amazon.in:B0MANY{i:04d}"}) for i in range(5)]
+    search_req.page.products = many
+    first = run(tools.run(tools.Context(search_req), *tools.CHIPS["read the results"]))
+    assert first.output.summary.startswith("Results 1 to 3 of 5: 1, Novix A15 5G")
+    assert "Read more results" in first.output.followups
+    more = run(tools.run(tools.Context(search_req), *tools.CHIPS["read more results"]))
+    assert more.output.summary.startswith("Results 4 to 5 of 5: 4, Novix A15 5G")
+    assert more.output.sections[0].items[0].text.startswith("4. ")
+
+
+def test_add_to_cart_on_results_asks_to_open_the_product_first(search_req):
+    result = run(tools.add_to_cart(tools.Context(search_req)))
+    assert result.output.summary.startswith("Let's open the product first.")
+    assert result.actions == [] and result.confirmation is None
+
+
+def test_page_brief_stays_small_on_a_busy_results_page(search_req):
+    """Seen live: a real results page made one turn ~5,200 tokens, over Groq's 8k a minute
+    for two turns. The page part must stay near 1,300 tokens."""
+    first = search_req.page.products[0]
+    search_req.page.products = [
+        first.model_copy(update={"id": f"amazon.in:B0BUSY{i:04d}", "title": "Phone " * 30})
+        for i in range(24)
+    ]
+    link = search_req.page.targets[1]
+    search_req.page.targets = [
+        link.model_copy(update={"id": f"t-{i}", "label": "A long link label " * 6})
+        for i in range(90)
+    ]
+    brief = orchestrator.page_brief(search_req)
+    assert len(brief["products"]) == 10 and len(brief["targets"]) == 40
+    assert len(json.dumps(brief, separators=(",", ":"))) < 5600

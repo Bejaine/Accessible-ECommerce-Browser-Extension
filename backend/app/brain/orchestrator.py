@@ -27,7 +27,7 @@ from app.services import numbers
 
 log = logging.getLogger(__name__)
 
-MAX_TARGETS = 60
+MAX_TARGETS = 40  # Groq's free tier is 8k tokens a minute: a turn must stay near 3k
 LOW_ASR = 0.5
 
 SYSTEM_PROMPT = """\
@@ -61,6 +61,8 @@ arguments as a JSON string}, each a different tool or different arguments from y
   the summary and asks; never press the Place order button yourself). While
   TASK_IN_PROGRESS is set, the user's answer (which order, a reason, "continue", "yes") goes to
   order_task with the matching slot, and "stop" / "never mind" goes to order_task with stop.
+- On a search page, "open / select / choose / show me" + a name or number ("the second one",
+  "the Orbita phone") -> press that result's link (zone results); never add_to_cart there.
 - `product_id` (optional): a product id from PAGE or SEEN; omit it for this product.
 - `priorities` (compare, recommend, set_preferences): [{feature, importance}] for features the
   shopper says matter or don't. feature is one of: price, rating, camera, front_camera, battery,
@@ -87,7 +89,20 @@ def page_brief(req: TurnRequest) -> dict[str, Any]:
     page = req.page
     mem = session.get(req.session_id)
     products = []
-    for p in page.products[:20]:
+    # A product page needs one product in detail; a results page only names (read_results and
+    # the tools read the rest from the page itself).
+    detailed = page.page_type.value == "product"
+    for p in page.products[: 1 if detailed else 10]:
+        if not detailed:
+            products.append(
+                {
+                    "id": p.id,
+                    "title": (p.title or "")[:50],
+                    "price": p.price.amount if p.price else None,
+                    "sponsored": p.sponsored,
+                }
+            )
+            continue
         products.append(
             {
                 "id": p.id,
@@ -142,7 +157,7 @@ def page_brief(req: TurnRequest) -> dict[str, Any]:
         ],
         "stated_preferences": {"priorities": mem.priorities, "max_price": mem.max_price},
         "targets": [
-            {"id": t.id, "kind": t.kind.value, "label": t.label[:60], "zone": t.zone.value}
+            {"id": t.id, "kind": t.kind.value, "label": t.label[:40], "zone": t.zone.value}
             for t in targets
         ],
     }

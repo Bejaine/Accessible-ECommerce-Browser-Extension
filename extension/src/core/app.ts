@@ -150,6 +150,8 @@ export interface App {
   playbackKey(): void;
   /** Continue the order task the previous page started (says so, then a "Continue" turn). */
   continueTask(): Promise<void>;
+  /** After a search: read this results page's results (Track C's "Read the results" chip). */
+  readResults(): Promise<void>;
   /** Step-by-step checkout for the page's summary (or a given one, e.g. a fixture in dev). */
   showCheckout(summary?: CheckoutSummary): void;
   speaker: Speaker;
@@ -171,6 +173,8 @@ export interface AppOptions {
   continuity?: TaskContinuity;
   /** The previous page took an order-task step: continue it here (no "resume reading" offer). */
   continueTask?: boolean;
+  /** The previous page searched: read this results page's results (no "resume reading" offer). */
+  readResults?: boolean;
 }
 
 export function mountApp(
@@ -721,7 +725,7 @@ export function mountApp(
   );
   // During an order task the next page continues it instead (one voice at a time).
   void resume.take().then((snap) => {
-    if (!snap || speaker.state !== 'idle' || options.continueTask) return;
+    if (!snap || speaker.state !== 'idle' || options.continueTask || options.readResults) return;
     speaker.offerResume(snap);
     announce(label('playback.resume_offer', lang()));
   });
@@ -1280,6 +1284,11 @@ export function mountApp(
     async continueTask() {
       announce(label('task.continuing', lang()));
       await turn.continueTask();
+    },
+    async readResults() {
+      // Only on a results page (the search may have landed somewhere else, e.g. one product).
+      if (extractPageContext().page_type !== 'search') return;
+      await turn.readResults();
     },
     toggleAssistant() {
       if (overlay.isOpen) {
