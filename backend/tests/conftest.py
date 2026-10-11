@@ -43,3 +43,13 @@ def mock_body():
         return json.loads((REPO / "fixtures" / "mocks" / f"{title}.json").read_text())
 
     return load
+
+
+@pytest.fixture(autouse=True)
+def _fresh_llm_key_cooldowns():
+    """Groq key cooldowns live for the process; never let one test's 429 leak into another."""
+    from app.brain import llm
+
+    llm.reset_key_cooldowns()
+    yield
+    llm.reset_key_cooldowns()
