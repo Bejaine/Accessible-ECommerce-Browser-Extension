@@ -66,7 +66,10 @@ function state(): {
   return JSON.parse(localStorage.getItem('asl-mock-store-v1') ?? '{}');
 }
 
-beforeEach(() => localStorage.clear());
+beforeEach(() => {
+  localStorage.clear();
+  sessionStorage.clear();
+});
 
 describe('mock store pages', () => {
   it.each([
