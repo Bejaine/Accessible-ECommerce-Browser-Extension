@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createBargeIn } from '../src/audio/bargeIn';
+import { createBargeIn, isLikelyEcho } from '../src/audio/bargeIn';
 import type { ListenOptions, Mic, Utterance } from '../src/audio/mic';
 import type { PlayerEvent, PlayerState } from '../src/audio/player';
 
@@ -86,8 +86,8 @@ function fakePlayer() {
   return {
     player,
     start: () => emit({ type: 'state', state: 'playing' }),
-    sentence: (source: 'audio' | 'device' | 'text' = 'audio') =>
-      emit({ type: 'sentence', section: 0, index: 0, text: 'x', source }),
+    sentence: (source: 'audio' | 'device' | 'text' = 'audio', text = 'x') =>
+      emit({ type: 'sentence', section: 0, index: 0, text, source }),
     userPause: () => emit({ type: 'state', state: 'paused' }),
     end: () => emit({ type: 'state', state: 'idle' }),
   };
@@ -95,7 +95,7 @@ function fakePlayer() {
 
 const tick = () => new Promise((r) => setTimeout(r, 0));
 
-function setup(mode: 'default' | 'speech' = 'default') {
+function setup(mode: 'default' | 'speech' = 'default', enabled = true) {
   const m = fakeMic();
   const p = fakePlayer();
   const onUtterance = vi.fn();
@@ -106,6 +106,7 @@ function setup(mode: 'default' | 'speech' = 'default') {
     mode: () => mode,
     onUtterance,
     onError,
+    enabled: () => enabled,
   });
   return { m, p, barge, onUtterance, onError };
 }
@@ -246,5 +247,61 @@ describe('barge-in', () => {
     expect(t.m.mic.stop).toHaveBeenCalledOnce();
     t.p.sentence();
     expect(t.m.mic.listen).toHaveBeenCalledOnce();
+  });
+});
+
+describe('barge-in safety (live phone test: the mic heard our own voice and looped)', () => {
+  it('is off unless enabled: the app must opt in (e.g. a "use headphones" setting)', () => {
+    const m = fakeMic();
+    const p = fakePlayer();
+    createBargeIn({ mic: m.mic, player: p.player, mode: () => 'default', onUtterance: vi.fn() });
+    p.start();
+    p.sentence();
+    expect(m.mic.listen).not.toHaveBeenCalled();
+  });
+
+  it('switching it off mid-playback closes the mic', () => {
+    let on = true;
+    const m = fakeMic();
+    const p = fakePlayer();
+    createBargeIn({
+      mic: m.mic,
+      player: p.player,
+      mode: () => 'default',
+      onUtterance: vi.fn(),
+      enabled: () => on,
+    });
+    p.start();
+    p.sentence();
+    on = false;
+    p.sentence();
+    expect(m.mic.stop).toHaveBeenCalledOnce();
+  });
+
+  it('isEcho() recognises a transcript of what it just played', () => {
+    const t = setup();
+    t.p.start();
+    t.p.sentence('audio', 'Add Zentra Buds Air to your cart?');
+    t.p.sentence('audio', 'Quantity 1, price ₹1,999.');
+    expect(t.barge.isEcho('add zentra buds air to your cart')).toBe(true);
+    expect(t.barge.isEcho('Quantity one price 1999')).toBe(true);
+    expect(t.barge.isEcho('yes')).toBe(false);
+    expect(t.barge.isEcho('show me the reviews')).toBe(false);
+  });
+});
+
+describe('isLikelyEcho', () => {
+  it.each([
+    [
+      'Add Zentra Buds Air to your cart',
+      ['Add Zentra Buds Air to your cart? Quantity 1, price ₹1,999.'],
+      true,
+    ],
+    ['अपने कार्ट में Zentra जोड़ें', ['अपने कार्ट में Zentra Buds Air जोड़ें?'], true],
+    ['add this to cart', ['Customers like the battery.'], false],
+    ['yes', ['Add it to your cart? Say yes or no.'], false], // too short to call it an echo
+    ['', ['anything'], false],
+  ])('%s', (transcript, spoken, expected) => {
+    expect(isLikelyEcho(transcript, spoken)).toBe(expected);
   });
 });
