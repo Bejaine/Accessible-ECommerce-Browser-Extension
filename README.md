@@ -65,3 +65,8 @@ make eval-inference    # inference calibration report (needs recorded sessions, 
 None to download. All models are used through hosted APIs (Bhashini via AnuvaadHub, Groq,
 Gemini); tests replay recorded responses from `fixtures/`. Libraries, APIs and data used are
 listed in `docs/dependencies.md`.
+
+## Demonstration and Presentation
+
+- [Video Demostration](https://drive.google.com/file/d/1NvfEahLamjsay-gXacbeEt7FmxAnhwJE/view?usp=sharing)
+- [Slide Presentation](https://drive.google.com/file/d/19cZT1Bn6TgA1p3jlbWgTL2Etep3Lcmh4/view?usp=sharing)
